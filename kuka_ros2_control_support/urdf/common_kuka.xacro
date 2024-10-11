@@ -3,6 +3,7 @@
 
   <xacro:arg name="robot_name" default="kuka" />
   <xacro:arg name="prefix" default="" />
+  <xacro:arg name="is_async" default="true" />
   <xacro:arg name="description_package" default="" />
   <xacro:arg name="description_macro_file" default="" />
   <xacro:arg name="use_eki_communication" default="false" />
