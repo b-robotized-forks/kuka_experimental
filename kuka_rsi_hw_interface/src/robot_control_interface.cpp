@@ -116,7 +116,7 @@ CallbackReturn RobotControlInterface::on_configure(
 {
   RCLCPP_INFO(rclcpp::get_logger(info_.name), "on_configure");
   // Wait for connection from robot
-  server_.reset(new UDPServer(local_host_, local_port_));
+  server_.reset(new UDPServer(local_host_, local_port_, false));
 
   RCLCPP_INFO(rclcpp::get_logger(info_.name), "Connecting to robot . . .");
 
