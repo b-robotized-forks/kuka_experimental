@@ -11,9 +11,11 @@
   <xacro:arg name="use_rsi_communication" default="false" />
   <xacro:arg name="rsi_listen_ip" default="127.0.0.1" />
   <xacro:arg name="rsi_listen_port" default="49152" />
+  <xacro:arg name="is_async" default="false" />
 
   <!-- ros2_control mock and simulation plugins -->
   <xacro:arg name="use_mock_hardware" default="false" />
+  <xacro:arg name="use_external_gripper_driver" default="true" />
   <xacro:arg name="sim_gazebo_classic" default="false" />
   <xacro:arg name="sim_gazebo" default="false" />
   <xacro:arg name="simulation_controllers" default="" />
@@ -33,6 +35,7 @@
   <xacro:kuka_common_ros2_control_macro
     name="$(arg robot_name)"
     prefix="$(arg prefix)"
+    is_async="$(arg is_async)"
     use_eki_communication="$(arg use_eki_communication)"
     eki_robot_ip="$(arg eki_robot_ip)"
     eki_robot_port="$(arg eki_robot_port)"
