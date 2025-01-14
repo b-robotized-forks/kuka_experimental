@@ -64,27 +64,6 @@ namespace kuka_eki_hw_interface
             hardware_interface::return_type read(const rclcpp::Time& time, const rclcpp::Duration& period) final;
             hardware_interface::return_type write(const rclcpp::Time& time, const rclcpp::Duration& period) final;
 
-//            ROS2_CONTROL_KUKA_EKI_HW_PUBLIC
-//            hardware_interface::return_type configure(const hardware_interface::HardwareInfo & info);
-//
-//            ROS2_CONTROL_KUKA_EKI_HW_PUBLIC
-//            std::vector<hardware_interface::StateInterface> export_state_interfaces() override;
-//
-//            ROS2_CONTROL_KUKA_EKI_HW_PUBLIC
-//            std::vector<hardware_interface::CommandInterface> export_command_interfaces() override;
-//
-//            ROS2_CONTROL_KUKA_EKI_HW_PUBLIC
-//            hardware_interface::return_type start();
-//
-//            ROS2_CONTROL_KUKA_EKI_HW_PUBLIC
-//            hardware_interface::return_type stop();
-//
-//            ROS2_CONTROL_KUKA_EKI_HW_PUBLIC
-//            hardware_interface::return_type read();
-//
-//            ROS2_CONTROL_KUKA_EKI_HW_PUBLIC
-//            hardware_interface::return_type write();
-
         private:
             // Store the command for the simulated robot
             std::vector<double> hw_commands_;
@@ -95,8 +74,8 @@ namespace kuka_eki_hw_interface
 
             int eki_cmd_buff_len_;
             int eki_max_cmd_buff_len_ = 5;  // by default, limit command buffer to 5 (size of advance run in KRL)
-//
-//            // EKI socket read/write
+
+            // EKI socket read/write
             int eki_read_state_timeout_ = 100;  // [s]; settable by parameter (default = 5)
             boost::asio::io_service ios_;
             std::unique_ptr<boost::asio::deadline_timer> deadline_;
