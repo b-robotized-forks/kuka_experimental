@@ -19,6 +19,13 @@
                initial_positions:=${dict(joint_a1=0.0,joint_a2=-1.57,joint_a3=1.57,joint_a4=0.0,joint_a5=1.57,joint_a6=0.0)}"
                >
 
+    <xacro:if value="${use_mock_hardware}">
+      <xacro:property name="is_async" value="false" />
+    </xacro:if>
+    <xacro:unless value="${use_mock_hardware}">
+      <xacro:property name="be_async" value="${is_async}" />
+    </xacro:unless>
+
     <ros2_control name="${name}" type="system" is_async="${is_async}">
 
       <hardware>
