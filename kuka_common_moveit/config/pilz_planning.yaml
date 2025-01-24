@@ -1,4 +1,7 @@
-request_adapters: >-
-  default_planner_request_adapters/FixWorkspaceBounds
-  default_planner_request_adapters/FixStartStateBounds
-  default_planner_request_adapters/FixStartStatePathConstraints
+/**:
+  ros__parameters:
+    pilz:
+      planning_plugin: pilz_industrial_motion_planner/CommandPlanner
+      default_planner_config: PTP
+      request_adapters: default_planner_request_adapters/ResolveConstraintFrames default_planner_request_adapters/FixWorkspaceBounds default_planner_request_adapters/FixStartStateBounds default_planner_request_adapters/FixStartStateCollision
+      response_adapters: default_planning_response_adapters/AddTimeOptimalParameterization default_planning_response_adapters/ValidateSolution default_planning_response_adapters/DisplayMotionPath

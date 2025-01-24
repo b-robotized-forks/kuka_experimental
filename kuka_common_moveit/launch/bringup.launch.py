@@ -162,6 +162,14 @@ def generate_launch_description():
 
     declared_arguments.append(
         DeclareLaunchArgument(
+            "hardware_is_async",
+            default_value="true",
+            description="Set the hardware to be asynchronos to the controller manager.",
+        )
+    )
+
+    declared_arguments.append(
+        DeclareLaunchArgument(
             "use_mock_hardware",
             default_value="true",
             description="Start robot with fake hardware mirroring command to its states.",
@@ -202,6 +210,22 @@ def generate_launch_description():
         )
     )
 
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "additional_xacro_args",
+            default_value="true",
+            description="additional_xacro_args"
+        )
+    )
+
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "use_external_gripper_driver",
+            default_value="true",
+            description="Disable starting of local gripper driver. Use driver running on CtrlX device.",
+        )
+    )
+
     # initialize arguments
     robot_name = LaunchConfiguration("robot_name")
     prefix = LaunchConfiguration("prefix")
@@ -218,14 +242,18 @@ def generate_launch_description():
     use_rsi_communication = LaunchConfiguration("use_rsi_communication")
     rsi_listen_ip = LaunchConfiguration("rsi_listen_ip")
     rsi_listen_port = LaunchConfiguration("rsi_listen_port")
+    hardware_is_async = LaunchConfiguration("hardware_is_async")
 
     use_mock_hardware = LaunchConfiguration("use_mock_hardware")
+    use_external_gripper_driver = LaunchConfiguration("use_external_gripper_driver")
 
     moveit_config_package = LaunchConfiguration("moveit_config_package")
     semantic_description_file = LaunchConfiguration("semantic_description_file")
     rviz_file = LaunchConfiguration("rviz_file")
 
     activate_ros2_control = LaunchConfiguration("activate_ros2_control")
+
+    additional_xacro_args = LaunchConfiguration("additional_xacro_args")
 
     initial_positions_file = PathJoinSubstitution(
         [FindPackageShare(configuration_package), "config", initial_positions_file]
@@ -272,11 +300,24 @@ def generate_launch_description():
             "rsi_listen_port:=",
             rsi_listen_port,
             " ",
+            "is_async:=",
+            hardware_is_async,
+            " ",
             "use_mock_hardware:=",
             use_mock_hardware,
             " ",
             "initial_positions_file:=",
             initial_positions_file,
+            " ",
+            "activate_ros2_control:=",
+            activate_ros2_control,
+            " ",
+            "additional_xacro_args:=",
+            additional_xacro_args,
+            " ",
+            "use_external_gripper_driver:=",
+            use_external_gripper_driver,
+            
         ]
     )
     robot_description = {"robot_description": robot_description_content}
@@ -310,10 +351,22 @@ def generate_launch_description():
     for controller in ["position_trajectory_controller", "joint_state_broadcaster"]:
         load_and_activate_controllers += [
             ExecuteProcess(
+                cmd=[f"ros2 run controller_manager spawner {controller} -c controller_manager -p /home/oguz/maurobot_ws/install/kuka_ros2_control_support/share/kuka_ros2_control_support/config/6dof_controllers.yaml"],
+                shell=True,
+                output="screen",
+                condition=IfCondition(use_mock_hardware),
+            )
+        ]
+    
+    # Spawn gripper controllers - only if mock hardware
+    load_and_activate_gripper_controllers = []
+    for controller in ["gripper", "mocked_sensors_controller"]:
+        load_and_activate_gripper_controllers += [
+            ExecuteProcess(
                 cmd=[f"ros2 run controller_manager spawner {controller}"],
                 shell=True,
                 output="screen",
-                condition=IfCondition(activate_ros2_control),
+                condition=UnlessCondition(use_external_gripper_driver),
             )
         ]
 
@@ -362,7 +415,9 @@ def generate_launch_description():
             "default_planner_config": "PTP"
         }
     }
-    joint_limits_yaml = load_yaml(joint_limits_file)
+    joint_limits_yaml = load_yaml(
+        "kuka_common_moveit", "config/joint_limits.yaml"
+    )
     ompl_planning_pipeline_config["ompl"].update(joint_limits_yaml)
 
     # WARNING default_planner_request_adapters/FixStartStateCollision might cause jumps if the robot is in a slight collision at start, deactivating it for now
