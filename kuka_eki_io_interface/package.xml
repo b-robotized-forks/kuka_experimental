@@ -17,6 +17,7 @@
   <depend>rclcpp_lifecycle</depend>
   <depend>rclcpp_components</depend>
   <depend>std_msgs</depend>
+  <depend>tinyxml_vendor</depend>
 
   <export>
     <build_type>ament_cmake</build_type>
