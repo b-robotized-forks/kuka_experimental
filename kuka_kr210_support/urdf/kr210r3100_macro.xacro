@@ -23,7 +23,7 @@
       <collision>
         <origin rpy="0 0 0" xyz="0 0 0"/>
         <geometry>
-          <mesh filename="file://$(find kuka_kr210_support)/meshes/kr210r3100/collision/base_link.stl" scale="0.001 0.001 0.001"/>
+          <mesh filename="file://$(find maurob_gripper_description)/meshes/kr210r3100/collision/base_link2.stl" scale="0.001 0.001 0.001"/>
         </geometry>
       </collision>
     </link>
@@ -45,7 +45,7 @@
     <collision>
       <origin rpy="0 0 0" xyz="0.0 0.0 0.0"/>
       <geometry>
-        <mesh filename="file://$(find kuka_kr210_support)/meshes/kr210r3100/collision/l1_1.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="file://$(find kuka_kr210_support)/meshes/kr210r3100/collision/l1_2.stl" scale="0.001 0.001 0.001"/>
       </geometry>
     </collision>
         </link>
