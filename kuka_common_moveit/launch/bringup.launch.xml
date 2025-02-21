@@ -130,11 +130,11 @@
   <group if="$(var activate_ros2_control)">
     <node if="$(var use_mock_hardware)" pkg="controller_manager" exec="ros2_control_node" name="controller_manager" output="both">
       <param name="robot_description" value="$(var robot_description_content)"/>
-      <param from="/home/oguz/maurobot_ws/src/kuka_experimental/kuka_resources/config/kuka_6dof_controllers.yaml"/>
+      <param from="$(find-pkg-share kuka_resources)/config/kuka_6dof_controllers.yaml"/>
     </node>
     <node unless="$(var use_mock_hardware)" pkg="kuka_ros2_control_support" exec="ros2_control_node_max_update_rate_sc" name="controller_manager" output="screen">
       <param name="robot_description" value="$(var robot_description_content)"/>
-      <param from="/home/oguz/maurobot_ws/src/kuka_experimental/kuka_resources/config/kuka_6dof_controllers.yaml"/>
+      <param from="$(find-pkg-share kuka_resources)/config/kuka_6dof_controllers.yaml"/>
     </node>
   </group>
 
