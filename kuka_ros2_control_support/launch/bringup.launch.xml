@@ -1,0 +1,130 @@
+<launch>
+  <arg name="robot_name"
+       default="kuka"
+       description="Name of the robot or application for unique identification." />
+  <arg name="prefix"
+       default=""
+       description="Prefix of the joint names, useful for multi-robot setup. If changed, also update joint names in the controllers' configuration." />
+  <arg name="description_package"
+       description="Description package with robot URDF/xacro files." />
+   <arg name="description_macro_file"
+       description="URDF/XACRO description file of the robot or application." />
+  <arg name="configuration_package"
+       default="kuka_resources"
+       description="Package with configuration files, e.g., controllers, initial positions." />
+  <arg name="controllers_file"
+       default="kuka_6dof_controllers.yaml"
+       description="YAML file with the controllers configuration." />
+  <arg name="initial_positions_file"
+       default="initial_positions.yaml"
+       description="YAML file with the initial positions when using mock hardware from ros2_control." />
+  <arg name="use_eki_communication"
+       default="false"
+       description="Use EKI communication to the KUKA Robot Controller (KR-C). If true, 'eki_robot_ip' and 'eki_robot_port' define the endpoint of robot controller to connect." />
+  <arg name="eki_robot_ip"
+       default="127.0.0.1"
+       description="IP address for the robot controller for communication using EKI protocol." />
+  <arg name="eki_robot_port"
+       default="54600"
+       description="Port by which the robot can be reached for communication using EKI protocol." />
+  <arg name="use_rsi_communication"
+       default="false"
+       description="Use RSI communication to the KUKA Robot Controller (KR-C). If true, 'rsi_listen_ip' and 'rsi_robot_port' define the endpoint where the robot controller should connect." />
+  <arg name="rsi_listen_ip"
+       default="127.0.0.1"
+       description="IP address of a computer where robot controller should connect for communication using RSI protocol." />
+  <arg name="rsi_listen_port"
+       default="49152"
+       description="Port on a computer where robot controller should connect for communication using RSI protocol." />
+  <arg name="use_mock_hardware"
+       default="true"
+       description="Start robot with mock hardware mirroring command to its states." />
+  <arg name="rviz_file"
+       default="view_robot.rviz"
+       description="Rviz2 configuration file for visualization. " />
+  <arg name="activate_ros2_control"
+       default="true"
+       description="YAML file with the OMPL planning configuration."/>
+  <arg name="controller_manager_name"
+       default="controller_manager"
+       description="Start cm" />
+  <arg name="start_rviz"
+       default="true"
+       description="Start vizualization in Rviz2."/>
+  <arg name="log_level_driver" default="info" description="Set the logging level of the loggers of all started nodes.">
+      <choice value="debug"/>
+      <choice value="DEBUG"/>
+      <choice value="info"/>
+      <choice value="INFO"/>
+      <choice value="warn"/>
+      <choice value="WARN"/>
+      <choice value="error"/>
+      <choice value="ERROR"/>
+      <choice value="fatal"/>
+      <choice value="FATAL"/>
+  </arg>
+  <arg name="log_level_all" default="info" description="Set the logging level of the loggers of all started nodes.">
+      <choice value="debug"/>
+      <choice value="DEBUG"/>
+      <choice value="info"/>
+      <choice value="INFO"/>
+      <choice value="warn"/>
+      <choice value="WARN"/>
+      <choice value="error"/>
+      <choice value="ERROR"/>
+      <choice value="fatal"/>
+      <choice value="FATAL"/>
+  </arg>
+
+
+
+  
+  
+   <!-- Load Robot Description -->
+  <let name="robot_description_content"
+      value="$(command '$(find-exec xacro) $(var description_kuka_file) \
+                robot_name:=$(var robot_name) \
+                prefix:=$(var prefix) \
+                description_package:=$(var description_package) \
+                description_macro_file:=$(var description_macro_file) \
+                use_eki_communication:=$(var use_eki_communication) \
+                eki_robot_ip:=$(var eki_robot_ip) \
+                eki_robot_port:=$(var eki_robot_port) \
+                use_rsi_communication:=$(var use_rsi_communication) \
+                rsi_listen_ip:=$(var rsi_listen_ip) \
+                rsi_listen_port:=$(var rsi_listen_port) \
+                use_mock_hardware:=$(var use_mock_hardware) \
+                use_mock_hardware_gripper:=$(var use_mock_hardware_gripper) \
+                initial_positions_file:=$(find-pkg-share $(var configuration_package))/config/$(var initial_positions_file)')"/>
+
+   <!-- Publish TF -->
+  <node pkg="robot_state_publisher" exec="robot_state_publisher" name="robot_state_publisher_node" output="both">
+    <param name="robot_description" value="$(var robot_description_content)"/>
+  </node>
+
+  <!-- Run real robot configuration or simulated hardware -->
+  <!-- ros2 control node -->
+  <group if="$(var activate_ros2_control)">
+    <let name="controllers_file_name" value="$(find-pkg-share $(var configuration_package))/config/$(var controllers_file)" />
+    <let name="controller_manager_name" value="controller_manager" />
+    <node if="$(var use_mock_hardware)" pkg="controller_manager" exec="ros2_control_node" name="controller_manager" output="both"
+      args="--ros-args
+            --log-level
+            KukaSystemPositionOnlyHardware:=$(var log_level_driver)
+            --ros-args
+            --log-level
+            $(var log_level_all)">
+      <param name="robot_description" value="$(var robot_description_content)"/>
+      <param from="/home/oguz/maurobot_ws/src/kuka_experimental/kuka_resources/config/kuka_6dof_controllers.yaml"/>
+    </node>
+    <node pkg="controller_manager" exec="spawner" name="position_trajectory_controller" output="screen"
+          args="position_trajectory_controller -c $(var controller_manager_name) -p $(var controllers_file_name)"/>
+    <node pkg="controller_manager" exec="spawner" name="joint_state_broadcaster" output="screen"
+          args="joint_state_broadcaster -c $(var controller_manager_name) -p $(var controllers_file_name)"/>
+  </group>
+
+  <!-- RViz2 -->
+  <node if="$(var start_rviz)" pkg="rviz2" exec="rviz2" name="rviz2" output="log" 
+  args="$(find-pkg-share $(var configuration_package))/config/$(var rviz_file)" />
+  
+</launch>
