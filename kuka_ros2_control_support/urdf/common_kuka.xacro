@@ -12,7 +12,6 @@
   <xacro:arg name="use_rsi_communication" default="false" />
   <xacro:arg name="rsi_listen_ip" default="127.0.0.1" />
   <xacro:arg name="rsi_listen_port" default="49152" />
-  <xacro:arg name="is_async" default="false" />
 
   <!-- ros2_control mock and simulation plugins -->
   <xacro:arg name="use_mock_hardware" default="false" />

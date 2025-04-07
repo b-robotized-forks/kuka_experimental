@@ -3,15 +3,11 @@ publisher_joint_trajectory_controller:
     controller_name: "position_trajectory_controller"
     wait_sec_between_publish: 6
 
-    goal_names: ["pos1", "pos2", "pos3", "pos4"]
+    goal_names: ["pos1", "pos2"]
     pos1:
-      positions: [0.0, -1.57, 1.57, 0.0, 0.0, 0.0]
+      positions: [0.0, -1.919862, 2.094395, 0.0, 1.308997, 0.1745329]
     pos2:
-      positions: [0.0, -1.57, 1.57, 0.0, -1.57, 0.0]
-    pos3:
-      positions: [0.0, -1.57, 1.57, 0.0, 0.0, 0.0]
-    pos4:
-      positions: [0.0, -1.57, 1.57, 0.0, 1.57, 0.0]
+      positions: [0.0, -1.919862, 2.094395, 0.0, 1.308997, -0.1745329]
 
     joints:
       - joint_a1
@@ -20,12 +16,3 @@ publisher_joint_trajectory_controller:
       - joint_a4
       - joint_a5
       - joint_a6
-
-    check_starting_point: true
-    starting_point_limits:
-      joint_a1: [-0.1,0.1]
-      joint_a2: [-1.58,1.58]
-      joint_a3: [-1.58,1.58]
-      joint_a4: [-0.1,0.1]
-      joint_a5: [-2.0,2.0]
-      joint_a6: [-0.1,0.1]
