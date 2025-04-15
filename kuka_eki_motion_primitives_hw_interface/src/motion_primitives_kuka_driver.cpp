@@ -38,7 +38,8 @@ hardware_interface::CallbackReturn MotionPrimitivesKukaDriver::on_init(
   info_ = info;
 
   // Joint states for RViz, ...
-  hw_joint_states_.resize(info_.joints.size(), std::numeric_limits<double>::quiet_NaN());
+  // hw_joint_states_.resize(info_.joints.size(), std::numeric_limits<double>::quiet_NaN());
+  hw_joint_states_.resize(info_.joints.size(), 0.0);  // TODO(mathias31415): Set to 0.0 for testing --> change to nan and set in read() later
 
   // State interfaces for the motion_primitive_forward_controller
   hw_mo_prim_states_.resize(2, std::numeric_limits<double>::quiet_NaN());     // execution_status, ready_for_new_primitive
