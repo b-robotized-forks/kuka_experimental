@@ -43,6 +43,8 @@ from launch.substitutions import (
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 
+from launch.substitutions import TextSubstitution
+
 
 def generate_launch_description():
     declared_arguments = []
@@ -337,11 +339,23 @@ def generate_launch_description():
 
 
     load_and_activate_controllers = []
+    # for controller in ["position_trajectory_controller", "joint_state_broadcaster"]:
+    #     load_and_activate_controllers += [
+    #         ExecuteProcess(
+    #             cmd=[f"ros2 run controller_manager spawner {controller} -c {controller_manager_name}"],
+    #             shell=True,
+    #             output="screen",
+    #             condition=IfCondition(activate_ros2_control),
+    #         )
+    #     ]
+
     for controller in ["position_trajectory_controller", "joint_state_broadcaster"]:
         load_and_activate_controllers += [
             ExecuteProcess(
-                cmd=[f"ros2 run controller_manager spawner {controller} -c {controller_manager_name}"],
-                shell=True,
+                cmd=[
+                    "ros2", "run", "controller_manager", "spawner", controller,
+                    "--controller-manager", controller_manager_name,
+                ],
                 output="screen",
                 condition=IfCondition(activate_ros2_control),
             )
