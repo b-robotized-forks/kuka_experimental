@@ -28,6 +28,8 @@
 #include "rclcpp/macros.hpp"
 #include "rclcpp_lifecycle/state.hpp"
 
+#include "motion_primitives_forward_controller/execution_state.hpp"
+
 namespace kuka_eki_motion_primitives_hw_interface
 {
 class MotionPrimitivesKukaDriver : public hardware_interface::SystemInterface
@@ -64,8 +66,12 @@ public:
     const rclcpp::Time & time, const rclcpp::Duration & period) override;
 
 private:
-  std::vector<double> hw_commands_;
-  std::vector<double> hw_states_;
+  std::vector<double> hw_joint_states_;
+  std::vector<double> hw_mo_prim_states_;
+  std::vector<double> hw_mo_prim_commands_;
+
+  std::atomic<int8_t> current_execution_status_{ExecutionState::IDLE};
+  std::atomic_bool ready_for_new_primitive_{false}; // Flag to indicate if the hw-interface is ready for a new motion primitive
 };
 
 }  // namespace kuka_eki_motion_primitives_hw_interface
