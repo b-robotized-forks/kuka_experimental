@@ -12,6 +12,7 @@ find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
 find_package(ament_cmake_gmock REQUIRED)
+find_package(ros2_control_test_assets REQUIRED)
 
 add_library(
   kuka_eki_motion_primitives_hw_interface
