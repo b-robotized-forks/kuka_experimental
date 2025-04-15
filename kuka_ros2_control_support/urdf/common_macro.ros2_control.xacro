@@ -6,6 +6,7 @@
                prefix
                is_async:=^|true
                use_eki_communication:=^|false
+               use_motion_primitives_driver:=^|false
                eki_robot_ip:=^|127.0.0.1
                eki_robot_port:=^|54600
                use_rsi_communication:=^|false
@@ -43,6 +44,11 @@
           <param name="robot_ip">${eki_robot_ip}</param>
           <param name="eki_robot_port">${eki_robot_port}</param>
         </xacro:if>
+        <xacro:if value="${use_motion_primitives_driver}">
+          <plugin>kuka_eki_motion_primitives_hw_interface/MotionPrimitivesKukaDriver</plugin>
+          <param name="robot_ip">${eki_robot_ip}</param>
+          <param name="eki_robot_port">${eki_robot_port}</param>
+        </xacro:if>
         <xacro:if value="${use_rsi_communication}">
           <plugin>kuka_rsi_hw_interface/RobotControlInterface</plugin>
           <param name="listen_address">${rsi_listen_ip}</param>
@@ -50,60 +56,131 @@
         </xacro:if>
       </hardware>
 
-      <joint name="${prefix}joint_a1">
-        <command_interface name="position">
-          <param name="min">-1</param>
-          <param name="max">1</param>
-        </command_interface>
-        <state_interface name="position">
-          <param name="initial_value">${initial_positions['joint_a1']}</param>
-        </state_interface>
+      <!-- Dont use command interfaces for joints if use_motion_primitives_driver is true-->
+      <xacro:if value="${use_motion_primitives_driver}">
+        <joint name="${prefix}joint_a1">
+          <state_interface name="position">
+            <param name="initial_value">${initial_positions['joint_a1']}</param>
+          </state_interface>
+        </joint>
+        <joint name="${prefix}joint_a2">
+          <state_interface name="position">
+            <param name="initial_value">${initial_positions['joint_a2']}</param>
+          </state_interface>
       </joint>
-      <joint name="${prefix}joint_a2">
-        <command_interface name="position">
-          <param name="min">-1</param>
-          <param name="max">1</param>
-        </command_interface>
-        <state_interface name="position">
-          <param name="initial_value">${initial_positions['joint_a2']}</param>
-        </state_interface>
-	  </joint>
-      <joint name="${prefix}joint_a3">
-        <command_interface name="position">
-          <param name="min">-1</param>
-          <param name="max">0.61</param>
-        </command_interface>
-        <state_interface name="position">
-          <param name="initial_value">${initial_positions['joint_a3']}</param>
-        </state_interface>
-	  </joint>
-      <joint name="${prefix}joint_a4">
-        <command_interface name="position">
-          <param name="min">-1</param>
-          <param name="max">1</param>
-        </command_interface>
-        <state_interface name="position">
-          <param name="initial_value">${initial_positions['joint_a4']}</param>
-        </state_interface>
+        <joint name="${prefix}joint_a3">
+          <state_interface name="position">
+            <param name="initial_value">${initial_positions['joint_a3']}</param>
+          </state_interface>
       </joint>
-      <joint name="${prefix}joint_a5">
-        <command_interface name="position">
-          <param name="min">-1</param>
-          <param name="max">1</param>
-        </command_interface>
-        <state_interface name="position">
-          <param name="initial_value">${initial_positions['joint_a5']}</param>
-        </state_interface>
+        <joint name="${prefix}joint_a4">
+          <state_interface name="position">
+            <param name="initial_value">${initial_positions['joint_a4']}</param>
+          </state_interface>
+        </joint>
+        <joint name="${prefix}joint_a5">
+          <state_interface name="position">
+            <param name="initial_value">${initial_positions['joint_a5']}</param>
+          </state_interface>
+        </joint>
+        <joint name="${prefix}joint_a6">
+          <state_interface name="position">
+            <param name="initial_value">${initial_positions['joint_a6']}</param>
+          </state_interface>
+        </joint>
+      </xacro:if>
+      
+      <!-- Use command interfaces for joints if use_motion_primitives_driver is false-->
+      <xacro:unless value="${use_motion_primitives_driver}">
+        <joint name="${prefix}joint_a1">
+          <command_interface name="position">
+            <param name="min">-1</param>
+            <param name="max">1</param>
+          </command_interface>
+          <state_interface name="position">
+            <param name="initial_value">${initial_positions['joint_a1']}</param>
+          </state_interface>
+        </joint>
+        <joint name="${prefix}joint_a2">
+          <command_interface name="position">
+            <param name="min">-1</param>
+            <param name="max">1</param>
+          </command_interface>
+          <state_interface name="position">
+            <param name="initial_value">${initial_positions['joint_a2']}</param>
+          </state_interface>
       </joint>
-      <joint name="${prefix}joint_a6">
-        <command_interface name="position">
-          <param name="min">-1</param>
-          <param name="max">1</param>
-        </command_interface>
-        <state_interface name="position">
-          <param name="initial_value">${initial_positions['joint_a6']}</param>
-        </state_interface>
+        <joint name="${prefix}joint_a3">
+          <command_interface name="position">
+            <param name="min">-1</param>
+            <param name="max">0.61</param>
+          </command_interface>
+          <state_interface name="position">
+            <param name="initial_value">${initial_positions['joint_a3']}</param>
+          </state_interface>
       </joint>
+        <joint name="${prefix}joint_a4">
+          <command_interface name="position">
+            <param name="min">-1</param>
+            <param name="max">1</param>
+          </command_interface>
+          <state_interface name="position">
+            <param name="initial_value">${initial_positions['joint_a4']}</param>
+          </state_interface>
+        </joint>
+        <joint name="${prefix}joint_a5">
+          <command_interface name="position">
+            <param name="min">-1</param>
+            <param name="max">1</param>
+          </command_interface>
+          <state_interface name="position">
+            <param name="initial_value">${initial_positions['joint_a5']}</param>
+          </state_interface>
+        </joint>
+        <joint name="${prefix}joint_a6">
+          <command_interface name="position">
+            <param name="min">-1</param>
+            <param name="max">1</param>
+          </command_interface>
+          <state_interface name="position">
+            <param name="initial_value">${initial_positions['joint_a6']}</param>
+          </state_interface>
+        </joint>
+      </xacro:unless>
+
+      <!-- Interfaces for motion_primitives_driver if  use_motion_primitives_driver==true-->
+      <xacro:if value="${use_motion_primitives_driver}">
+        <gpio name="motion_primitive">
+          <command_interface name="motion_type"/>
+          <command_interface name="q1"/>
+          <command_interface name="q2"/>
+          <command_interface name="q3"/>
+          <command_interface name="q4"/>
+          <command_interface name="q5"/>
+          <command_interface name="q6"/>
+          <command_interface name="pos_x"/>
+          <command_interface name="pos_y"/>
+          <command_interface name="pos_z"/>
+          <command_interface name="pos_qx"/>
+          <command_interface name="pos_qy"/>
+          <command_interface name="pos_qz"/>
+          <command_interface name="pos_qw"/>
+          <command_interface name="pos_via_x"/>
+          <command_interface name="pos_via_y"/>
+          <command_interface name="pos_via_z"/>
+          <command_interface name="pos_via_qx"/>
+          <command_interface name="pos_via_qy"/>
+          <command_interface name="pos_via_qz"/>
+          <command_interface name="pos_via_qw"/>
+          <command_interface name="blend_radius"/>
+          <command_interface name="velocity"/>
+          <command_interface name="acceleration"/>
+          <command_interface name="move_time"/>
+          
+          <state_interface name="execution_status"/>
+          <state_interface name="ready_for_new_primitive"/>
+        </gpio>
+      </xacro:if>
 
       <xacro:if value="${description_package == 'kuka_lbr_iiwa_support'}">
         <joint name="${prefix}joint_a7">
