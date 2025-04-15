@@ -1,18 +1,5 @@
-// Copyright (c) 2025, b»robotized
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 #include <gmock/gmock.h>
+#include <rclcpp/rclcpp.hpp>  // Für Node
 
 #include <string>
 
@@ -25,7 +12,14 @@ class TestMotionPrimitivesKukaDriver : public ::testing::Test
 protected:
   void SetUp() override
   {
-    // TODO(anyone): Extend this description to your robot
+    // Optional: initialize rclcpp if not already done
+    if (!rclcpp::ok()) {
+      rclcpp::init(0, nullptr);
+    }
+
+    // Dummy-Node für Logging/Clock Interfaces
+    node_ = std::make_shared<rclcpp::Node>("test_motion_primitives_kuka_driver");
+
     motion_primitives_kuka_driver_2dof_ =
       R"(
         <ros2_control name="MotionPrimitivesKukaDriver2dof" type="system">
@@ -47,11 +41,16 @@ protected:
   }
 
   std::string motion_primitives_kuka_driver_2dof_;
+  rclcpp::Node::SharedPtr node_;
 };
 
 TEST_F(TestMotionPrimitivesKukaDriver, load_motion_primitives_kuka_driver_2dof)
 {
   auto urdf = ros2_control_test_assets::urdf_head + motion_primitives_kuka_driver_2dof_ +
               ros2_control_test_assets::urdf_tail;
-  ASSERT_NO_THROW(hardware_interface::ResourceManager rm(urdf));
+
+  auto clock_iface = node_->get_node_clock_interface();
+  auto log_iface = node_->get_node_logging_interface();
+
+  ASSERT_NO_THROW(hardware_interface::ResourceManager rm(urdf, clock_iface, log_iface));
 }
