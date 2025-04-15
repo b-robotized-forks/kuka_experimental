@@ -112,6 +112,15 @@ def generate_launch_description():
     )
     declared_arguments.append(
         DeclareLaunchArgument(
+            "use_motion_primitives_driver",
+            default_value="true",
+            description="Use EKI communication with motion primitives driver. \
+            If the flag is set to true 'eki_robot_ip' and 'eki_robot_port' arguments define the \
+            endpoint of robot controller to connect.",
+        )
+    )
+    declared_arguments.append(
+        DeclareLaunchArgument(
             "eki_robot_ip",
             default_value="127.0.0.1",
             description="IP address for the robot controller for communication using EKI protocol.",
@@ -239,6 +248,7 @@ def generate_launch_description():
     initial_positions_file = LaunchConfiguration("initial_positions_file")
 
     use_eki_communication = LaunchConfiguration("use_eki_communication")
+    use_motion_primitives_driver = LaunchConfiguration("use_motion_primitives_driver")
     eki_robot_ip = LaunchConfiguration("eki_robot_ip")
     eki_robot_port = LaunchConfiguration("eki_robot_port")
     use_rsi_communication = LaunchConfiguration("use_rsi_communication")
@@ -282,6 +292,9 @@ def generate_launch_description():
             " ",
             "use_eki_communication:=",
             use_eki_communication,
+            " ",
+            "use_motion_primitives_driver:=",
+            use_motion_primitives_driver,
             " ",
             "eki_robot_ip:=",
             eki_robot_ip,
@@ -339,16 +352,6 @@ def generate_launch_description():
 
 
     load_and_activate_controllers = []
-    # for controller in ["position_trajectory_controller", "joint_state_broadcaster"]:
-    #     load_and_activate_controllers += [
-    #         ExecuteProcess(
-    #             cmd=[f"ros2 run controller_manager spawner {controller} -c {controller_manager_name}"],
-    #             shell=True,
-    #             output="screen",
-    #             condition=IfCondition(activate_ros2_control),
-    #         )
-    #     ]
-
     for controller in ["position_trajectory_controller", "joint_state_broadcaster"]:
         load_and_activate_controllers += [
             ExecuteProcess(
