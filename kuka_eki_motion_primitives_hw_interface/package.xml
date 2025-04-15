@@ -20,6 +20,8 @@
 
   <depend>ros2_control_test_assets</depend>
 
+  <depend>motion_primitives_forward_controller</depend>
+
   <export>
     <build_type>ament_cmake</build_type>
   </export>

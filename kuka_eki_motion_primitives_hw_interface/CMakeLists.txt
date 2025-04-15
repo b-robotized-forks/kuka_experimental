@@ -13,6 +13,7 @@ find_package(rclcpp REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
 find_package(ament_cmake_gmock REQUIRED)
 find_package(ros2_control_test_assets REQUIRED)
+find_package(motion_primitives_forward_controller REQUIRED)
 
 add_library(
   kuka_eki_motion_primitives_hw_interface
@@ -29,6 +30,7 @@ ament_target_dependencies(
   hardware_interface
   rclcpp
   rclcpp_lifecycle
+  motion_primitives_forward_controller
 )
 # prevent pluginlib from using boost
 target_compile_definitions(kuka_eki_motion_primitives_hw_interface PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
