@@ -11,6 +11,7 @@ find_package(hardware_interface REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
+find_package(ament_cmake_gmock REQUIRED)
 
 add_library(
   kuka_eki_motion_primitives_hw_interface
