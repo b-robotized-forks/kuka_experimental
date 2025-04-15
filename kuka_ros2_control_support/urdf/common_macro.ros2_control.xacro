@@ -67,16 +67,16 @@
           <state_interface name="position">
             <param name="initial_value">${initial_positions['joint_a2']}</param>
           </state_interface>
-      </joint>
-        <joint name="${prefix}joint_a3">
-          <state_interface name="position">
-            <param name="initial_value">${initial_positions['joint_a3']}</param>
-          </state_interface>
-      </joint>
-        <joint name="${prefix}joint_a4">
-          <state_interface name="position">
-            <param name="initial_value">${initial_positions['joint_a4']}</param>
-          </state_interface>
+        </joint>
+          <joint name="${prefix}joint_a3">
+            <state_interface name="position">
+              <param name="initial_value">${initial_positions['joint_a3']}</param>
+            </state_interface>
+        </joint>
+          <joint name="${prefix}joint_a4">
+            <state_interface name="position">
+              <param name="initial_value">${initial_positions['joint_a4']}</param>
+            </state_interface>
         </joint>
         <joint name="${prefix}joint_a5">
           <state_interface name="position">
@@ -109,7 +109,7 @@
           <state_interface name="position">
             <param name="initial_value">${initial_positions['joint_a2']}</param>
           </state_interface>
-      </joint>
+        </joint>
         <joint name="${prefix}joint_a3">
           <command_interface name="position">
             <param name="min">-1</param>
@@ -118,7 +118,7 @@
           <state_interface name="position">
             <param name="initial_value">${initial_positions['joint_a3']}</param>
           </state_interface>
-      </joint>
+        </joint>
         <joint name="${prefix}joint_a4">
           <command_interface name="position">
             <param name="min">-1</param>
