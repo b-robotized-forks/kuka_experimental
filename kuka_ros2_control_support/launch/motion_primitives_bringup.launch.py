@@ -113,7 +113,7 @@ def generate_launch_description():
     declared_arguments.append(
         DeclareLaunchArgument(
             "use_motion_primitives_driver",
-            default_value="false",
+            default_value="true",
             description="Use EKI communication with motion primitives driver. \
             If the flag is set to true 'eki_robot_ip' and 'eki_robot_port' arguments define the \
             endpoint of robot controller to connect.",
@@ -352,7 +352,7 @@ def generate_launch_description():
 
 
     load_and_activate_controllers = []
-    for controller in ["position_trajectory_controller", "joint_state_broadcaster"]:
+    for controller in ["motion_primitive_controller", "joint_state_broadcaster"]:
         load_and_activate_controllers += [
             ExecuteProcess(
                 cmd=[
