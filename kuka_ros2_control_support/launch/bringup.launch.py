@@ -163,7 +163,7 @@ def generate_launch_description():
             "rviz_file",
             default_value="view_robot.rviz",
             description="Rviz2 configuration file of the visualization. \
-            The expected location of the file is '<configuration_package>/config/'.",
+            The expected location of the file is '<configuration_package>/rviz/'.",
         )
     )
     declared_arguments.append(
@@ -362,7 +362,7 @@ def generate_launch_description():
         ]
 
     rviz_config_file = PathJoinSubstitution(
-        [FindPackageShare(configuration_package), "config", rviz_file]
+        [FindPackageShare(configuration_package), "rviz", rviz_file]
     )
     rviz_node = Node(
         package="rviz2",
