@@ -10,6 +10,9 @@ controller_manager:
 
     position_trajectory_controller:
       type: joint_trajectory_controller/JointTrajectoryController
+    
+    motion_primitive_controller:
+      type: motion_primitives_forward_controller/MotionPrimitivesForwardController
 
 forward_position_controller:
   ros__parameters:
@@ -47,3 +50,39 @@ position_trajectory_controller:
     constraints:
       stopped_velocity_tolerance: 0.01 # Defaults to 0.01
       goal_time: 0.0 # Defaults to 0.0 (start immediately)
+
+      
+
+motion_primitive_controller:
+  ros__parameters:
+    name: motion_primitive
+    command_interfaces:
+      - motion_type
+      - q1
+      - q2
+      - q3
+      - q4
+      - q5
+      - q6
+      - pos_x
+      - pos_y
+      - pos_z
+      - pos_qx
+      - pos_qy
+      - pos_qz
+      - pos_qw
+      - pos_via_x
+      - pos_via_y
+      - pos_via_z
+      - pos_via_qx
+      - pos_via_qy
+      - pos_via_qz
+      - pos_via_qw
+      - blend_radius
+      - velocity
+      - acceleration
+      - move_time
+    state_interfaces:
+      - execution_status
+      - ready_for_new_primitive
+    queue_size: 20    # queue size to buffer incoming commands
