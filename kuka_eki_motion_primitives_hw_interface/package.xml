@@ -22,6 +22,10 @@
 
   <depend>motion_primitives_forward_controller</depend>
 
+  <depend>kuka_eki_hw_interface</depend>
+
+  <depend>angles</depend>
+
   <export>
     <build_type>ament_cmake</build_type>
   </export>
