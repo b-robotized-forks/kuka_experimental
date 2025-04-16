@@ -16,6 +16,8 @@ find_package(ros2_control_test_assets REQUIRED)
 find_package(motion_primitives_forward_controller REQUIRED)
 find_package(kuka_eki_hw_interface REQUIRED)
 find_package(angles REQUIRED)
+find_package(tinyxml_vendor REQUIRED)
+find_package(TinyXML REQUIRED)
 
 add_library(
   kuka_eki_motion_primitives_hw_interface
@@ -34,6 +36,7 @@ ament_target_dependencies(
   rclcpp_lifecycle
   motion_primitives_forward_controller
   kuka_eki_hw_interface
+  TinyXML
   angles
 )
 # prevent pluginlib from using boost
