@@ -44,6 +44,8 @@
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "rclcpp_lifecycle/state.hpp"
 
+#include "kuka_eki_hw_interface/eki_helper.hpp"
+
 namespace kuka_eki_hw_interface
 {
     class KukaEkiHardwareInterface : public hardware_interface::SystemInterface
@@ -80,12 +82,13 @@ namespace kuka_eki_hw_interface
             boost::asio::io_service ios_;
             std::unique_ptr<boost::asio::deadline_timer> deadline_;
             boost::asio::ip::udp::endpoint eki_server_endpoint_;
-            std::unique_ptr<boost::asio::ip::udp::socket> eki_server_socket_;
-            void eki_check_read_state_deadline();
-            static void eki_handle_receive(const boost::system::error_code &ec, size_t length,
-                                         boost::system::error_code* out_ec, size_t* out_length);
-            bool eki_read_state(std::vector<double> &joint_position, std::vector<double> &joint_velocity,
-                              std::vector<double> &joint_effort, int &cmd_buff_len);
+            // std::unique_ptr<boost::asio::ip::udp::socket> eki_server_socket_;
+            std::shared_ptr<boost::asio::ip::udp::socket> eki_server_socket_;
+            // void eki_check_read_state_deadline();
+            // static void eki_handle_receive(const boost::system::error_code &ec, size_t length,
+            //                              boost::system::error_code* out_ec, size_t* out_length);
+            // bool eki_read_state(std::vector<double> &joint_position, std::vector<double> &joint_velocity,
+            //                   std::vector<double> &joint_effort, int &cmd_buff_len);
             bool eki_write_command(const std::vector<double> &joint_position);
     };
 
