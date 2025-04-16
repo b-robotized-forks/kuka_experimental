@@ -102,19 +102,20 @@ def main(args=None):
         while rclpy.ok() and timeout_count < max_timeout:
             time.sleep(0.001)  # FIXME: make this a ros2 node
             try:
-                str_data = create_eki_xml_rob(act_joint_pos)
+                str_data = create_eki_xml_rob(act_joint_pos)    # create the XML with the current joint position
                 msg = String()
                 msg.data = str(str_data)
                 eki_act_pub.publish(msg)
                 s.sendto(str_data, addr)
 
-                recv_msg, addr = s.recvfrom(1024)
+                recv_msg, addr = s.recvfrom(1024)   # receive the command
+                node.get_logger().info(f"Empfangenes XML:\n{recv_msg.decode('utf-8')}") # print the received XML
                 msg = String()
                 msg.data = str(recv_msg)
                 eki_cmd_pub.publish(msg)
                 des_joint_absolute = parse_eki_xml_sen(recv_msg)
                 if des_joint_absolute is not None:
-                    act_joint_pos = des_joint_absolute
+                    act_joint_pos = des_joint_absolute  # update the joint position
                 else:
                     continue
                 time.sleep(cycle_time / 2)
