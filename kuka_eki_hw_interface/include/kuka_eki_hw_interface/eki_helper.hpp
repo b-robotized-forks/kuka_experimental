@@ -2,6 +2,7 @@
 #define EKI_HELPER_HPP
 
 #include <boost/asio.hpp>
+#include <boost/bind.hpp>
 #include <boost/array.hpp>
 #include <tinyxml.h>
 #include <angles/angles.h>
