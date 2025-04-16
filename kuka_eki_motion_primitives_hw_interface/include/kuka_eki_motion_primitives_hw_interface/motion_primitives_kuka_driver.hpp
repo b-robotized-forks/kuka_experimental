@@ -30,6 +30,8 @@
 
 #include "motion_primitives_forward_controller/execution_state.hpp"
 
+#include "kuka_eki_hw_interface/eki_helper.hpp"
+
 namespace kuka_eki_motion_primitives_hw_interface
 {
 class MotionPrimitivesKukaDriver : public hardware_interface::SystemInterface
@@ -72,6 +74,21 @@ private:
 
   std::atomic<int8_t> current_execution_status_{ExecutionState::IDLE};
   std::atomic_bool ready_for_new_primitive_{false}; // Flag to indicate if the hw-interface is ready for a new motion primitive
+
+  std::string eki_server_address_;
+  std::string eki_server_port_;
+
+  int eki_cmd_buff_len_;
+  int eki_max_cmd_buff_len_ = 5;  // by default, limit command buffer to 5 (size of advance run in KRL)
+
+  // EKI socket read/write
+  int eki_read_state_timeout_ = 100;  // [s]; settable by parameter (default = 5)
+  boost::asio::io_service ios_;
+  std::unique_ptr<boost::asio::deadline_timer> deadline_;
+  boost::asio::ip::udp::endpoint eki_server_endpoint_;
+  std::shared_ptr<boost::asio::ip::udp::socket> eki_server_socket_;
+
+  bool eki_write_command(const std::vector<double> &joint_position);
 };
 
 }  // namespace kuka_eki_motion_primitives_hw_interface
