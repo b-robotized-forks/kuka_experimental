@@ -230,28 +230,81 @@ hardware_interface::return_type MotionPrimitivesKukaDriver::write(
   if (!std::isnan(hw_mo_prim_commands_[0])) {
     RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Command of type: %f recived", hw_mo_prim_commands_[0]);
     ready_for_new_primitive_ = false; // set to false to indicate that the driver is busy handeling a command
-    if (hw_mo_prim_commands_[0] == MotionType::STOP_MOTION) {
+    double motion_type = hw_mo_prim_commands_[0];
+    // TODO(mathias31415): Handle new commands --> extra thread needed?
+    switch (static_cast<uint8_t>(motion_type)) 
+    {
+      case MotionType::STOP_MOTION: {
+        RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "STOP_MOTION command received (handeling not implemented yet)");
+        // TODO(mathias31415): Handle STOP_MOTION command
 
-      // TODO(mathias31415): Handle STOP_MOTION command
+        current_execution_status_ = ExecutionState::IDLE;
+        // Reset command interfaces
+        std::fill(hw_mo_prim_commands_.begin(), hw_mo_prim_commands_.end(), std::numeric_limits<double>::quiet_NaN());
+        ready_for_new_primitive_ = true; // TODO(mathias31415): Only for testing --> adjust later
+        break;
+      }
+      case MotionType::LINEAR_JOINT: { // MoveJ/ PTP
+        RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "LINEAR_JOINT command received");
 
-      // Reset command interfaces
-      std::fill(hw_mo_prim_commands_.begin(), hw_mo_prim_commands_.end(), std::numeric_limits<double>::quiet_NaN());
-      ready_for_new_primitive_ = true; // TODO(mathias31415): Only for testing --> adjust later
-    } else {
+        // Check if joint positions are valid
+        for (int i = 1; i <= 6; ++i) {
+          if (std::isnan(hw_mo_prim_commands_[i])) {
+              RCLCPP_ERROR(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Invalid motion command: joint positions contain NaN values");
+              current_execution_status_ = ExecutionState::ERROR;
+              return hardware_interface::return_type::OK;  // TODO(mathias31415): OK or ERROR?
+          }
+        }
+        current_execution_status_ = ExecutionState::EXECUTING;
+        std::vector<double> joint_positions = {hw_mo_prim_commands_[1], hw_mo_prim_commands_[2], hw_mo_prim_commands_[3], hw_mo_prim_commands_[4], hw_mo_prim_commands_[5], hw_mo_prim_commands_[6]};
+        RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), 
+              "Executing moveJ with joint positions: [%f, %f, %f, %f, %f, %f]", 
+              joint_positions[0], joint_positions[1], joint_positions[2], joint_positions[3], joint_positions[4], joint_positions[5]);
+        bool success = eki_write_command(joint_positions);
+        current_execution_status_ = success ? ExecutionState::SUCCESS : ExecutionState::ERROR;  // TODO(mathias31415): Its not the execution status, but the send status?
+        RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "After executing moveJ: current_execution_status_ = %d", current_execution_status_.load());
+        if(success){
+          ready_for_new_primitive_ = true; // set to true to allow sending new commands
+        }
+        // Reset command interfaces
+        std::fill(hw_mo_prim_commands_.begin(), hw_mo_prim_commands_.end(), std::numeric_limits<double>::quiet_NaN());
+        break;
+      }
+      case MotionType::LINEAR_CARTESIAN: { // MoveL/ LIN
+        RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "LINEAR_CARTESIAN command received (handeling not implemented yet)");
+        // TODO(mathias31415): Handle LINEAR_CARTESIAN command
 
-      // TODO(mathias31415): Handle new commands --> extra thread needed?
+        current_execution_status_ = ExecutionState::IDLE;
+        // Reset command interfaces
+        std::fill(hw_mo_prim_commands_.begin(), hw_mo_prim_commands_.end(), std::numeric_limits<double>::quiet_NaN());
+        ready_for_new_primitive_ = true; // TODO(mathias31415): Only for testing --> adjust later
+        break;
+      }
+      case MotionType::CIRCULAR_CARTESIAN: {  // MoveC/ CIRC
+        RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "CIRCULAR_CARTESIAN command received (handeling not implemented yet)");
+        // TODO(mathias31415): Handle CIRCULAR_CARTESIAN command
 
-      // Reset command interfaces
-      std::fill(hw_mo_prim_commands_.begin(), hw_mo_prim_commands_.end(), std::numeric_limits<double>::quiet_NaN());
-      ready_for_new_primitive_ = true; // TODO(mathias31415): Only for testing --> adjust later
+        // Reset command interfaces
+        std::fill(hw_mo_prim_commands_.begin(), hw_mo_prim_commands_.end(), std::numeric_limits<double>::quiet_NaN());
+        ready_for_new_primitive_ = true; // TODO(mathias31415): Only for testing --> adjust later
+        break;
+      }
+      default: {
+        RCLCPP_ERROR(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Invalid motion command: motion type %f is not supported", motion_type);
+        current_execution_status_ = ExecutionState::ERROR;
+        return hardware_interface::return_type::ERROR;  // TODO(mathias31415): OK or ERROR?
+      }
     }
-  }
-  // send dummy command to the robot
-  if (eki_cmd_buff_len_ < eki_max_cmd_buff_len_)
-  {
-    std::vector<double> dummy_command = {0.0, -1.57, 1.57, 0.0, 1.57, 0.0};
-    eki_write_command(dummy_command);
-  }
+  } else {
+    // Send "keep alive" msg to the robot if no new command is received
+    // TODO(mathias31415): Check if this is needed? Keep alive without data? No keep alive at all? (eki simulator needs new data to prevent timeout)
+    // RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "No new command received, sending keep alive msg to robot");
+    if (eki_cmd_buff_len_ < eki_max_cmd_buff_len_)
+    {
+      eki_write_command(hw_joint_states_);  // send current joint positions back to the robot
+      // TODO(mathias31415): Check return value of eki_write_command
+    }
+  }  
   return hardware_interface::return_type::OK;
 }
 
