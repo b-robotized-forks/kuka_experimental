@@ -11,6 +11,7 @@ find_package(hardware_interface REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
+find_package(rclpy REQUIRED)
 find_package(ament_cmake_gmock REQUIRED)
 find_package(ros2_control_test_assets REQUIRED)
 find_package(motion_primitives_forward_controller REQUIRED)
@@ -81,6 +82,15 @@ ament_export_dependencies(
   pluginlib
   rclcpp
   rclcpp_lifecycle
+)
+
+# Install Python execs
+ament_python_install_package(${PROJECT_NAME})
+
+# Install executables
+install(PROGRAMS
+  examples/send_dummy_motion_primitives.py
+  DESTINATION lib/${PROJECT_NAME}
 )
 
 ament_package()

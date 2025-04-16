@@ -109,7 +109,7 @@ def main(args=None):
                 s.sendto(str_data, addr)
 
                 recv_msg, addr = s.recvfrom(1024)   # receive the command
-                node.get_logger().info(f"Empfangenes XML:\n{recv_msg.decode('utf-8')}") # print the received XML
+                # node.get_logger().info(f"Recived XML:\n{recv_msg.decode('utf-8')}") # print the received XML
                 msg = String()
                 msg.data = str(recv_msg)
                 eki_cmd_pub.publish(msg)

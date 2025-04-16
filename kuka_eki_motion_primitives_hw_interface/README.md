@@ -34,3 +34,7 @@ ros2 launch kuka_ros2_control_support bringup.launch.py description_package:=kuk
 ```
 ros2 launch kuka_ros2_control_support motion_primitives_bringup.launch.py description_package:=kuka_kr5_support description_macro_file:=kr5_arc_macro.xacro
 ```
+**Publish dummy commands**
+```
+ros2 run kuka_eki_motion_primitives_hw_interface send_dummy_motion_primitives.py
+```

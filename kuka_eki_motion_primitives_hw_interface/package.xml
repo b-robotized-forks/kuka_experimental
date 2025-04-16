@@ -4,11 +4,12 @@
   <name>kuka_eki_motion_primitives_hw_interface</name>
   <version>0.0.0</version>
   <description>Driver package to control kuka robot using motion primitives like PTP, LIN and CIRC</description>
-  <maintainer email="mathias31415@gmx.de">mathias31415</maintainer>
+  <maintainer email="todo@todo.de">mathias31415</maintainer>
   <license>BSD-3-Clause</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
   <buildtool_depend>ament_cmake_gmock</buildtool_depend> 
+  <buildtool_depend>ament_cmake_python</buildtool_depend>
 
   <depend>hardware_interface</depend>
 
@@ -17,6 +18,8 @@
   <depend>rclcpp</depend>
 
   <depend>rclcpp_lifecycle</depend>
+
+  <depend>rclpy</depend>
 
   <depend>ros2_control_test_assets</depend>
 
