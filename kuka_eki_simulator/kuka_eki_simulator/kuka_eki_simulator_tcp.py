@@ -12,43 +12,96 @@ from std_msgs.msg import String
 
 max_vel = 1.0 * 100.0
 
-def create_eki_xml_rob(act_joint_pos):
+def create_eki_xml_rob(act_joint_pos, command_id="1"):
     q = act_joint_pos
-    qd = [0.0]*6
-    eff = [0.0]*6
+    qd = [0.0] * 6  # Joint velocities
+    eff = [0.0] * 6  # Joint torques
 
     root = ET.Element('RobotState')
 
-    ET.SubElement(root, 'Pos', {'A1': str(q[0]), 'A2': str(q[1]), 'A3': str(q[2]),
-                                'A4': str(q[3]), 'A5': str(q[4]), 'A6': str(q[5])})
-    ET.SubElement(root, 'Vel', {'A1': str(qd[0]/max_vel), 'A2': str(qd[1]/max_vel), 'A3': str(qd[2]/max_vel),
-                                'A4': str(qd[3]/max_vel), 'A5': str(qd[4]/max_vel), 'A6': str(qd[5]/max_vel)})
-    ET.SubElement(root, 'Eff', {'A1': str(eff[0]), 'A2': str(eff[1]), 'A3': str(eff[2]),
-                                'A4': str(eff[3]), 'A5': str(eff[4]), 'A6': str(eff[5])})
-    ET.SubElement(root, 'RobotCommand', {'Size': str(1)})
+    # Command
+    command = ET.SubElement(root, 'Command')
+    command.set('Id', str(command_id))
+
+    # Joint positions
+    position = ET.SubElement(root, 'Position')
+    joint = ET.SubElement(position, 'Joint')
+    for i in range(6):
+        joint.set(f'A{i+1}', str(q[i]))
+    #joint.set('A7', "0.0")  # Placeholder for A7
+
+    # Cartesian positions (placeholder values)
+    cartesian = ET.SubElement(position, 'Cartesian')
+    for axis in ['X', 'Y', 'Z', 'A', 'B', 'C']:
+        cartesian.set(axis, "0.0")
+
+    # Joint velocities
+    velocity = ET.SubElement(root, 'Velocity')
+    for i in range(6):
+        velocity.set(f'A{i+1}', str(qd[i] / max_vel))
+
+    # Joint torques
+    torque = ET.SubElement(root, 'Torque')
+    for i in range(6):
+        torque.set(f'A{i+1}', str(eff[i]))
+
+    # Gripper state (placeholders)
+    gripper = ET.SubElement(root, 'Gripper')
+    jaw = ET.SubElement(gripper, 'Jaw')
+    jaw.set('Position', "0.0")
+    jaw.set('Status', "0")
+    vacuum = ET.SubElement(gripper, 'Vacuum')
+    vacuum.set('Suction', "0")
+    vacuum.set('Force1', "0.0")
+    vacuum.set('Force2', "0.0")
+    vacuum.set('Cylinder', "0")
+
+    # Info (placeholder)
+    info = ET.SubElement(root, 'Info')
+    info.set('Code', "0")
+    info.set('Message', "OK")
+
+    # Error (placeholder)
+    error = ET.SubElement(root, 'Error')
+    error.set('Code', "0")
+    error.set('Message', "")
 
     return ET.tostring(root, short_empty_elements=False)
 
 
 def parse_eki_xml_sen(data):
-    desired_joint = None
-
     try:
-        root = ET.fromstring(data)
-        if root:
-            if root.tag == 'RobotCommand':
-                pos = root.find('Pos').attrib
-                if pos:
-                    desired_joint = np.array([pos['A1'], pos['A2'], pos['A3'],
-                                              pos['A4'], pos['A5'], pos['A6']], dtype=np.float64)
-            else:
-                print(f' RobotCommand not found in data {root}')
+        result = {}
+
+        # Parse the XML data
+        tree = ET.ElementTree(ET.fromstring(data))
+        root = tree.getroot()
+
+        # Extract command ID (from <RobotCommand Id="3">)
+        command_id = root.attrib.get('Id')
+        if command_id is None:
+            raise ValueError("Missing 'Id' attribute in <RobotCommand> element")
+        result['command_id'] = int(command_id)
+
+        # Extract joint values (from <Move><Joint A1="0.000000" A2="0.000000" ...>)
+        joint = root.find('.//Move/Joint')
+        if joint is None:
+            raise ValueError("Missing <Joint> element in <Move> section")
+
+        joint_values = []
+        for axis in ['A1', 'A2', 'A3', 'A4', 'A5', 'A6']:
+            axis_value = joint.attrib.get(axis)
+            if axis_value is None:
+                raise ValueError(f"Missing joint value for {axis}")
+            joint_values.append(float(axis_value))
+
+        result['joint_positions'] = np.array(joint_values, dtype=np.float64)
+
+        return result
 
     except Exception as e:
-        print(f' Cannot parse this data {data}, Error: {e}')
-        pass
-
-    return desired_joint
+        print(f"[Error] Failed to parse RobotCommand: {e}")
+        return None
 
 
 def main(args=None):
@@ -68,8 +121,9 @@ def main(args=None):
     node_name = 'kuka_eki_simulation_tcp'
     cycle_time = 0.004
     act_joint_pos = np.array([0, -90, 90, 0, 90, 0], dtype=np.float64)
-    cmd_joint_pos = act_joint_pos.copy()
-    des_joint_absolute = np.zeros(6)
+    act_command_id = -1
+    # cmd_joint_pos = act_joint_pos.copy()
+    # des_joint_absolute = np.zeros(6)
     timeout_count = 0
     max_timeout = 5
 
@@ -104,7 +158,7 @@ def main(args=None):
                 time.sleep(0.001)  # FIXME: make this a ros2 node
                 try:
                     # Create and send robot state as XML
-                    str_data = create_eki_xml_rob(act_joint_pos)
+                    str_data = create_eki_xml_rob(act_joint_pos, act_command_id)
                     msg = String()
                     msg.data = str(str_data)
                     eki_act_pub.publish(msg)
@@ -119,10 +173,12 @@ def main(args=None):
                     msg.data = str(recv_msg)
                     eki_cmd_pub.publish(msg)
 
-                    # Parse the received XML and update the joint position
-                    des_joint_absolute = parse_eki_xml_sen(recv_msg)
-                    if des_joint_absolute is not None:
-                        act_joint_pos = des_joint_absolute  # Update the joint position
+                    # Parse the received XML and update the joint position and command ID
+                    parsed_data = parse_eki_xml_sen(recv_msg)
+
+                    if parsed_data is not None and parsed_data['joint_positions'] is not None:
+                        act_joint_pos = parsed_data['joint_positions']
+                        act_command_id = parsed_data['command_id']
                     else:
                         continue
                     time.sleep(cycle_time / 2)
