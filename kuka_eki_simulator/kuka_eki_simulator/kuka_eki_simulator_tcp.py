@@ -10,6 +10,7 @@ import errno
 import rclpy
 from std_msgs.msg import String
 
+# TODO(mathias31415): Aktuell nur für ein Motion Primitive implementiert. Problem wenn mehrere in einem XML gesendet werden
 max_vel = 1.0 * 100.0
 
 def create_eki_xml_rob(act_joint_pos, command_id="1"):
@@ -77,23 +78,33 @@ def parse_eki_xml_sen(data):
         tree = ET.ElementTree(ET.fromstring(data))
         root = tree.getroot()
 
-        # Extract command ID (from <RobotCommand Id="3">)
+        # Extract command ID (from <RobotCommand Id="...">)
         command_id = root.attrib.get('Id')
         if command_id is None:
             raise ValueError("Missing 'Id' attribute in <RobotCommand> element")
         result['command_id'] = int(command_id)
 
+        # Extract Mode from <Move> element
+        move_element = root.find('.//Move')
+        if move_element is None:
+            raise ValueError("Missing <Move> element")
+        mode = int(move_element.attrib.get('Mode', -1))  # Default to -1 if Mode is missing
+
         # Extract joint values (from <Move><Joint A1="0.000000" A2="0.000000" ...>)
-        joint = root.find('.//Move/Joint')
+        joint = move_element.find('Joint')
         if joint is None:
             raise ValueError("Missing <Joint> element in <Move> section")
 
         joint_values = []
-        for axis in ['A1', 'A2', 'A3', 'A4', 'A5', 'A6']:
-            axis_value = joint.attrib.get(axis)
-            if axis_value is None:
-                raise ValueError(f"Missing joint value for {axis}")
-            joint_values.append(float(axis_value))
+        if mode == 1: # Joint mode --> extract joint values from the XML
+            for axis in ['A1', 'A2', 'A3', 'A4', 'A5', 'A6']:
+                axis_value = joint.attrib.get(axis)
+                if axis_value is None:
+                    raise ValueError(f"Missing joint value for {axis}")
+                joint_values.append(float(axis_value))
+        else: # Cartesian mode --> fill joint values with 0.0, since no IK is implemented
+            print(f"[Warning] Cartesian mode detected, using 0.0 joint values, because no IK is implemented.")
+            joint_values = [0.0] * 6
 
         result['joint_positions'] = np.array(joint_values, dtype=np.float64)
 
@@ -102,6 +113,7 @@ def parse_eki_xml_sen(data):
     except Exception as e:
         print(f"[Error] Failed to parse RobotCommand: {e}")
         return None
+
 
 
 def main(args=None):
@@ -158,11 +170,13 @@ def main(args=None):
                 time.sleep(0.001)  # FIXME: make this a ros2 node
                 try:
                     # Create and send robot state as XML
-                    str_data = create_eki_xml_rob(act_joint_pos, act_command_id)
+                    # str_data = create_eki_xml_rob(act_joint_pos, act_command_id)
+                    str_data = create_eki_xml_rob(act_joint_pos, act_command_id+1)
                     msg = String()
                     msg.data = str(str_data)
                     eki_act_pub.publish(msg)
                     conn.send(str_data)  # Send data over TCP
+                    node.get_logger().info(f"Sent XML:\n{str_data.decode('utf-8')}")
 
                     # Receive the command message
                     recv_msg = conn.recv(1024)
