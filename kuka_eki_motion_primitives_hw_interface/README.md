@@ -6,7 +6,7 @@ Driver package to control kuka robot using motion primitives like PTP, LIN and C
 ![Licence](https://img.shields.io/badge/License-BSD-3-Clause-blue.svg)
 
 # Usage notes:
-## Standard kuka_experimental
+## 1 Standard kuka_experimental
 **Launch kr5 with mock hw**
 ```
 ros2 launch kuka_ros2_control_support bringup.launch.py description_package:=kuka_kr5_support description_macro_file:=kr5_arc_macro.xacro use_mock_hardware:=true
@@ -18,7 +18,7 @@ ros2 launch kuka_ros2_control_support test_joint_trajectory_controller.launch.py
 
 
 
-## Normal kuka_experimental with EKI Communication
+## 2 Normal kuka_experimental with EKI Communication
 **Start EKI simulator with UDP**
 ```
 ros2 run kuka_eki_simulator kuka_eki_simulator 
@@ -28,7 +28,7 @@ ros2 run kuka_eki_simulator kuka_eki_simulator
 ros2 launch kuka_ros2_control_support bringup.launch.py description_package:=kuka_kr5_support description_macro_file:=kr5_arc_macro.xacro use_eki_communication:=true
 ```
 
-## H-KA EKI implementation
+## 3 H-KA EKI implementation
 **Start EKI simulator with TCP**
 ```
 ros2 run kuka_eki_simulator kuka_eki_simulator_tcp
@@ -44,7 +44,8 @@ ros2 run robot_interface_eki client.py
 
 
 
-## EKI Communication with motion primitive driver and normal kuka_experimantal eki implementation
+## 4 EKI Communication with motion primitive driver
+### 4.1 motion_primitive_kuka_driver branch using kuka_experimental eki implementation
 **Start EKI simulator with UDP**
 ```
 ros2 run kuka_eki_simulator kuka_eki_simulator 
@@ -62,6 +63,17 @@ ros2 launch kuka_ros2_control_support motion_primitives_bringup.launch.py descri
 ros2 run kuka_eki_motion_primitives_hw_interface send_dummy_motion_primitives.py
 ```
 
-
+### 4.2 hka_motion_primitive_kuka_driver branch using robot_interface_eki implementation from Moritz
+```
+ros2 run kuka_eki_simulator kuka_eki_simulator_tcp
+```
+**Launch kr3 with motion primitive driver**
+```
+ros2 launch kuka_ros2_control_support motion_primitives_bringup.launch.py description_package:=kuka_kr3_support description_macro_file:=kr3r540_macro.xacro
+```
+**Publish dummy commands**
+```
+ros2 run kuka_eki_motion_primitives_hw_interface send_dummy_motion_primitives.py
+```
 
 

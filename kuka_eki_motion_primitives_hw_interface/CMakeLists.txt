@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.8)
 project(kuka_eki_motion_primitives_hw_interface)
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
-  add_compile_options(-Wall -Wextra -Werror=conversion -Werror=unused-but-set-variable -Werror=return-type -Werror=shadow)
+  add_compile_options(-Wall -Wextra -Werror=unused-but-set-variable -Werror=return-type)
 endif()
 
 # find dependencies
@@ -16,6 +16,7 @@ find_package(ament_cmake_gmock REQUIRED)
 find_package(ros2_control_test_assets REQUIRED)
 find_package(motion_primitives_forward_controller REQUIRED)
 find_package(kuka_eki_hw_interface REQUIRED)
+find_package(robot_interface_eki REQUIRED)
 find_package(angles REQUIRED)
 find_package(tinyxml_vendor REQUIRED)
 find_package(TinyXML REQUIRED)
@@ -25,10 +26,14 @@ add_library(
   SHARED
   src/motion_primitives_kuka_driver.cpp
 )
+
+# TODO(mathias31415): change/ improve include paths/ structure
 target_include_directories(
   kuka_eki_motion_primitives_hw_interface
   PUBLIC
-  include
+  ${CMAKE_CURRENT_SOURCE_DIR}/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../robot_interface_eki/aip_robot_interface/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../robot_interface_eki/aip_robot_interface/aip_common/include
 )
 ament_target_dependencies(
   kuka_eki_motion_primitives_hw_interface
@@ -37,6 +42,7 @@ ament_target_dependencies(
   rclcpp_lifecycle
   motion_primitives_forward_controller
   kuka_eki_hw_interface
+  robot_interface_eki
   TinyXML
   angles
 )

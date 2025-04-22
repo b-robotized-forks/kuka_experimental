@@ -12,21 +12,14 @@
   <buildtool_depend>ament_cmake_python</buildtool_depend>
 
   <depend>hardware_interface</depend>
-
   <depend>pluginlib</depend>
-
   <depend>rclcpp</depend>
-
   <depend>rclcpp_lifecycle</depend>
-
   <depend>rclpy</depend>
-
   <depend>ros2_control_test_assets</depend>
-
   <depend>motion_primitives_forward_controller</depend>
-
   <depend>kuka_eki_hw_interface</depend>
-
+  <depend>robot_interface_eki</depend>
   <depend>angles</depend>
 
   <export>
