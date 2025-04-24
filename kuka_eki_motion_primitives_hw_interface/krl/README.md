@@ -1,0 +1,1 @@
+Copy the files to the kuka ws according to this tutorial: https://github.com/IRAS-HKA/r2e_tutorial/blob/cell_setup/README.md
