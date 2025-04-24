@@ -28,7 +28,8 @@ msg_PTP_1.joint_positions = [0.0, -1.57, 1.57, 0.0, 1.57, 0.0]
 
 msg_PTP_2 = MotionPrimitive()
 msg_PTP_2.type = MotionPrimitive.LINEAR_JOINT
-msg_PTP_2.joint_positions = [0, 0 ,0, 0, 0, 0]
+msg_PTP_2.joint_positions = [0.7, -1.57, 1.57, 0.0, 1.57, 0.0]
+
 
 
 # # send all primitives
