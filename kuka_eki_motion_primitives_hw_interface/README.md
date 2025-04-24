@@ -58,6 +58,9 @@ ros2 launch kuka_ros2_control_support motion_primitives_bringup.launch.py descri
 ```
 ros2 launch kuka_ros2_control_support motion_primitives_bringup.launch.py description_package:=kuka_kr3_support description_macro_file:=kr3r540_macro.xacro
 ```
+```
+ros2 launch kuka_ros2_control_support motion_primitives_bringup.launch.py description_package:=kuka_kr3_support description_macro_file:=kr3r540_macro.xacro eki_robot_ip:=10.181.116.51
+```
 **Publish dummy commands**
 ```
 ros2 run kuka_eki_motion_primitives_hw_interface send_dummy_motion_primitives.py
