@@ -295,40 +295,45 @@ hardware_interface::return_type MotionPrimitivesKukaDriver::write(
         return hardware_interface::return_type::ERROR;  // TODO(mathias31415): OK or ERROR?
       }
     }
-  } else {
-    // Send "keep alive" msg to the robot if no new command is received
-    // TODO(mathias31415): Check if this is needed? Keep alive without data? No keep alive at all? (eki simulator needs new data to prevent timeout)
-    // RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "No new command received, sending keep alive msg to robot");
-    if (eki_cmd_buff_len_ < eki_max_cmd_buff_len_)
-    {
-      eki_write_command(hw_joint_states_);  // send current joint positions back to the robot
-      // TODO(mathias31415): Check return value of eki_write_command
-    }
-  }  
+  } 
+
+  // TODO(mathias31415): Keep alive cmd with current joint state only neccesary for eki simulator, causes problem with real robot --> fix simulator instead
+
+  // else {
+  //   // Send "keep alive" msg to the robot if no new command is received
+  //   // TODO(mathias31415): Check if this is needed? Keep alive without data? No keep alive at all? (eki simulator needs new data to prevent timeout)
+  //   // RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "No new command received, sending keep alive msg to robot");
+  //   if (eki_cmd_buff_len_ < eki_max_cmd_buff_len_)
+  //   {
+      // eki_write_command(hw_joint_states_);  // send current joint positions back to the robot
+  //     // TODO(mathias31415): Check return value of eki_write_command
+  //   }
+  // }  
   return hardware_interface::return_type::OK;
 }
 
 bool MotionPrimitivesKukaDriver::eki_write_command(const std::vector<double> &joint_position_command)
     {
-        TiXmlDocument xml_out;
-        TiXmlElement* robot_command = new TiXmlElement("RobotCommand");
-        TiXmlElement* pos = new TiXmlElement("Pos");
-        TiXmlText* empty_text = new TiXmlText("");
-        robot_command->LinkEndChild(pos);
-        pos->LinkEndChild(empty_text);   // force <Pos></Pos> format (vs <Pos />)
-        char axis_name[] = "A1";
-        for (long unsigned int i = 0; i < hw_joint_states_.size(); ++i)
-        {
-            pos->SetAttribute(axis_name, std::to_string(angles::to_degrees(joint_position_command[i])).c_str());
-            axis_name[1]++;
-        }
-        xml_out.LinkEndChild(robot_command);
-        TiXmlPrinter xml_printer;
-        xml_printer.SetStreamPrinting();  // no linebreaks
-        xml_out.Accept(&xml_printer);
+      TiXmlDocument xml_out;
+      TiXmlElement* robot_command = new TiXmlElement("RobotCommand");
+      TiXmlElement* pos = new TiXmlElement("Pos");
+      TiXmlText* empty_text = new TiXmlText("");
+      robot_command->LinkEndChild(pos);
+      pos->LinkEndChild(empty_text);   // force <Pos></Pos> format (vs <Pos />)
+      char axis_name[] = "A1";
+      for (long unsigned int i = 0; i < hw_joint_states_.size(); ++i)
+      {
+          pos->SetAttribute(axis_name, std::to_string(angles::to_degrees(joint_position_command[i])).c_str());
+          axis_name[1]++;
+      }
+      xml_out.LinkEndChild(robot_command);
+      TiXmlPrinter xml_printer;
+      xml_printer.SetStreamPrinting();  // no linebreaks
+      xml_out.Accept(&xml_printer);
 
-        eki_server_socket_->send_to(boost::asio::buffer(xml_printer.CStr(), xml_printer.Size()),
-                                              eki_server_endpoint_);
+      eki_server_socket_->send_to(boost::asio::buffer(xml_printer.CStr(), xml_printer.Size()),
+                                            eki_server_endpoint_);
+      RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Sent command: %s", xml_printer.CStr());
       return true;
     }
 
