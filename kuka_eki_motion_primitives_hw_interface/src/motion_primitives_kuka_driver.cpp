@@ -139,7 +139,7 @@ hardware_interface::CallbackReturn MotionPrimitivesKukaDriver::on_activate(
   RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Activating Hardware Interface");
   ready_for_new_primitive_ = true; // set to true to allow sending new commands
 
-  robot_ip_ = info_.hardware_parameters["eki_robot_ip"];
+  robot_ip_ = info_.hardware_parameters["robot_ip"];
   eki_robot_port_ = std::stoi(info_.hardware_parameters["eki_robot_port"]);
   // eki_robot_meta_port_ = std::stoi(info_.hardware_parameters["eki_robot_meta_port"]);
   eki_robot_meta_port_ = 0; // TODO(mathias31415): Read parameter instead of hardcodeing
