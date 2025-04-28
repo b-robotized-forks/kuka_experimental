@@ -81,22 +81,15 @@ private:
   int eki_robot_port_;
   int eki_robot_meta_port_;
 
-  // int eki_cmd_buff_len_;
-  // int eki_max_cmd_buff_len_ = 5;  // by default, limit command buffer to 5 (size of advance run in KRL)
-
-  // EKI socket read/write
-  // int eki_read_state_timeout_ = 100;  // [s]; settable by parameter (default = 5)
-  // boost::asio::io_service ios_;
-  // std::unique_ptr<boost::asio::deadline_timer> deadline_;
-  // boost::asio::ip::udp::endpoint eki_server_endpoint_;
-  // std::shared_ptr<boost::asio::ip::udp::socket> eki_server_socket_;
-
-  // bool eki_write_command(const std::vector<double> &joint_position);
-
   rbt::Robot robot_;
+
   std::atomic_bool build_motion_sequence_{false};   // flag to put all following primitives into a motion sequence instead of sending single primitives
   bool add_linear_joint_cmd();
+  bool add_linear_cartesian_cmd();
+  bool add_circular_cartesian_cmd();
+
   void reset_command_interfaces();
+  void quaternionToEuler(double qx, double qy, double qz, double qw, double& rx, double& ry, double& rz);
 };
 
 }  // namespace kuka_eki_motion_primitives_hw_interface

@@ -227,7 +227,7 @@ hardware_interface::return_type MotionPrimitivesKukaDriver::write(
       case MotionType::LINEAR_JOINT: { // MoveJ/ PTP
         RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "LINEAR_JOINT command received");
         if(!add_linear_joint_cmd()) {
-          RCLCPP_ERROR(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Failed to add linear joint command");
+          RCLCPP_ERROR(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Failed to add LINEAR_JOINT command");
           current_execution_status_ = ExecutionState::ERROR;
           return hardware_interface::return_type::ERROR;
         }
@@ -235,24 +235,33 @@ hardware_interface::return_type MotionPrimitivesKukaDriver::write(
         if(!build_motion_sequence_) { // send single command imimediately
           bool success = robot_.run();
           current_execution_status_ = success ? ExecutionState::EXECUTING : ExecutionState::ERROR;  // TODO(mathias31415): Its not the execution status, but the send status?
-          RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "%s PTP command to robot.", success? "Sent" : "Failed to send");
+          RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "%s LINEAR_JOINT command to robot.", success? "Sent" : "Failed to send");
           if(success){
             ready_for_new_primitive_ = true; // set to true to allow sending new commands
           }
         } else {
           ready_for_new_primitive_ = true; // set to true to allow sending new commands
         }
-        
-        
         break;
       }
       case MotionType::LINEAR_CARTESIAN: { // MoveL/ LIN
         RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "LINEAR_CARTESIAN command received (handeling not implemented yet)");
-        // TODO(mathias31415): Handle LINEAR_CARTESIAN command
-
-        current_execution_status_ = ExecutionState::IDLE;
+        if(!add_linear_cartesian_cmd()) {
+          RCLCPP_ERROR(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Failed to add LINEAR_CARTESIAN command");
+          current_execution_status_ = ExecutionState::ERROR;
+          return hardware_interface::return_type::ERROR;
+        }
         reset_command_interfaces();
-        ready_for_new_primitive_ = true; // TODO(mathias31415): Only for testing --> adjust later
+        if(!build_motion_sequence_) { // send single command imimediately
+          bool success = robot_.run();
+          current_execution_status_ = success ? ExecutionState::EXECUTING : ExecutionState::ERROR;  // TODO(mathias31415): Its not the execution status, but the send status?
+          RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "%s LINEAR_CARTESIAN command to robot.", success? "Sent" : "Failed to send");
+          if(success){
+            ready_for_new_primitive_ = true; // set to true to allow sending new commands
+          }
+        } else {
+          ready_for_new_primitive_ = true; // set to true to allow sending new commands
+        }
         break;
       }
       case MotionType::CIRCULAR_CARTESIAN: {  // MoveC/ CIRC
@@ -283,7 +292,7 @@ bool MotionPrimitivesKukaDriver::add_linear_joint_cmd()
     }
   }
   constexpr double rad_to_deg = 180.0 / M_PI;
-  std::vector<double> joint_positions = {     // get joint positions in degrees
+  std::vector<double> joints = {     // get joint positions in degrees
       hw_mo_prim_commands_[1] * rad_to_deg,
       hw_mo_prim_commands_[2] * rad_to_deg,
       hw_mo_prim_commands_[3] * rad_to_deg,
@@ -291,17 +300,74 @@ bool MotionPrimitivesKukaDriver::add_linear_joint_cmd()
       hw_mo_prim_commands_[5] * rad_to_deg,
       hw_mo_prim_commands_[6] * rad_to_deg};
   RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), 
-        "Adding PTP with joint positions: [%f, %f, %f, %f, %f, %f]", 
-        joint_positions[0], joint_positions[1], joint_positions[2], joint_positions[3], joint_positions[4], joint_positions[5]);
+        "Adding LINEAR_JOINT with joint positions: [%f, %f, %f, %f, %f, %f]", 
+        joints[0], joints[1], joints[2], joints[3], joints[4], joints[5]);
   rbt::MoveCommand command;
-  command = rbt::MoveCommand(rbt::PoseJoints(joint_positions[0], joint_positions[1], joint_positions[2], joint_positions[3], joint_positions[4], joint_positions[5], 0.0));   // last 0.0 for not used A7
+  command = rbt::MoveCommand(rbt::PoseJoints(joints[0], joints[1], joints[2], joints[3], joints[4], joints[5], 0.0));   // last 0.0 for not used A7
   robot_.perform(command);
+  return true;
+}
+
+bool MotionPrimitivesKukaDriver::add_linear_cartesian_cmd()
+{
+  // Check if pose values (position and quaternion) are valid
+  for (int i = 7; i <= 13; ++i) {
+    if (std::isnan(hw_mo_prim_commands_[i])) {
+        RCLCPP_ERROR(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Invalid motion command: pose contains NaN values");
+        return false;
+    }
+  }
+  double rx, ry, rz;
+  quaternionToEuler(hw_mo_prim_commands_[10], hw_mo_prim_commands_[11], hw_mo_prim_commands_[12], hw_mo_prim_commands_[13], rx, ry, rz);
+
+  constexpr double rad_to_deg = 180.0 / M_PI;
+  std::vector<double> pose = {
+    hw_mo_prim_commands_[7] * 1000.0, // from m to mm
+    hw_mo_prim_commands_[8] * 1000.0,
+    hw_mo_prim_commands_[9] * 1000.0,
+    rx * rad_to_deg,  // from rad to deg
+    ry * rad_to_deg,
+    rz * rad_to_deg};
+
+  RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), 
+        "Adding LINEAR_CARTESIAN with pose: [%f, %f, %f, %f, %f, %f]", 
+        pose[0], pose[1], pose[2], pose[3], pose[4], pose[5]);
+  rbt::MoveCommand command;
+  command = rbt::MoveCommand(rbt::PoseCartesian(pose[0], pose[1], pose[2], pose[3], pose[4], pose[5]), true);
+  robot_.perform(command);
+  return true;
+}
+
+bool MotionPrimitivesKukaDriver::add_circular_cartesian_cmd()
+{
+ 
   return true;
 }
 
 void MotionPrimitivesKukaDriver::reset_command_interfaces()
 {
   std::fill(hw_mo_prim_commands_.begin(), hw_mo_prim_commands_.end(), std::numeric_limits<double>::quiet_NaN());
+}
+
+// Convert quaternion to Euler angles (roll, pitch, yaw) 
+// https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles
+void MotionPrimitivesKukaDriver::quaternionToEuler(double qx, double qy, double qz, double qw, double& rx, double& ry, double& rz) {
+  // roll (x-axis rotation)
+  double sinr_cosp = 2 * (qw * qx + qy * qz);
+  double cosr_cosp = 1 - 2 * (qx * qx + qy * qy);
+  rx = std::atan2(sinr_cosp, cosr_cosp);
+
+  // pitch (y-axis rotation)
+  double sinp = std::sqrt(1 + 2 * (qw * qy - qx * qz));
+  double cosp = std::sqrt(1 - 2 * (qw * qy - qx * qz));
+  ry = 2 * std::atan2(sinp, cosp) - M_PI / 2;
+
+  // yaw (z-axis rotation)
+  double siny_cosp = 2 * (qw * qz + qx * qy);
+  double cosy_cosp = 1 - 2 * (qy * qy + qz * qz);
+  rz = std::atan2(siny_cosp, cosy_cosp);
+
+  // RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Converted quaternion [%f, %f, %f, %f] to Euler angles: [%f, %f, %f]",qx, qy, qz, qw, rx, ry, rz);
 }
 
 }  // namespace kuka_eki_motion_primitives_hw_interface
