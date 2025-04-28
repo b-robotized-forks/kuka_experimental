@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.1 FATAL_ERROR)
+cmake_minimum_required (VERSION 3.5 FATAL_ERROR)
 
 file (GLOB SOURCES src/*.cpp)
 file (GLOB SOURCES_CORE src/core/*.cpp)
