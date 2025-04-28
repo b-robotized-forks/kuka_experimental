@@ -56,6 +56,7 @@ std::string rbt::EKInterface::receive()
             read(socket_, buffer, receive_size - 1),
             "ERROR reading from socket");
 
+        // std::cout << "[EKInterface] Received XML from robot ..." << std::endl << std::string(buffer) << std::endl << std::endl;
         return std::string(buffer);
     }
 
