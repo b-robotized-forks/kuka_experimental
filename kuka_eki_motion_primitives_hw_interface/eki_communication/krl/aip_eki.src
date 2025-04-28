@@ -25,9 +25,9 @@ def aip_eki()
    ControlWord = 0
    DeviceMode = 10
    ControlWord = 1
-   WAIT FOR $IN[1112] == TRUE
+   ;WAIT FOR $IN[1112] == TRUE ;mathias31415 commented to not wait for input
    ControlWord = 0
-   WAIT FOR $IN[1112] == FALSE
+   ;WAIT FOR $IN[1112] == FALSE ;mathias31415 commented to not wait for input
    
    ; Communication process
    loop
@@ -143,12 +143,12 @@ def send_status()
       ;status = eki_setreal("AIP_EKI", "RobotState/Torque/@A5", $torque_axis_act[5])
       ;status = eki_setreal("AIP_EKI", "RobotState/Torque/@A6", $torque_axis_act[6])
       ; Gripper
-      status = eki_setint("AIP_EKI", "RobotState/Gripper/Jaw/@Position", ActualPosition)
-      status = eki_setint("AIP_EKI", "RobotState/Gripper/Jaw/@Status", StatusWord)
-      status = eki_setbool("AIP_EKI", "RobotState/Gripper/Vacuum/@Suction", $out[1230])
-      status = eki_setbool("AIP_EKI", "RobotState/Gripper/Vacuum/@Force1", $in[1230])  ;VakuumSensor1
-      status = eki_setbool("AIP_EKI", "RobotState/Gripper/Vacuum/@Force2", $in[1231])  ;VakuumSensor2
-      status = eki_setbool("AIP_EKI", "RobotState/Gripper/Vacuum/@Cylinder", $in[1228])
+      ;status = eki_setint("AIP_EKI", "RobotState/Gripper/Jaw/@Position", ActualPosition)
+      ;status = eki_setint("AIP_EKI", "RobotState/Gripper/Jaw/@Status", StatusWord)
+      ;status = eki_setbool("AIP_EKI", "RobotState/Gripper/Vacuum/@Suction", $out[1230])
+      ;status = eki_setbool("AIP_EKI", "RobotState/Gripper/Vacuum/@Force1", $in[1230])  ;VakuumSensor1
+      ;status = eki_setbool("AIP_EKI", "RobotState/Gripper/Vacuum/@Force2", $in[1231])  ;VakuumSensor2
+      ;status = eki_setbool("AIP_EKI", "RobotState/Gripper/Vacuum/@Cylinder", $in[1228])
       
       if has_connection() then
          status = eki_send("AIP_EKI", "RobotState")
