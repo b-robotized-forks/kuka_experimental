@@ -30,6 +30,11 @@ import time
 # _client.move(cartesian=[240.0, -140.0, 550.0, -180.0, 0.0, 180.0], lin=False) #position2
 # _client.move(cartesian=[280.0, 0.0, 550.0, -180.0, 0.0, 180.0], lin=True) #position1
 # _client.move(cartesian=[240.0, -140.0, 550.0, -180.0, 0.0, 180.0], lin=True)  #position2
+msg_start_sequence = MotionPrimitive()
+msg_start_sequence.type = MotionPrimitive.MOTION_SEQUENCE_START
+
+msg_end_sequence = MotionPrimitive()
+msg_end_sequence.type = MotionPrimitive.MOTION_SEQUENCE_END
 
 msg_PTP_1 = MotionPrimitive()
 msg_PTP_1.type = MotionPrimitive.LINEAR_JOINT
@@ -111,7 +116,8 @@ class MotionPublisher(Node):
 
         self.publisher_ = self.create_publisher(MotionPrimitive, '/motion_primitive_controller/reference', 10)
 
-        self.messages = [msg_PTP_1, msg_PTP_2, msg_LIN_1, msg_LIN_2]
+        # self.messages = [msg_PTP_1, msg_PTP_2, msg_LIN_1, msg_LIN_2]
+        self.messages = [msg_start_sequence, msg_PTP_1, msg_PTP_2, msg_LIN_1, msg_LIN_2, msg_end_sequence]
         self.current_index = 0
 
         self.get_logger().info(f"Number of messages: {len(self.messages)}")

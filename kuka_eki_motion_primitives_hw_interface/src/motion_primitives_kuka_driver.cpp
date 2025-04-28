@@ -224,6 +224,25 @@ hardware_interface::return_type MotionPrimitivesKukaDriver::write(
         ready_for_new_primitive_ = true; // TODO(mathias31415): Only for testing --> adjust later
         break;
       }
+      case MotionType::MOTION_SEQUENCE_START: {
+        RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Received MOTION_SEQUENCE_START: add all following commands to the motion sequence.");
+        build_motion_sequence_ = true;  // set flag to put all following commands into the motion sequence
+        reset_command_interfaces();
+        ready_for_new_primitive_ = true; // set to true to allow sending new commands
+        break;
+      }
+      case MotionType::MOTION_SEQUENCE_END: {
+        RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Received MOTION_SEQUENCE_END: executing motion sequence ...");
+        build_motion_sequence_ = false;
+        bool success = robot_.run();
+        current_execution_status_ = success ? ExecutionState::EXECUTING : ExecutionState::ERROR;  // TODO(mathias31415): Its not the execution status, but the send status?
+        RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "%s motion sequence to robot.", success? "Sent" : "Failed to send");
+        reset_command_interfaces();
+        if(success){
+          ready_for_new_primitive_ = true; // set to true to allow sending new commands
+        }
+        break;
+      }
       case MotionType::LINEAR_JOINT: { // MoveJ/ PTP
         RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "LINEAR_JOINT command received");
         if(!add_linear_joint_cmd()) {
