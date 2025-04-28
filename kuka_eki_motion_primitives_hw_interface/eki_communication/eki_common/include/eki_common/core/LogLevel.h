@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint> // for uint8_t
 #include <eki_common/default.h>
 
 class LogLevel
