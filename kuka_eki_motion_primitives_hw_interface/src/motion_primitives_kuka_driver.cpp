@@ -139,47 +139,45 @@ hardware_interface::CallbackReturn MotionPrimitivesKukaDriver::on_activate(
   RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Activating Hardware Interface");
   ready_for_new_primitive_ = true; // set to true to allow sending new commands
 
-  eki_server_address_ = info_.hardware_parameters["robot_ip"];
-  eki_server_port_ = info_.hardware_parameters["eki_robot_port"];
-  RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "using IP: %s", eki_server_address_.c_str());
-  RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "using port: %s", eki_server_port_.c_str());
-
-  if (eki_server_address_.empty() || eki_server_port_.empty())
+  robot_ip_ = info_.hardware_parameters["eki_robot_ip"];
+  eki_robot_port_ = std::stoi(info_.hardware_parameters["eki_robot_port"]);
+  // eki_robot_meta_port_ = std::stoi(info_.hardware_parameters["eki_robot_meta_port"]);
+  eki_robot_meta_port_ = 0; // TODO(mathias31415): Read parameter instead of hardcodeing
+  RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Trying to connect to the host: [%s], port: [%d], meta_port: [%d]", robot_ip_.c_str(), eki_robot_port_, eki_robot_meta_port_);
+  if (robot_ip_.empty() || eki_robot_port_ == 0)
   {
       RCLCPP_ERROR(
-          rclcpp::get_logger("MotionPrimitivesKukaDriver"), "robot_ip or eki_robot_port cannot be empty");
+          rclcpp::get_logger("MotionPrimitivesKukaDriver"), "robot_ip and eki_robot_port cannot be empty");
       return CallbackReturn::ERROR;
   }
 
-  deadline_.reset(new boost::asio::deadline_timer(ios_));
-  eki_server_socket_ = std::make_shared<boost::asio::ip::udp::socket>(ios_, boost::asio::ip::udp::endpoint(boost::asio::ip::udp::v4(), 0));
+  robot_.connect_async(robot_ip_, eki_robot_port_, eki_robot_meta_port_);
 
-  boost::asio::ip::udp::resolver resolver(ios_);
-  eki_server_endpoint_ = *resolver.resolve({boost::asio::ip::udp::v4(), eki_server_address_, eki_server_port_});
+  // TODO(mathias31415): Check this code block
+  // robot_.listener = [this](rbt::RobotEvent event, rbt::Robot *robot) -> void {
+  //   switch (event)
+  //   {
+  //   case rbt::RobotEvent::CONNECT:
+  //       RCLCPP_INFO(get_logger(), "Robot connected"); 
+  //       break;
+  //   case rbt::RobotEvent::RUN:
+  //       RCLCPP_INFO(get_logger(), "Robot running"); 
+  //       break;
+  //   case rbt::RobotEvent::STATE:
+  //       break;
+  //   }
+  // };
 
-  boost::array<char, 1> ini_buf = { 0 };
-  eki_server_socket_->send_to(boost::asio::buffer(ini_buf), eki_server_endpoint_);  // initiate contact to start server
+  // std::vector<double> joint_position;
+  // std::vector<double> joint_velocity;
+  // std::vector<double> joint_effort;
+  // joint_position.resize(hw_joint_states_.size());
+  // joint_velocity.resize(hw_joint_states_.size());
+  // joint_effort.resize(hw_joint_states_.size());
+// TODO(mathias31415): Read jointstates from robot
+  // hw_joint_states_ = joint_position;
 
-  // Start persistent actor to check for eki_read_state timeouts
-  deadline_->expires_at(boost::posix_time::pos_infin);  // do nothing until a read is invoked (deadline_ = +inf)
-  EkiHelper::check_read_state_deadline(*deadline_, eki_server_socket_,ios_);
 
-  std::vector<double> joint_position;
-  std::vector<double> joint_velocity;
-  std::vector<double> joint_effort;
-  joint_position.resize(hw_joint_states_.size());
-  joint_velocity.resize(hw_joint_states_.size());
-  joint_effort.resize(hw_joint_states_.size());
-  if (!EkiHelper::eki_read_state(joint_position, joint_velocity, joint_effort, eki_cmd_buff_len_, *deadline_, eki_server_socket_, ios_, eki_read_state_timeout_, hw_joint_states_))
-  {
-      std::string msg = "Failed to read from robot EKI server within alloted time of "
-                        + std::to_string(eki_read_state_timeout_) + " seconds.  Make sure eki_hw_interface is running "
-                        "on the robot controller and all configurations are correct.";
-      RCLCPP_ERROR(
-          rclcpp::get_logger("MotionPrimitivesKukaDriver"), msg.c_str());
-      throw std::runtime_error(msg);
-  }
-  hw_joint_states_ = joint_position;
 
   RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "System Successfully activated!");
 
@@ -190,7 +188,7 @@ hardware_interface::CallbackReturn MotionPrimitivesKukaDriver::on_deactivate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
   RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Deactivating Hardware Interface");
-  // TODO(anyone): prepare the robot to stop receiving commands
+  robot_.disconnect();
   RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "System Successfully deactivated!");
   return CallbackReturn::SUCCESS;
 }
@@ -198,23 +196,14 @@ hardware_interface::CallbackReturn MotionPrimitivesKukaDriver::on_deactivate(
 hardware_interface::return_type MotionPrimitivesKukaDriver::read(
   const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/)
 {
-  std::vector<double> joint_position;
-  std::vector<double> joint_velocity;
-  std::vector<double> joint_effort;
-  joint_position.resize(hw_joint_states_.size());
-  joint_velocity.resize(hw_joint_states_.size());
-  joint_effort.resize(hw_joint_states_.size());
-  
-  if (!EkiHelper::eki_read_state(joint_position, joint_velocity, joint_effort, eki_cmd_buff_len_, *deadline_, eki_server_socket_, ios_, eki_read_state_timeout_, hw_joint_states_))
-  {
-      std::string msg = "Failed to read from robot EKI server within alloted time of "
-                        + std::to_string(eki_read_state_timeout_) + " seconds.  Make sure eki_hw_interface is running "
-                        "on the robot controller and all configurations are correct.";
-      RCLCPP_ERROR(
-          rclcpp::get_logger("MotionPrimitivesKukaDriver"), msg.c_str());
-      throw std::runtime_error(msg);
-  }
-  hw_joint_states_ = joint_position;
+  // std::vector<double> joint_position;
+  // std::vector<double> joint_velocity;
+  // std::vector<double> joint_effort;
+  // joint_position.resize(hw_joint_states_.size());
+  // joint_velocity.resize(hw_joint_states_.size());
+  // joint_effort.resize(hw_joint_states_.size());
+// TODO(mathias31415): Read jointstates from robot
+  // hw_joint_states_ = joint_position;
 
   // TODO(mathias31415): Fill execution status and ready_for_new_primitive_ with real data
   hw_mo_prim_states_[0] = current_execution_status_;    // 0=idle, 1=executing, 2=success, 3=error
@@ -260,7 +249,10 @@ hardware_interface::return_type MotionPrimitivesKukaDriver::write(
         RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), 
               "Executing moveJ with joint positions: [%f, %f, %f, %f, %f, %f]", 
               joint_positions[0], joint_positions[1], joint_positions[2], joint_positions[3], joint_positions[4], joint_positions[5]);
-        bool success = eki_write_command(joint_positions);
+        rbt::MoveCommand command;
+        command = rbt::MoveCommand(rbt::PoseJoints(joint_positions[0], joint_positions[1], joint_positions[2], joint_positions[3], joint_positions[4], joint_positions[5], 0.0));   // last 0.0 for not used A7
+        robot_.perform(command);
+        bool success = robot_.run(); // TODO(mathias31415): Check if single primitive or sequence
         current_execution_status_ = success ? ExecutionState::SUCCESS : ExecutionState::ERROR;  // TODO(mathias31415): Its not the execution status, but the send status?
         RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "After executing moveJ: current_execution_status_ = %d", current_execution_status_.load());
         if(success){
@@ -312,30 +304,30 @@ hardware_interface::return_type MotionPrimitivesKukaDriver::write(
   return hardware_interface::return_type::OK;
 }
 
-bool MotionPrimitivesKukaDriver::eki_write_command(const std::vector<double> &joint_position_command)
-    {
-      TiXmlDocument xml_out;
-      TiXmlElement* robot_command = new TiXmlElement("RobotCommand");
-      TiXmlElement* pos = new TiXmlElement("Pos");
-      TiXmlText* empty_text = new TiXmlText("");
-      robot_command->LinkEndChild(pos);
-      pos->LinkEndChild(empty_text);   // force <Pos></Pos> format (vs <Pos />)
-      char axis_name[] = "A1";
-      for (long unsigned int i = 0; i < hw_joint_states_.size(); ++i)
-      {
-          pos->SetAttribute(axis_name, std::to_string(angles::to_degrees(joint_position_command[i])).c_str());
-          axis_name[1]++;
-      }
-      xml_out.LinkEndChild(robot_command);
-      TiXmlPrinter xml_printer;
-      xml_printer.SetStreamPrinting();  // no linebreaks
-      xml_out.Accept(&xml_printer);
+// bool MotionPrimitivesKukaDriver::eki_write_command(const std::vector<double> &joint_position_command)
+// {
+//   TiXmlDocument xml_out;
+//   TiXmlElement* robot_command = new TiXmlElement("RobotCommand");
+//   TiXmlElement* pos = new TiXmlElement("Pos");
+//   TiXmlText* empty_text = new TiXmlText("");
+//   robot_command->LinkEndChild(pos);
+//   pos->LinkEndChild(empty_text);   // force <Pos></Pos> format (vs <Pos />)
+//   char axis_name[] = "A1";
+//   for (long unsigned int i = 0; i < hw_joint_states_.size(); ++i)
+//   {
+//       pos->SetAttribute(axis_name, std::to_string(angles::to_degrees(joint_position_command[i])).c_str());
+//       axis_name[1]++;
+//   }
+//   xml_out.LinkEndChild(robot_command);
+//   TiXmlPrinter xml_printer;
+//   xml_printer.SetStreamPrinting();  // no linebreaks
+//   xml_out.Accept(&xml_printer);
 
-      eki_server_socket_->send_to(boost::asio::buffer(xml_printer.CStr(), xml_printer.Size()),
-                                            eki_server_endpoint_);
-      RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Sent command: %s", xml_printer.CStr());
-      return true;
-    }
+//   eki_server_socket_->send_to(boost::asio::buffer(xml_printer.CStr(), xml_printer.Size()),
+//                                         eki_server_endpoint_);
+//   RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Sent command: %s", xml_printer.CStr());
+//   return true;
+// }
 
 }  // namespace kuka_eki_motion_primitives_hw_interface
 
