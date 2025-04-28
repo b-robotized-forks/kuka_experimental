@@ -1,4 +1,5 @@
 #pragma once
+#include <limits>
 
 namespace rbt
 {
@@ -29,13 +30,13 @@ enum class GripMode
 
 struct PoseJoints
 {
-    float a1 = 0.f;
-    float a2 = 0.f;
-    float a3 = 0.f;
-    float a4 = 0.f;
-    float a5 = 0.f;
-    float a6 = 0.f;
-    float a7 = 0.f;
+    float a1 = std::numeric_limits<float>::quiet_NaN();
+    float a2 = std::numeric_limits<float>::quiet_NaN();
+    float a3 = std::numeric_limits<float>::quiet_NaN();
+    float a4 = std::numeric_limits<float>::quiet_NaN();
+    float a5 = std::numeric_limits<float>::quiet_NaN();
+    float a6 = std::numeric_limits<float>::quiet_NaN();
+    float a7 = std::numeric_limits<float>::quiet_NaN();
 
     PoseJoints() {}
     PoseJoints(float a1, float a2, float a3, float a4, float a5, float a6) : a1(a1), a2(a2), a3(a3), a4(a4), a5(a5), a6(a6) {}
@@ -44,12 +45,12 @@ struct PoseJoints
 
 struct PoseCartesian
 {
-    float x = 0.f;
-    float y = 0.f;
-    float z = 0.f;
-    float a = 0.f;
-    float b = 0.f;
-    float c = 0.f;
+    float x = std::numeric_limits<float>::quiet_NaN();
+    float y = std::numeric_limits<float>::quiet_NaN();
+    float z = std::numeric_limits<float>::quiet_NaN();
+    float a = std::numeric_limits<float>::quiet_NaN();
+    float b = std::numeric_limits<float>::quiet_NaN();
+    float c = std::numeric_limits<float>::quiet_NaN();
 
     PoseCartesian() {}
     PoseCartesian(float x, float y, float z, float a) : x(x), y(y), z(z), a(a) {}
