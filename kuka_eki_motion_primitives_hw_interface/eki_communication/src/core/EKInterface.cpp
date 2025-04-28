@@ -35,7 +35,8 @@ bool rbt::EKInterface::is_connected()
 
 int rbt::EKInterface::send(const std::string &xml)
 {
-    std::cout<<xml<<std::endl;
+    std::cout<<"[EKInterface] Sending XML to robot ..."<<std::endl<<xml<<std::endl<<std::endl;
+    // std::cout<<"[EKInterface] Sending XML to robot ..."<<std::endl;
     return check_error(
         write(socket_, xml.c_str(), xml.size()),
         "ERROR writing to socket");
@@ -63,6 +64,8 @@ std::string rbt::EKInterface::receive()
 
 bool rbt::EKInterface::connect_to(const std::string &host, int port, bool udp)
 {
+    std::cout << "[EKInterface] Trying to connect to " << host << ", port: " << port << ", udp: " << (udp ? "true" : "false") << std::endl;
+
     socket_ = socket(AF_INET, udp ? SOCK_DGRAM : SOCK_STREAM, 0);
     struct hostent *server = gethostbyname(host.c_str());
 
@@ -82,6 +85,8 @@ bool rbt::EKInterface::connect_to(const std::string &host, int port, bool udp)
         "ERROR connecting to socket");
 
     connected_ = code == 0;
+
+    std::cout << "[EKInterface] " << (connected_ ? "Successfully connected to " : "Failed to connect to ") << host << ", port: " << port << std::endl;
 
     return connected_;
 }
