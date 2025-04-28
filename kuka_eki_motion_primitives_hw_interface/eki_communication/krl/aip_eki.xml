@@ -8,7 +8,7 @@
          <BUFFERING Mode="FIFO" Limit="512" />     <!-- Mode: FIFO /LIFO | Limit: Buffering up to 512 messages (system max) -->
          <BUFFSIZE Limit="65534" />                <!-- Max message length of 65534 bytes (system max) -->
          <ALIVE Set_Flag="1" />                    <!-- Use $flag[1] to indicate alive/good connection status -->
-         <IP>10.166.32.145</IP>                    <!-- IP address for EKI interface on robot controller (KRC) -->
+         <IP>10.181.116.51</IP>                    <!-- IP address for EKI interface on robot controller (KRC) -->
          <PORT>54600</PORT>                        <!-- Port of EKI interface on robot controller [54600, 54615] -->
          <PROTOCOL>TCP</PROTOCOL>                  <!-- Use TCP / UDP protocol -->
       </INTERNAL>
