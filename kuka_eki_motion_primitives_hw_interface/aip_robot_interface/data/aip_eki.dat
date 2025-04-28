@@ -1,0 +1,12 @@
+&ACCESS RVP
+&REL 48
+defdat aip_eki
+   ext bas(bas_command :in, real :in)
+   struc move_type int mode, base_index, tool_index, wait_for_gripper, teached, real velocity, axis joint, frame cartesian
+   struc jaw_type int tolerance, velocity, force, base_pos, work_pos, teach_pos, shift_pos, direction_mode
+   struc vacuum_type int suction, real cylinder
+   struc grip_type int mode, jaw_type jaw, vacuum_type vacuum
+   struc command_type int id, step, type, move_type move_data, grip_type grip_data
+   decl command_type current_command
+   decl axis teached_points[10]
+enddat

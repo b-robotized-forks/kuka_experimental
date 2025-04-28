@@ -1,0 +1,69 @@
+<ETHERNETKRL>
+  <CONFIGURATION>
+    <EXTERNAL>
+      <IP>192.168.0.1</IP>
+      <PORT>8000</PORT>
+      <TYPE>Server</TYPE>
+    </EXTERNAL>
+    <INTERNAL>
+      <BUFFERING Mode="FIFO" Limit="32"/>
+      <ALIVE Set_Flag="997"/>
+    </INTERNAL>
+  </CONFIGURATION>
+  <RECEIVE>
+    <XML>
+      <ELEMENT Tag="Response/Id" Type="string"/>
+      <ELEMENT Tag="Response/Version" Type="string"/>
+      <ELEMENT Tag="Response/LcFound" Type="bool"/>
+      <ELEMENT Tag="Response/Succeeded" Type="bool"/>
+      <ELEMENT Tag="Response/ErrorMsg" Type="string"/>
+      <ELEMENT Tag="Response/NumberOfSkus" Type="int"/>
+      <ELEMENT Tag="Response/LcPose/Xmm" Type="Real"/>
+      <ELEMENT Tag="Response/LcPose/Ymm" Type="Real"/>
+      <ELEMENT Tag="Response/LcPose/Zmm" Type="Real"/>
+      <ELEMENT Tag="Response/LcPose/Adeg" Type="Real"/>
+      <ELEMENT Tag="Response/LcPose/Bdeg" Type="Real"/>
+      <ELEMENT Tag="Response/LcPose/Cdeg" Type="Real"/>
+      <ELEMENT Tag="Response/LcDimension/InnerLengthMm" Type="Real"/>
+      <ELEMENT Tag="Response/LcDimension/InnerWidthMm" Type="Real"/>
+      <ELEMENT Tag="Response/LcDimension/InnerHeightMm" Type="Real"/>
+      <ELEMENT Tag="Response/LcDimension/OuterLengthMm" Type="Real"/>
+      <ELEMENT Tag="Response/LcDimension/OuterWidthMm" Type="Real"/>
+      <ELEMENT Tag="Response/LcDimension/OuterHeightMm" Type="Real"/>
+      <ELEMENT Tag="Response/GraspPose/Xmm" Type="Real"/>
+      <ELEMENT Tag="Response/GraspPose/Ymm" Type="Real"/>
+      <ELEMENT Tag="Response/GraspPose/Zmm" Type="Real"/>
+      <ELEMENT Tag="Response/GraspPose/Adeg" Type="Real"/>
+      <ELEMENT Tag="Response/GraspPose/Bdeg" Type="Real"/>
+      <ELEMENT Tag="Response/GraspPose/Cdeg" Type="Real"/>
+      <ELEMENT Tag="Response/EndOfResult" Set_Flag="998" />
+    </XML>
+  </RECEIVE>
+  <SEND>
+    <XML>
+      <ELEMENT Tag="Message/Id"/>
+      <ELEMENT Tag="Message/Version"/>
+      <ELEMENT Tag="Message/Data/LcuId"/>
+      <ELEMENT Tag="Message/Data/SkuId"/>
+      <ELEMENT Tag="Message/Data/MinGraspDiameter"/>
+      <ELEMENT Tag="Message/Data/CurrentRobotPosition/@X"/>
+      <ELEMENT Tag="Message/Data/CurrentRobotPosition/@Y"/>
+      <ELEMENT Tag="Message/Data/CurrentRobotPosition/@Z"/>
+      <ELEMENT Tag="Message/Data/CurrentRobotPosition/@A"/>
+      <ELEMENT Tag="Message/Data/CurrentRobotPosition/@B"/>
+      <ELEMENT Tag="Message/Data/CurrentRobotPosition/@C"/>
+      <ELEMENT Tag="Message/Data/CurrentRobotBase/@X"/>
+      <ELEMENT Tag="Message/Data/CurrentRobotBase/@Y"/>
+      <ELEMENT Tag="Message/Data/CurrentRobotBase/@Z"/>
+      <ELEMENT Tag="Message/Data/CurrentRobotBase/@A"/>
+      <ELEMENT Tag="Message/Data/CurrentRobotBase/@B"/>
+      <ELEMENT Tag="Message/Data/CurrentRobotBase/@C"/>
+      <ELEMENT Tag="Message/Data/CurrentToolData/@X"/>
+      <ELEMENT Tag="Message/Data/CurrentToolData/@Y"/>
+      <ELEMENT Tag="Message/Data/CurrentToolData/@Z"/>
+      <ELEMENT Tag="Message/Data/CurrentToolData/@A"/>
+      <ELEMENT Tag="Message/Data/CurrentToolData/@B"/>
+      <ELEMENT Tag="Message/Data/CurrentToolData/@C"/>
+    </XML>
+  </SEND>
+</ETHERNETKRL>

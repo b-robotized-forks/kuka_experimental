@@ -1,0 +1,107 @@
+<ETHERNETKRL>
+   <CONFIGURATION>
+      <EXTERNAL>
+         <TYPE>Client</TYPE>                  <!-- Users connect as clients -->
+      </EXTERNAL>
+      <INTERNAL>
+         <ENVIRONMENT>Program</ENVIRONMENT>   <!-- Server run via robot interpreter -->
+         <BUFFERING Limit="512" />            <!-- Allow buffering of up to 512 messages (system max) -->
+         <ALIVE Set_Flag="1" />               <!-- Use $flag[1] to indicate alive/good connection status -->
+         <IP>10.166.32.145</IP>              <!-- IP address for EKI interface on robot controller (KRC) -->
+         <PORT>54600</PORT>                   <!-- Port of EKI interface on robot controller (in [54600, 54615]) -->
+         <PROTOCOL>UDP</PROTOCOL>             <!-- Use UDP protocol -->
+      </INTERNAL>
+   </CONFIGURATION>
+   
+   <RECEIVE>
+      <XML>
+         <!-- Command -->
+         <ELEMENT Tag="RobotCommand/@Id" Type="INT"/>
+         <ELEMENT Tag="RobotCommand/@Step" Type="INT"/>
+         <!-- Type: 1=Move, 2=Gripper -->
+         <ELEMENT Tag="RobotCommand/@Type" Type="INT"/>
+         <!-- Move parameter -->
+         <!-- Mode: 1=Joint, 2=Cartesian-Ptp, 3=Cartesian-Lin, 4=Teached-Ptp, 5=Teached-Lin -->
+         <ELEMENT Tag="RobotCommand/Move/@Mode" Type="INT"/>
+         <ELEMENT Tag="RobotCommand/Move/@BaseIndex" Type="INT"/>
+         <ELEMENT Tag="RobotCommand/Move/@ToolIndex" Type="INT"/>
+         <ELEMENT Tag="RobotCommand/Move/@Velocity" Type="REAL"/>
+         <ELEMENT Tag="RobotCommand/Move/@WaitForGripper" Type="INT"/>
+         <!-- Move joint positions -->
+         <ELEMENT Tag="RobotCommand/Move/Joint/@A1" Type="REAL"/>
+         <ELEMENT Tag="RobotCommand/Move/Joint/@A2" Type="REAL"/>
+         <ELEMENT Tag="RobotCommand/Move/Joint/@A3" Type="REAL"/>
+         <ELEMENT Tag="RobotCommand/Move/Joint/@A4" Type="REAL"/>
+         <ELEMENT Tag="RobotCommand/Move/Joint/@A5" Type="REAL"/>
+         <ELEMENT Tag="RobotCommand/Move/Joint/@A6" Type="REAL"/>
+         <!-- Move cartesian positions -->
+         <ELEMENT Tag="RobotCommand/Move/Cartesian/@X" Type="REAL"/>
+         <ELEMENT Tag="RobotCommand/Move/Cartesian/@Y" Type="REAL"/>
+         <ELEMENT Tag="RobotCommand/Move/Cartesian/@Z" Type="REAL"/>
+         <ELEMENT Tag="RobotCommand/Move/Cartesian/@A" Type="REAL"/>
+         <ELEMENT Tag="RobotCommand/Move/Cartesian/@B" Type="REAL"/>
+         <ELEMENT Tag="RobotCommand/Move/Cartesian/@C" Type="REAL"/>
+         <!-- Move teached position index -->
+         <ELEMENT Tag="RobotCommand/Move/Teached/@PositionIndex" Type="INT"/>
+         <!-- Gripper parameter -->
+         <ELEMENT Tag="RobotCommand/Grip/@Mode" Type="INT"/>
+         <ELEMENT Tag="RobotCommand/Grip/Jaw/@Tolerance" Type="INT"/>
+         <ELEMENT Tag="RobotCommand/Grip/Jaw/@Velocity" Type="INT"/>
+         <ELEMENT Tag="RobotCommand/Grip/Jaw/@Force" Type="INT"/>
+         <!-- Grip positions -->
+         <ELEMENT Tag="RobotCommand/Grip/Jaw/@BasePosition" Type="INT"/>
+         <ELEMENT Tag="RobotCommand/Grip/Jaw/@WorkPosition" Type="INT"/>
+         <ELEMENT Tag="RobotCommand/Grip/Jaw/@TeachPosition" Type="INT"/>
+         <ELEMENT Tag="RobotCommand/Grip/Jaw/@ShiftPosition" Type="INT"/>
+         <ELEMENT Tag="RobotCommand/Grip/Jaw/@DirectionMode" Type="INT"/>
+         <!-- Grip vacuum -->
+         <ELEMENT Tag="RobotCommand/Grip/Vacuum/@Suction" Type="INT"/>
+         <ELEMENT Tag="RobotCommand/Grip/Vacuum/@Cylinder" Type="REAL"/>
+      </XML>
+   </RECEIVE>
+   
+   <SEND>
+      <XML>
+         <ELEMENT Tag="RobotState/Command/@Id"/>
+         <ELEMENT Tag="RobotState/Command/@Step"/>
+         <!-- Joint state positions -->
+         <ELEMENT Tag="RobotState/Position/Joint/@A1"/>
+         <ELEMENT Tag="RobotState/Position/Joint/@A2"/>
+         <ELEMENT Tag="RobotState/Position/Joint/@A3"/>
+         <ELEMENT Tag="RobotState/Position/Joint/@A4"/>
+         <ELEMENT Tag="RobotState/Position/Joint/@A5"/>
+         <ELEMENT Tag="RobotState/Position/Joint/@A6"/>
+         <!-- Cartesian state positions -->
+         <ELEMENT Tag="RobotState/Position/Cartesian/@X"/>
+         <ELEMENT Tag="RobotState/Position/Cartesian/@Y"/>
+         <ELEMENT Tag="RobotState/Position/Cartesian/@Z"/>
+         <ELEMENT Tag="RobotState/Position/Cartesian/@A"/>
+         <ELEMENT Tag="RobotState/Position/Cartesian/@B"/>
+         <ELEMENT Tag="RobotState/Position/Cartesian/@C"/>
+         <!-- Joint state velocities -->
+         <ELEMENT Tag="RobotState/Velocity/@A1"/>
+         <ELEMENT Tag="RobotState/Velocity/@A2"/>
+         <ELEMENT Tag="RobotState/Velocity/@A3"/>
+         <ELEMENT Tag="RobotState/Velocity/@A4"/>
+         <ELEMENT Tag="RobotState/Velocity/@A5"/>
+         <ELEMENT Tag="RobotState/Velocity/@A6"/>
+         <!-- Joint state torques -->
+         <ELEMENT Tag="RobotState/Torque/@A1"/>
+         <ELEMENT Tag="RobotState/Torque/@A2"/>
+         <ELEMENT Tag="RobotState/Torque/@A3"/>
+         <ELEMENT Tag="RobotState/Torque/@A4"/>
+         <ELEMENT Tag="RobotState/Torque/@A5"/>
+         <ELEMENT Tag="RobotState/Torque/@A6"/>
+         <!-- Gripper state -->
+         <ELEMENT Tag="RobotState/Gripper/Jaw/@Position"/>
+         <ELEMENT Tag="RobotState/Gripper/Jaw/@Status"/>
+         <ELEMENT Tag="RobotState/Gripper/Vacuum/@Suction"/>
+         <ELEMENT Tag="RobotState/Gripper/Vacuum/@Force1"/>
+         <ELEMENT Tag="RobotState/Gripper/Vacuum/@Force2"/>
+         <ELEMENT Tag="RobotState/Gripper/Vacuum/@Cylinder"/>
+         <!-- Error -->
+         <ELEMENT Tag="RobotState/Error/@Code"/>
+         <ELEMENT Tag="RobotState/Error/@Message"/>
+      </XML>
+   </SEND>
+</ETHERNETKRL>

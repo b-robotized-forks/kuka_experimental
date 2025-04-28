@@ -1,0 +1,380 @@
+&ACCESS RVP
+&REL 48
+def aip2_eki()
+   ; Author: Moritz Weisenboehler (HsKA) <moritz.weisenboehler@hs-karlsruhe.de>
+   
+   ;Declarations
+   decl int index
+   
+   ; Initialization
+   bas(#initmov, 0)
+   init_interface()
+  current_command = null_command()
+
+   index = 0
+   
+   for index = 1 to 10
+      teached_points[index] = { a1 0, a2 0, a3 0, a4 0, a5 0, a6 0 }
+   endfor
+   
+   ; Move to current position
+   ptp $axis_act_meas
+   
+   ; Communication process
+   loop
+      if get_command(current_command) then
+         switch current_command.type
+            case 1
+               check_error(do_move(current_command.step, current_command.move_data))
+            case 2
+               check_error(do_grip(current_command.grip_data))
+         endswitch
+      endif
+   endloop
+end
+
+deffct command_type null_command()
+   decl axis joint
+   decl frame cartesian
+   decl move_type move_data
+   decl vacuum_type vacuum
+   decl jaw_type jaw
+   decl grip_type grip_data
+   decl command_type command
+   
+   move_data = { mode 0, base_index 0, tool_index 0, wait_for_gripper 0, teached 0, velocity 0 }
+   joint = { a1 0, a2 0, a3 0, a4 0, a5 0, a6 0}
+   move_data.joint = joint
+   cartesian = { x 0, y 0, z 0, a 0, b 0, c 0 }
+   move_data.cartesian = cartesian
+   
+   grip_data.mode = 0
+   jaw = { tolerance 0, velocity 0, force 0, base_pos 0, work_pos 0, teach_pos 0, shift_pos 0, direction_mode 0 }
+   grip_data.jaw = jaw
+   vacuum = { suction 0, cylinder 0 }
+   grip_data.vacuum = vacuum
+   
+   command = { id 0, step 0, type 0}
+   command.move_data = move_data
+   command.grip_data = grip_data
+   
+   return command
+endfct
+
+def init_interface()
+   decl eki_status status
+   
+   global interrupt decl 15 when $flag[1] == false do reset_interface()
+   interrupt on 15
+   
+   global interrupt decl 16 when $timer_flag[1] == true do send_status()
+   interrupt on 16
+   
+   wait sec 0.012          ; Wait for next interpolation cycle
+   $timer[1] = -200        ; Time in [ms] before first interrupt call
+   $timer_stop[1] = false  ; Start timer 1
+   
+   status = eki_init("AIP2_EKI")
+   status = eki_open("AIP2_EKI")
+end
+
+
+def reset_interface()
+   decl eki_status status
+
+   status = eki_clear("AIP2_EKI")
+   status = eki_init("AIP2_EKI")
+   status = eki_open("AIP2_EKI")
+end
+
+
+deffct bool has_connection()
+   return $flag[1]
+endfct
+
+
+def send_status()
+   decl eki_status status
+   
+   if has_connection() then
+      ; Command id
+      status = eki_setint("AIP2_EKI", "RobotState/Command/@Id", current_command.id)
+      ; Joint position
+      status = eki_setreal("AIP2_EKI", "RobotState/Position/Joint/@A1", $axis_act_meas.a1)
+      status = eki_setreal("AIP2_EKI", "RobotState/Position/Joint/@A2", $axis_act_meas.a2)
+      status = eki_setreal("AIP2_EKI", "RobotState/Position/Joint/@A3", $axis_act_meas.a3)
+      status = eki_setreal("AIP2_EKI", "RobotState/Position/Joint/@A4", $axis_act_meas.a4)
+      status = eki_setreal("AIP2_EKI", "RobotState/Position/Joint/@A5", $axis_act_meas.a5)
+      status = eki_setreal("AIP2_EKI", "RobotState/Position/Joint/@A6", $axis_act_meas.a6)
+      ; Cartesian position
+      status = eki_setreal("AIP2_EKI", "RobotState/Position/Cartesian/@X", $pos_act.x)
+      status = eki_setreal("AIP2_EKI", "RobotState/Position/Cartesian/@Y", $pos_act.y)
+      status = eki_setreal("AIP2_EKI", "RobotState/Position/Cartesian/@Z", $pos_act.z)
+      status = eki_setreal("AIP2_EKI", "RobotState/Position/Cartesian/@A", $pos_act.a)
+      status = eki_setreal("AIP2_EKI", "RobotState/Position/Cartesian/@B", $pos_act.b)
+      status = eki_setreal("AIP2_EKI", "RobotState/Position/Cartesian/@C", $pos_act.c)
+      ; Velocity
+      ;status = eki_setreal("AIP2_EKI", "RobotState/Velocity/@A1", $vel_axis_act[1] * $vel_axis_ma[1] / 100.0)
+      ;status = eki_setreal("AIP2_EKI", "RobotState/Velocity/@A2", $vel_axis_act[2] * $vel_axis_ma[2] / 100.0)
+      ;status = eki_setreal("AIP2_EKI", "RobotState/Velocity/@A3", $vel_axis_act[3] * $vel_axis_ma[3] / 100.0)
+      ;status = eki_setreal("AIP2_EKI", "RobotState/Velocity/@A4", $vel_axis_act[4] * $vel_axis_ma[4] / 100.0)
+      ;status = eki_setreal("AIP2_EKI", "RobotState/Velocity/@A5", $vel_axis_act[5] * $vel_axis_ma[5] / 100.0)
+      ;status = eki_setreal("AIP2_EKI", "RobotState/Velocity/@A6", $vel_axis_act[6] * $vel_axis_ma[6] / 100.0)
+      ; Torque
+      ;status = eki_setreal("AIP2_EKI", "RobotState/Torque/@A1", $torque_axis_act[1])
+      ;status = eki_setreal("AIP2_EKI", "RobotState/Torque/@A2", $torque_axis_act[2])
+      ;status = eki_setreal("AIP2_EKI", "RobotState/Torque/@A3", $torque_axis_act[3])
+      ;status = eki_setreal("AIP2_EKI", "RobotState/Torque/@A4", $torque_axis_act[4])
+      ;status = eki_setreal("AIP2_EKI", "RobotState/Torque/@A5", $torque_axis_act[5])
+      ;status = eki_setreal("AIP2_EKI", "RobotState/Torque/@A6", $torque_axis_act[6])
+      ; Gripper
+      status = eki_setint("AIP2_EKI", "RobotState/Gripper/Jaw/@Position", ActualPosition)
+      status = eki_setint("AIP2_EKI", "RobotState/Gripper/Jaw/@Status", StatusWord)
+      status = eki_setbool("AIP2_EKI", "RobotState/Gripper/Vacuum/@Suction", $out[1230])
+      status = eki_setbool("AIP2_EKI", "RobotState/Gripper/Vacuum/@Force1", $in[1230])  ;VakuumSensor1
+      status = eki_setbool("AIP2_EKI", "RobotState/Gripper/Vacuum/@Force2", $in[1231])  ;VakuumSensor2
+      status = eki_setbool("AIP2_EKI", "RobotState/Gripper/Vacuum/@Cylinder", $in[1228])
+      
+      if has_connection() then
+         status = eki_send("AIP2_EKI", "RobotState")
+      endif
+   endif
+   
+   ; Set timer for next interrupt [ms]
+   $timer[1] = -10  ; ~10 ms for above send + 10 ms interrupt timer -> ~50 Hz state transmission
+end
+
+
+def check_error(error_code :in)
+   decl int error_code
+   
+   decl char error_message[64]
+   decl int index
+   
+   index = 0
+   
+   for index = 1 to 64
+      error_message[index] = " "
+   endfor
+   
+   if error_code > 0 then
+      switch error_code
+         case 1
+            error_message[] = "Fehler 1"
+         default
+            error_message[] = "Unbekannter Fehler"
+      endswitch
+      
+      send_error(error_code, error_message[])
+     endif
+end
+
+def send_info(info_code :in, info_message[] :in)
+   decl int info_code
+   decl char info_message[]
+   
+   decl eki_status status
+   
+   if has_connection() then
+      status = eki_setint("AIP2_EKI", "RobotState/Info/@Code", info_code)
+      status = eki_setstring("AIP2_EKI", "RobotState/Info/@Message", info_message[])
+   endif
+end
+
+def send_error(error_code :in, error_message[] :in)
+   decl int error_code
+   decl char error_message[]
+   
+   decl eki_status status
+   
+   if has_connection() then
+      status = eki_setint("AIP2_EKI", "RobotState/Error/@Code", error_code)
+      status = eki_setstring("AIP2_EKI", "RobotState/Error/@Message", error_message[])
+   endif
+end
+
+
+deffct bool has_command()
+   decl eki_status status
+   
+   if not $flag[1] then
+      return false
+   endif
+
+   status = eki_checkbuffer("AIP2_EKI", "RobotCommand/@Type")
+   
+   return status.buff > 0
+endfct
+
+
+deffct bool get_command(command :out)
+   decl command_type command
+   
+   decl eki_status status
+   
+   if not has_command() then
+     return false
+   endif
+   
+   status = eki_getint("AIP2_EKI", "RobotCommand/@Id", command.id)
+   status = eki_getint("AIP2_EKI", "RobotCommand/@Type", command.type)
+   
+   status = eki_getint("AIP2_EKI", "RobotCommand/Move/@Mode", command.move_data.mode)
+   status = eki_getint("AIP2_EKI", "RobotCommand/Move/@BaseIndex", command.move_data.base_index)
+   status = eki_getint("AIP2_EKI", "RobotCommand/Move/@ToolIndex", command.move_data.tool_index)
+   status = eki_getreal("AIP2_EKI", "RobotCommand/Move/@Velocity", command.move_data.velocity)
+   status = eki_getint("AIP2_EKI", "RobotCommand/Move/@WaitForGripper", command.move_data.wait_for_gripper)
+   
+   status = eki_getreal("AIP2_EKI", "RobotCommand/Move/Joint/@A1", command.move_data.joint.a1)
+   status = eki_getreal("AIP2_EKI", "RobotCommand/Move/Joint/@A2", command.move_data.joint.a2)
+   status = eki_getreal("AIP2_EKI", "RobotCommand/Move/Joint/@A3", command.move_data.joint.a3)
+   status = eki_getreal("AIP2_EKI", "RobotCommand/Move/Joint/@A4", command.move_data.joint.a4)
+   status = eki_getreal("AIP2_EKI", "RobotCommand/Move/Joint/@A5", command.move_data.joint.a5)
+   status = eki_getreal("AIP2_EKI", "RobotCommand/Move/Joint/@A6", command.move_data.joint.a6)
+   
+   status = eki_getreal("AIP2_EKI", "RobotCommand/Move/Cartesian/@X", command.move_data.cartesian.x)
+   status = eki_getreal("AIP2_EKI", "RobotCommand/Move/Cartesian/@Y", command.move_data.cartesian.y)
+   status = eki_getreal("AIP2_EKI", "RobotCommand/Move/Cartesian/@Z", command.move_data.cartesian.z)
+   status = eki_getreal("AIP2_EKI", "RobotCommand/Move/Cartesian/@A", command.move_data.cartesian.a)
+   status = eki_getreal("AIP2_EKI", "RobotCommand/Move/Cartesian/@B", command.move_data.cartesian.b)
+   status = eki_getreal("AIP2_EKI", "RobotCommand/Move/Cartesian/@C", command.move_data.cartesian.c)
+   
+   status = eki_getint("AIP2_EKI", "RobotCommand/Move/Teached/@PositionIndex", command.move_data.teached)
+   
+   status = eki_getint("AIP2_EKI", "RobotCommand/Grip/@Mode", command.grip_data.mode)
+   
+   status = eki_getint("AIP2_EKI", "RobotCommand/Grip/Jaw/@Tolerance", command.grip_data.jaw.tolerance)
+   status = eki_getint("AIP2_EKI", "RobotCommand/Grip/Jaw/@Velocity", command.grip_data.jaw.velocity)
+   status = eki_getint("AIP2_EKI", "RobotCommand/Grip/Jaw/@Force", command.grip_data.jaw.force)
+   status = eki_getint("AIP2_EKI", "RobotCommand/Grip/Jaw/@BasePosition", command.grip_data.jaw.base_pos)
+   status = eki_getint("AIP2_EKI", "RobotCommand/Grip/Jaw/@WorkPosition", command.grip_data.jaw.work_pos)
+   status = eki_getint("AIP2_EKI", "RobotCommand/Grip/Jaw/@TeachPosition", command.grip_data.jaw.teach_pos)
+   status = eki_getint("AIP2_EKI", "RobotCommand/Grip/Jaw/@ShiftPosition", command.grip_data.jaw.shift_pos)
+   status = eki_getint("AIP2_EKI", "RobotCommand/Grip/Jaw/@DirectionMode", command.grip_data.jaw.direction_mode)
+   
+   status = eki_getint("AIP2_EKI", "RobotCommand/Grip/Vacuum/@Suction", command.grip_data.vacuum.suction)
+   status = eki_getreal("AIP2_EKI", "RobotCommand/Grip/Vacuum/@Cylinder", command.grip_data.vacuum.cylinder)
+   
+   return true
+endfct
+
+
+deffct int do_move(step :in, move_data :in)
+   decl int step
+   decl move_type move_data
+   
+   decl int error_code
+   
+   error_code = 0
+   
+   if move_data.base_index > 0 then
+      $base = base_data[move_data.base_index]
+   else 
+      $base = $nullframe
+   endif
+
+   if move_data.tool_index > 0 then
+      $tool = tool_data[move_data.tool_index]
+   else 
+      $tool = $nullframe
+   endif
+   
+   ;04.07.2019
+   $out[1] = step == 13
+   
+   if step == 15 then
+      if $in[100] then
+         move_data.cartesian.a = move_data.cartesian.a + 90
+         move_data.cartesian.c = move_data.cartesian.c - 45
+      endif
+      if $in[101] then
+         move_data.cartesian.a = move_data.cartesian.a - 90
+         move_data.cartesian.c = move_data.cartesian.c + 45
+      endif
+   endif
+ 
+   switch (move_data.mode)
+      case 1
+         ptp move_data.joint c_ptp
+      case 2
+         ptp move_data.cartesian c_ptp
+      case 3
+         lin move_data.cartesian
+      case 4
+         ptp teached_points[move_data.teached] c_ptp
+      ;case 5
+      ;   lin teached_points[move_data.teached]
+   endswitch
+   
+   return error_code
+endfct
+
+
+deffct int do_grip(grip_data :in)
+   decl grip_type grip_data
+   
+   decl int error_code
+   
+   error_code = 0
+   
+   if (grip_data.mode == 1) or (grip_data.mode == 3) then
+      $out[1230] = (grip_data.vacuum.suction == 1)
+      $out[1231] = (grip_data.vacuum.suction == 1)
+      
+      $out[1228] = (grip_data.vacuum.cylinder > 0)
+      $out[1229] = (grip_data.vacuum.cylinder == 0)
+      
+      if $out[1230] then
+         wait for ($in[1230] or $in[1231])
+      endif
+      
+      if $out[1228] then
+         wait sec 1
+         wait for $in[1227]
+      else
+         wait for $in[1229]
+      endif
+   endif
+   
+   if (grip_data.mode == 1) or (grip_data.mode == 2) then
+      ControlWord = 0
+   
+      if $in[1112] == false then
+         DeviceMode = 80
+         WorkpieceNo = 0
+         
+         ;Positionen in mm = Wert[mm] * 100
+         PositionTolerance = grip_data.jaw.tolerance  ;50 = 0,5mm
+         GripForce = grip_data.jaw.force              ;1
+         DriveVelocity = grip_data.jaw.velocity       ;100
+         BasePosition = grip_data.jaw.base_pos        ;75
+         ShiftPosition = grip_data.jaw.shift_pos      ;500
+         WorkPosition = grip_data.jaw.work_pos        ;4875
+         TeachPosition = grip_data.jaw.teach_pos      ;3000
+         
+         ControlWord = 1
+      endif
+   
+      wait for $in[1112] == true
+      ControlWord = 0
+      wait for $in[1112] == false
+      
+      $out[1108] = grip_data.jaw.direction_mode == 0
+      $out[1109] = grip_data.jaw.direction_mode == 1
+      
+      
+      if $OUT[1109] == TRUE then 
+         wait SEC 3
+      endif
+      
+   endif
+   
+   ;loop
+   ;   int jaw_pos = ....
+   ;   if jaw_pos - target_pos < 5 then
+   ;      break
+   ;   endif
+   ;endloop
+   
+   return error_code
+endfct

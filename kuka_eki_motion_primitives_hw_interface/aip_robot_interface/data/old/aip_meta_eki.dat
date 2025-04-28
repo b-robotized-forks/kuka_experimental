@@ -1,0 +1,7 @@
+&ACCESS RVP
+&REL 48
+defdat aip2_eki
+   ext bas(bas_command :in, real :in)
+   struc meta_type real velocity_override, int abort_commands
+   decl meta_type current_meta
+enddat

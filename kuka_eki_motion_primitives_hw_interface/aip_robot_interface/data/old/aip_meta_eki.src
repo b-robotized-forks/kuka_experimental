@@ -1,0 +1,185 @@
+&ACCESS RVP
+&REL 48
+def aip2_eki()
+   ; Author: Moritz Weisenboehler (HsKA) <moritz.weisenboehler@hs-karlsruhe.de>
+   
+   ;Declarations
+   decl int index
+   
+   ; Initialization
+   bas(#initmov, 0)
+   init_interface()
+  current_command = null_command()
+
+   index = 0
+   
+   for index = 1 to 10
+      teached_points[index] = { a1 0, a2 0, a3 0, a4 0, a5 0, a6 0 }
+   endfor
+   
+   ; Move to current position
+   ptp $axis_act_meas
+   
+   ; Communication process
+   loop
+      if get_command(current_command) then
+         switch current_command.type
+            case 1
+               check_error(do_move(current_command.step, current_command.move_data))
+            case 2
+               check_error(do_grip(current_command.grip_data))
+         endswitch
+      endif
+   endloop
+end
+
+deffct command_type null_command()
+   decl axis joint
+   decl frame cartesian
+   decl move_type move_data
+   decl vacuum_type vacuum
+   decl jaw_type jaw
+   decl grip_type grip_data
+   decl command_type command
+   
+   move_data = { mode 0, base_index 0, tool_index 0, wait_for_gripper 0, teached 0, velocity 0 }
+   joint = { a1 0, a2 0, a3 0, a4 0, a5 0, a6 0}
+   move_data.joint = joint
+   cartesian = { x 0, y 0, z 0, a 0, b 0, c 0 }
+   move_data.cartesian = cartesian
+   
+   grip_data.mode = 0
+   jaw = { tolerance 0, velocity 0, force 0, base_pos 0, work_pos 0, teach_pos 0, shift_pos 0, direction_mode 0 }
+   grip_data.jaw = jaw
+   vacuum = { suction 0, cylinder 0 }
+   grip_data.vacuum = vacuum
+   
+   command = { id 0, step 0, type 0}
+   command.move_data = move_data
+   command.grip_data = grip_data
+   
+   return command
+endfct
+
+def init_interface()
+   decl eki_status status
+   
+   global interrupt decl 15 when $flag[1] == false do reset_interface()
+   interrupt on 15
+   
+   global interrupt decl 16 when $timer_flag[1] == true do send_status()
+   interrupt on 16
+   
+   wait sec 0.012          ; Wait for next interpolation cycle
+   $timer[1] = -200        ; Time in [ms] before first interrupt call
+   $timer_stop[1] = false  ; Start timer 1
+   
+   status = eki_init("AIP2_META_EKI")
+   status = eki_open("AIP2_META_EKI")
+end
+
+
+def reset_interface()
+   decl eki_status status
+
+   status = eki_clear("AIP2_META_EKI")
+   status = eki_init("AIP2_META_EKI")
+   status = eki_open("AIP2_META_EKI")
+end
+
+
+deffct bool has_connection()
+   return $flag[1]
+endfct
+
+
+def send_status()
+   decl eki_status status
+   
+   if has_connection() then
+      ; Command id
+      status = eki_setint("AIP2_META_EKI", "RobotState/Meta/@VelocityOverride", 0)
+      status = eki_setint("AIP2_META_EKI", "RobotState/Meta/@CommandEmpty", 0)
+      
+      if has_connection() then
+         status = eki_send("AIP2_META_EKI", "RobotState")
+      endif
+   endif
+   
+   ; Set timer for next interrupt [ms]
+   $timer[1] = -10  ; ~10 ms for above send + 10 ms interrupt timer -> ~50 Hz state transmission
+end
+
+
+def check_error(error_code :in)
+   decl int error_code
+   
+   decl char error_message[64]
+   decl int index
+   
+   index = 0
+   
+   for index = 1 to 64
+      error_message[index] = " "
+   endfor
+   
+   if error_code > 0 then
+      switch error_code
+         case 1
+            error_message[] = "Fehler 1"
+         default
+            error_message[] = "Unbekannter Fehler"
+      endswitch
+      
+      send_error(error_code, error_message[])
+     endif
+end
+
+def send_error(error_code :in, error_message[] :in)
+   decl int error_code
+   decl char error_message[]
+   
+   decl eki_status status
+   
+   if has_connection() then
+      status = eki_setint("AIP2_META_EKI", "RobotState/Error/@Code", error_code)
+      status = eki_setstring("AIP2_META_EKI", "RobotState/Error/@Message", error_message[])
+   endif
+end
+
+
+deffct bool has_meta()
+   decl eki_status status
+   
+   if not $flag[1] then
+      return false
+   endif
+
+   status = eki_checkbuffer("AIP2_EKI", "MetaCommand/@VelocityOverride")
+   
+   return status.buff > 0
+endfct
+
+
+deffct bool get_meta(meta :out)
+   decl meta_type meta
+   
+   decl eki_status status
+   
+   if not has_meta() then
+     return false
+   endif
+   
+   status = eki_getreal("AIP2_META_EKI", "MetaCommand/@VelocityOverride", meta.velocity_override)
+   status = eki_getint("AIP2_META_EKI", "MetaCommand/@AbortCommands", meta.abort_commands)
+   
+   return true
+endfct
+
+
+def update_meta(meta :in)
+   decl meta_type meta
+
+   ; Update velocity_override
+   ; Update abort_commands_flag
+end
