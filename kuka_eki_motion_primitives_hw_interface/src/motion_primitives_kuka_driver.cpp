@@ -197,7 +197,9 @@ hardware_interface::return_type MotionPrimitivesKukaDriver::read(
   hw_joint_states_[4] = joints.a5;
   hw_joint_states_[5] = joints.a6;
 
-  // TODO(mathias31415): Fill execution status and ready_for_new_primitive_ with real data
+  // Check execution status
+  bool is_executing = robot_.is_active();
+  current_execution_status_ = is_executing ? ExecutionState::EXECUTING : ExecutionState::IDLE;
   hw_mo_prim_states_[0] = current_execution_status_;    // 0=idle, 1=executing, 2=success, 3=error
   hw_mo_prim_states_[1] = static_cast<double>(ready_for_new_primitive_);
 
@@ -235,7 +237,7 @@ hardware_interface::return_type MotionPrimitivesKukaDriver::write(
         RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Received MOTION_SEQUENCE_END: executing motion sequence ...");
         build_motion_sequence_ = false;
         bool success = robot_.run();
-        current_execution_status_ = success ? ExecutionState::EXECUTING : ExecutionState::ERROR;  // TODO(mathias31415): Its not the execution status, but the send status?
+        // current_execution_status_ = success ? ExecutionState::EXECUTING : ExecutionState::ERROR;  // TODO(mathias31415): Its not the execution status, but the send status?
         RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "%s motion sequence to robot.", success? "Sent" : "Failed to send");
         reset_command_interfaces();
         if(success){
@@ -253,7 +255,7 @@ hardware_interface::return_type MotionPrimitivesKukaDriver::write(
         reset_command_interfaces();
         if(!build_motion_sequence_) { // send single command imimediately
           bool success = robot_.run();
-          current_execution_status_ = success ? ExecutionState::EXECUTING : ExecutionState::ERROR;  // TODO(mathias31415): Its not the execution status, but the send status?
+          // current_execution_status_ = success ? ExecutionState::EXECUTING : ExecutionState::ERROR;  // TODO(mathias31415): Its not the execution status, but the send status?
           RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "%s LINEAR_JOINT command to robot.", success? "Sent" : "Failed to send");
           if(success){
             ready_for_new_primitive_ = true; // set to true to allow sending new commands
@@ -273,7 +275,7 @@ hardware_interface::return_type MotionPrimitivesKukaDriver::write(
         reset_command_interfaces();
         if(!build_motion_sequence_) { // send single command imimediately
           bool success = robot_.run();
-          current_execution_status_ = success ? ExecutionState::EXECUTING : ExecutionState::ERROR;  // TODO(mathias31415): Its not the execution status, but the send status?
+          // current_execution_status_ = success ? ExecutionState::EXECUTING : ExecutionState::ERROR;  // TODO(mathias31415): Its not the execution status, but the send status?
           RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "%s LINEAR_CARTESIAN command to robot.", success? "Sent" : "Failed to send");
           if(success){
             ready_for_new_primitive_ = true; // set to true to allow sending new commands
