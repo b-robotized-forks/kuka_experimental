@@ -237,10 +237,19 @@ hardware_interface::return_type MotionPrimitivesKukaDriver::write(
           }
         }
         current_execution_status_ = ExecutionState::EXECUTING;
-        std::vector<double> joint_positions = {hw_mo_prim_commands_[1], hw_mo_prim_commands_[2], hw_mo_prim_commands_[3], hw_mo_prim_commands_[4], hw_mo_prim_commands_[5], hw_mo_prim_commands_[6]};
+        // std::vector<double> joint_positions = {hw_mo_prim_commands_[1], hw_mo_prim_commands_[2], hw_mo_prim_commands_[3], hw_mo_prim_commands_[4], hw_mo_prim_commands_[5], hw_mo_prim_commands_[6]};
+        constexpr double rad_to_deg = 180.0 / M_PI;
+        std::vector<double> joint_positions = {     // get joint positions in degrees
+            hw_mo_prim_commands_[1] * rad_to_deg,
+            hw_mo_prim_commands_[2] * rad_to_deg,
+            hw_mo_prim_commands_[3] * rad_to_deg,
+            hw_mo_prim_commands_[4] * rad_to_deg,
+            hw_mo_prim_commands_[5] * rad_to_deg,
+            hw_mo_prim_commands_[6] * rad_to_deg};
         RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), 
               "Executing moveJ with joint positions: [%f, %f, %f, %f, %f, %f]", 
               joint_positions[0], joint_positions[1], joint_positions[2], joint_positions[3], joint_positions[4], joint_positions[5]);
+        
         rbt::MoveCommand command;
         command = rbt::MoveCommand(rbt::PoseJoints(joint_positions[0], joint_positions[1], joint_positions[2], joint_positions[3], joint_positions[4], joint_positions[5], 0.0));   // last 0.0 for not used A7
         robot_.perform(command);
