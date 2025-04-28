@@ -6,7 +6,7 @@ file (GLOB SOURCES_EVENTS src/events/*.cpp)
 file (GLOB SOURCES_TYPES src/types/*.cpp)
 file (GLOB SOURCES_TOOLS src/tools/*.cpp)
 
-add_library(common SHARED
+add_library(eki_common SHARED
   ${SOURCES}
   ${SOURCES_CORE}
   ${SOURCES_EVENTS}
@@ -14,12 +14,12 @@ add_library(common SHARED
   ${SOURCES_TOOLS}
 )
 
-target_include_directories(common PUBLIC
+target_include_directories(eki_common PUBLIC
   include
 )
 
-find_package(Threads)
+find_package(Threads REQUIRED)
 
-target_link_libraries(common PUBLIC
+target_link_libraries(eki_common PUBLIC
   ${CMAKE_THREAD_LIBS_INIT}
 )

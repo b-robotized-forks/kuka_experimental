@@ -15,11 +15,11 @@ find_package(rclpy REQUIRED)
 find_package(ament_cmake_gmock REQUIRED)
 find_package(ros2_control_test_assets REQUIRED)
 find_package(motion_primitives_forward_controller REQUIRED)
-find_package(kuka_eki_hw_interface REQUIRED)
-find_package(robot_interface_eki REQUIRED)
 find_package(angles REQUIRED)
 find_package(tinyxml_vendor REQUIRED)
 find_package(TinyXML REQUIRED)
+
+add_subdirectory(eki_communication)
 
 add_library(
   kuka_eki_motion_primitives_hw_interface
@@ -27,25 +27,28 @@ add_library(
   src/motion_primitives_kuka_driver.cpp
 )
 
-# TODO(mathias31415): change/ improve include paths/ structure
 target_include_directories(
   kuka_eki_motion_primitives_hw_interface
   PUBLIC
-  ${CMAKE_CURRENT_SOURCE_DIR}/include
-  ${CMAKE_CURRENT_SOURCE_DIR}/../../robot_interface_eki/aip_robot_interface/include
-  ${CMAKE_CURRENT_SOURCE_DIR}/../../robot_interface_eki/aip_robot_interface/aip_common/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/eki_communication/include
 )
+
+target_link_libraries(
+  kuka_eki_motion_primitives_hw_interface
+  eki_communication
+)
+
 ament_target_dependencies(
   kuka_eki_motion_primitives_hw_interface
   hardware_interface
   rclcpp
   rclcpp_lifecycle
   motion_primitives_forward_controller
-  kuka_eki_hw_interface
-  robot_interface_eki
   TinyXML
   angles
 )
+
 # prevent pluginlib from using boost
 target_compile_definitions(kuka_eki_motion_primitives_hw_interface PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 
