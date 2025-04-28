@@ -1,7 +1,7 @@
 #pragma once
 
-#include <eki_rbt/xml/XmlWriter.h>
-#include <eki_rbt/core/Types.h>
+#include <eki_communication/xml/XmlWriter.h>
+#include <eki_communication/core/Types.h>
 
 namespace rbt
 {
