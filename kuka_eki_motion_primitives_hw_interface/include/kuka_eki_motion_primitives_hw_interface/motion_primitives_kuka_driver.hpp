@@ -31,7 +31,7 @@
 #include "motion_primitives_forward_controller/execution_state.hpp"
 
 // #include "kuka_eki_hw_interface/eki_helper.hpp"
-#include "aip/rbt/Robot.h"
+#include "eki_communication/Robot.h"
 
 
 namespace kuka_eki_motion_primitives_hw_interface
