@@ -94,6 +94,9 @@ private:
   // bool eki_write_command(const std::vector<double> &joint_position);
 
   rbt::Robot robot_;
+  std::atomic_bool build_motion_sequence_{false};   // flag to put all following primitives into a motion sequence instead of sending single primitives
+  bool add_linear_joint_cmd();
+  void reset_command_interfaces();
 };
 
 }  // namespace kuka_eki_motion_primitives_hw_interface

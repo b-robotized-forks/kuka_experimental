@@ -220,47 +220,30 @@ hardware_interface::return_type MotionPrimitivesKukaDriver::write(
         // TODO(mathias31415): Handle STOP_MOTION command
 
         current_execution_status_ = ExecutionState::IDLE;
-        // Reset command interfaces
-        std::fill(hw_mo_prim_commands_.begin(), hw_mo_prim_commands_.end(), std::numeric_limits<double>::quiet_NaN());
+        reset_command_interfaces();
         ready_for_new_primitive_ = true; // TODO(mathias31415): Only for testing --> adjust later
         break;
       }
       case MotionType::LINEAR_JOINT: { // MoveJ/ PTP
         RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "LINEAR_JOINT command received");
-
-        // Check if joint positions are valid
-        for (int i = 1; i <= 6; ++i) {
-          if (std::isnan(hw_mo_prim_commands_[i])) {
-              RCLCPP_ERROR(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Invalid motion command: joint positions contain NaN values");
-              current_execution_status_ = ExecutionState::ERROR;
-              return hardware_interface::return_type::OK;  // TODO(mathias31415): OK or ERROR?
-          }
+        if(!add_linear_joint_cmd()) {
+          RCLCPP_ERROR(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Failed to add linear joint command");
+          current_execution_status_ = ExecutionState::ERROR;
+          return hardware_interface::return_type::ERROR;
         }
-        current_execution_status_ = ExecutionState::EXECUTING;
-        // std::vector<double> joint_positions = {hw_mo_prim_commands_[1], hw_mo_prim_commands_[2], hw_mo_prim_commands_[3], hw_mo_prim_commands_[4], hw_mo_prim_commands_[5], hw_mo_prim_commands_[6]};
-        constexpr double rad_to_deg = 180.0 / M_PI;
-        std::vector<double> joint_positions = {     // get joint positions in degrees
-            hw_mo_prim_commands_[1] * rad_to_deg,
-            hw_mo_prim_commands_[2] * rad_to_deg,
-            hw_mo_prim_commands_[3] * rad_to_deg,
-            hw_mo_prim_commands_[4] * rad_to_deg,
-            hw_mo_prim_commands_[5] * rad_to_deg,
-            hw_mo_prim_commands_[6] * rad_to_deg};
-        RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), 
-              "Executing moveJ with joint positions: [%f, %f, %f, %f, %f, %f]", 
-              joint_positions[0], joint_positions[1], joint_positions[2], joint_positions[3], joint_positions[4], joint_positions[5]);
-        
-        rbt::MoveCommand command;
-        command = rbt::MoveCommand(rbt::PoseJoints(joint_positions[0], joint_positions[1], joint_positions[2], joint_positions[3], joint_positions[4], joint_positions[5], 0.0));   // last 0.0 for not used A7
-        robot_.perform(command);
-        bool success = robot_.run(); // TODO(mathias31415): Check if single primitive or sequence
-        current_execution_status_ = success ? ExecutionState::SUCCESS : ExecutionState::ERROR;  // TODO(mathias31415): Its not the execution status, but the send status?
-        RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "After executing moveJ: current_execution_status_ = %d", current_execution_status_.load());
-        if(success){
+        reset_command_interfaces();
+        if(!build_motion_sequence_) { // send single command imimediately
+          bool success = robot_.run();
+          current_execution_status_ = success ? ExecutionState::EXECUTING : ExecutionState::ERROR;  // TODO(mathias31415): Its not the execution status, but the send status?
+          RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "%s PTP command to robot.", success? "Sent" : "Failed to send");
+          if(success){
+            ready_for_new_primitive_ = true; // set to true to allow sending new commands
+          }
+        } else {
           ready_for_new_primitive_ = true; // set to true to allow sending new commands
         }
-        // Reset command interfaces
-        std::fill(hw_mo_prim_commands_.begin(), hw_mo_prim_commands_.end(), std::numeric_limits<double>::quiet_NaN());
+        
+        
         break;
       }
       case MotionType::LINEAR_CARTESIAN: { // MoveL/ LIN
@@ -268,8 +251,7 @@ hardware_interface::return_type MotionPrimitivesKukaDriver::write(
         // TODO(mathias31415): Handle LINEAR_CARTESIAN command
 
         current_execution_status_ = ExecutionState::IDLE;
-        // Reset command interfaces
-        std::fill(hw_mo_prim_commands_.begin(), hw_mo_prim_commands_.end(), std::numeric_limits<double>::quiet_NaN());
+        reset_command_interfaces();
         ready_for_new_primitive_ = true; // TODO(mathias31415): Only for testing --> adjust later
         break;
       }
@@ -277,8 +259,7 @@ hardware_interface::return_type MotionPrimitivesKukaDriver::write(
         RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "CIRCULAR_CARTESIAN command received (handeling not implemented yet)");
         // TODO(mathias31415): Handle CIRCULAR_CARTESIAN command
 
-        // Reset command interfaces
-        std::fill(hw_mo_prim_commands_.begin(), hw_mo_prim_commands_.end(), std::numeric_limits<double>::quiet_NaN());
+        reset_command_interfaces();
         ready_for_new_primitive_ = true; // TODO(mathias31415): Only for testing --> adjust later
         break;
       }
@@ -289,46 +270,39 @@ hardware_interface::return_type MotionPrimitivesKukaDriver::write(
       }
     }
   } 
-
-  // TODO(mathias31415): Keep alive cmd with current joint state only neccesary for eki simulator, causes problem with real robot --> fix simulator instead
-
-  // else {
-  //   // Send "keep alive" msg to the robot if no new command is received
-  //   // TODO(mathias31415): Check if this is needed? Keep alive without data? No keep alive at all? (eki simulator needs new data to prevent timeout)
-  //   // RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "No new command received, sending keep alive msg to robot");
-  //   if (eki_cmd_buff_len_ < eki_max_cmd_buff_len_)
-  //   {
-      // eki_write_command(hw_joint_states_);  // send current joint positions back to the robot
-  //     // TODO(mathias31415): Check return value of eki_write_command
-  //   }
-  // }  
   return hardware_interface::return_type::OK;
 }
 
-// bool MotionPrimitivesKukaDriver::eki_write_command(const std::vector<double> &joint_position_command)
-// {
-//   TiXmlDocument xml_out;
-//   TiXmlElement* robot_command = new TiXmlElement("RobotCommand");
-//   TiXmlElement* pos = new TiXmlElement("Pos");
-//   TiXmlText* empty_text = new TiXmlText("");
-//   robot_command->LinkEndChild(pos);
-//   pos->LinkEndChild(empty_text);   // force <Pos></Pos> format (vs <Pos />)
-//   char axis_name[] = "A1";
-//   for (long unsigned int i = 0; i < hw_joint_states_.size(); ++i)
-//   {
-//       pos->SetAttribute(axis_name, std::to_string(angles::to_degrees(joint_position_command[i])).c_str());
-//       axis_name[1]++;
-//   }
-//   xml_out.LinkEndChild(robot_command);
-//   TiXmlPrinter xml_printer;
-//   xml_printer.SetStreamPrinting();  // no linebreaks
-//   xml_out.Accept(&xml_printer);
+bool MotionPrimitivesKukaDriver::add_linear_joint_cmd()
+{
+  // Check if joint positions are valid
+  for (int i = 1; i <= 6; ++i) {
+    if (std::isnan(hw_mo_prim_commands_[i])) {
+        RCLCPP_ERROR(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Invalid motion command: joint positions contain NaN values");
+        return false;
+    }
+  }
+  constexpr double rad_to_deg = 180.0 / M_PI;
+  std::vector<double> joint_positions = {     // get joint positions in degrees
+      hw_mo_prim_commands_[1] * rad_to_deg,
+      hw_mo_prim_commands_[2] * rad_to_deg,
+      hw_mo_prim_commands_[3] * rad_to_deg,
+      hw_mo_prim_commands_[4] * rad_to_deg,
+      hw_mo_prim_commands_[5] * rad_to_deg,
+      hw_mo_prim_commands_[6] * rad_to_deg};
+  RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), 
+        "Adding PTP with joint positions: [%f, %f, %f, %f, %f, %f]", 
+        joint_positions[0], joint_positions[1], joint_positions[2], joint_positions[3], joint_positions[4], joint_positions[5]);
+  rbt::MoveCommand command;
+  command = rbt::MoveCommand(rbt::PoseJoints(joint_positions[0], joint_positions[1], joint_positions[2], joint_positions[3], joint_positions[4], joint_positions[5], 0.0));   // last 0.0 for not used A7
+  robot_.perform(command);
+  return true;
+}
 
-//   eki_server_socket_->send_to(boost::asio::buffer(xml_printer.CStr(), xml_printer.Size()),
-//                                         eki_server_endpoint_);
-//   RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Sent command: %s", xml_printer.CStr());
-//   return true;
-// }
+void MotionPrimitivesKukaDriver::reset_command_interfaces()
+{
+  std::fill(hw_mo_prim_commands_.begin(), hw_mo_prim_commands_.end(), std::numeric_limits<double>::quiet_NaN());
+}
 
 }  // namespace kuka_eki_motion_primitives_hw_interface
 
