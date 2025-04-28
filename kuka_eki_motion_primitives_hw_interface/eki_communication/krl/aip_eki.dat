@@ -9,4 +9,19 @@ defdat aip_eki
    struc command_type int id, step, type, move_type move_data, grip_type grip_data
    decl command_type current_command
    decl axis teached_points[10]
+
+   ; mathias31415 added missing declerations:
+   decl int CURRENT_COMMAND_ID
+   decl int ControlWord
+   decl int DeviceMode
+   decl int ActualPosition
+   decl int StatusWord
+   decl int WorkpieceNo
+   decl int PositionTolerance
+   decl int GripForce
+   decl int DriveVelocity
+   decl int BasePosition
+   decl int ShiftPosition
+   decl int WorkPosition
+   decl int TeachPosition
 enddat
