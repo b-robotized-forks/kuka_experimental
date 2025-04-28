@@ -1,0 +1,6 @@
+&ACCESS RVO
+&REL 48
+defdat aip_meta_eki
+   struc meta_type real velocity_override, int abort_commands
+   decl meta_type current_meta
+enddat
