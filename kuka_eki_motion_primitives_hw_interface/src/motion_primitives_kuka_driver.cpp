@@ -168,15 +168,6 @@ hardware_interface::CallbackReturn MotionPrimitivesKukaDriver::on_activate(
   //   }
   // };
 
-  // std::vector<double> joint_position;
-  // std::vector<double> joint_velocity;
-  // std::vector<double> joint_effort;
-  // joint_position.resize(hw_joint_states_.size());
-  // joint_velocity.resize(hw_joint_states_.size());
-  // joint_effort.resize(hw_joint_states_.size());
-// TODO(mathias31415): Read jointstates from robot
-  // hw_joint_states_ = joint_position;
-
 
 
   RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "System Successfully activated!");
@@ -196,14 +187,15 @@ hardware_interface::CallbackReturn MotionPrimitivesKukaDriver::on_deactivate(
 hardware_interface::return_type MotionPrimitivesKukaDriver::read(
   const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/)
 {
-  // std::vector<double> joint_position;
-  // std::vector<double> joint_velocity;
-  // std::vector<double> joint_effort;
-  // joint_position.resize(hw_joint_states_.size());
-  // joint_velocity.resize(hw_joint_states_.size());
-  // joint_effort.resize(hw_joint_states_.size());
-// TODO(mathias31415): Read jointstates from robot
-  // hw_joint_states_ = joint_position;
+  rbt::RobotState robot_state = robot_.get_state();
+  const rbt::PoseJoints& joints = robot_state.position_joints;
+
+  hw_joint_states_[0] = joints.a1;
+  hw_joint_states_[1] = joints.a2;
+  hw_joint_states_[2] = joints.a3;
+  hw_joint_states_[3] = joints.a4;
+  hw_joint_states_[4] = joints.a5;
+  hw_joint_states_[5] = joints.a6;
 
   // TODO(mathias31415): Fill execution status and ready_for_new_primitive_ with real data
   hw_mo_prim_states_[0] = current_execution_status_;    // 0=idle, 1=executing, 2=success, 3=error
