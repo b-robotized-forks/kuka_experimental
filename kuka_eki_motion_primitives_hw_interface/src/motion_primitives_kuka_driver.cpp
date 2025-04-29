@@ -189,13 +189,13 @@ hardware_interface::return_type MotionPrimitivesKukaDriver::read(
 {
   rbt::RobotState robot_state = robot_.get_state();
   const rbt::PoseJoints& joints = robot_state.position_joints;
-
-  hw_joint_states_[0] = joints.a1;
-  hw_joint_states_[1] = joints.a2;
-  hw_joint_states_[2] = joints.a3;
-  hw_joint_states_[3] = joints.a4;
-  hw_joint_states_[4] = joints.a5;
-  hw_joint_states_[5] = joints.a6;
+  constexpr double deg_to_rad = M_PI / 180.0;
+  hw_joint_states_[0] = joints.a1 * deg_to_rad;
+  hw_joint_states_[1] = joints.a2 * deg_to_rad;
+  hw_joint_states_[2] = joints.a3 * deg_to_rad;
+  hw_joint_states_[3] = joints.a4 * deg_to_rad;
+  hw_joint_states_[4] = joints.a5 * deg_to_rad;
+  hw_joint_states_[5] = joints.a6 * deg_to_rad;
 
   // Check execution status
   bool is_executing = robot_.is_active();
