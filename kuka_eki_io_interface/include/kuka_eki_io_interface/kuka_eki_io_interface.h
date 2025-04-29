@@ -1,50 +1,72 @@
-// Copyright (c) 2021 Gergely Sóti
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
-#ifndef KUKA_EKI_IO_INTERFACE
-#define KUKA_EKI_IO_INTERFACE
+#ifndef ROS2_CONTROL_KUKA_EKI_IO_HPP_
+#define ROS2_CONTROL_KUKA_EKI_IO_HPP_
 
 #include <vector>
 #include <string>
 
 #include <boost/asio.hpp>
 
+// ros2_control hardware_interface
+#include "hardware_interface/hardware_info.hpp"
+#include "hardware_interface/system_interface.hpp"
+#include "hardware_interface/types/hardware_interface_return_values.hpp"
+
+// ROS
+#include "rclcpp/macros.hpp"
+#include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
+#include "rclcpp_lifecycle/state.hpp"
+
 namespace kuka_eki_io_interface
 {
-    class KukaEkiIOInterface
+    class KukaEkiIoInterface : public hardware_interface::SystemInterface
     {
+        public:
+            RCLCPP_SHARED_PTR_DEFINITIONS(KukaEkiIoInterface)
+            virtual ~KukaEkiIoInterface();
+
+            hardware_interface::CallbackReturn on_init(const hardware_interface::HardwareInfo & system_info) final;
+
+            std::vector<hardware_interface::StateInterface> export_state_interfaces() final;
+
+            std::vector<hardware_interface::CommandInterface> export_command_interfaces() final;
+
+            hardware_interface::CallbackReturn on_activate(const rclcpp_lifecycle::State & previous_state) final;
+            hardware_interface::CallbackReturn on_deactivate(const rclcpp_lifecycle::State & previous_state) final;
+
+            hardware_interface::return_type read(const rclcpp::Time & time, const rclcpp::Duration & period) final;
+            hardware_interface::return_type write(const rclcpp::Time & time, const rclcpp::Duration & period) final;
+
+            bool eki_read_state(std::vector<bool> & io_states, std::vector<int> & io_pins, std::vector<int> & io_types, int & cmd_buff_len);
+            bool eki_write_command(const std::vector<int> & io_pins, const std::vector<int> & io_modes,const std::vector<bool> & target_ios);
+
+            
+             KukaEkiIoInterface(const std::string & eki_server_address, const std::string & eki_server_port, int n_io);
         private:
+            int n_io_ = 8;
+
+            // Store the command for the simulated robot
+            std::vector<double> hw_commands_;
+            std::vector<double> hw_states_;
+
             std::string eki_server_address_;
             std::string eki_server_port_;
+
             int eki_cmd_buff_len_;
-            int eki_max_cmd_buff_len_ = 5;
-            int n_io_;
+            int eki_max_cmd_buff_len_ = 5; // by default, limit command buffer to 5 (size of advance run in KRL)
 
-            int eki_read_state_timeout_ = 5;  // [s]; settable by parameter (default = 5)
-            static void eki_handle_receive(const boost::system::error_code &ec, size_t length,
-                                         boost::system::error_code* out_ec, size_t* out_length);
+            // EKI socket read/write
+            int eki_read_state_timeout_ = 100;  // [s]; settable by parameter (default = 5)
             boost::asio::io_service ios_;
-            boost::asio::deadline_timer deadline_;
+            std::unique_ptr<boost::asio::deadline_timer> deadline_;
             boost::asio::ip::udp::endpoint eki_server_endpoint_;
-            boost::asio::ip::udp::socket eki_server_socket_;
-            void eki_check_read_state_deadline();
+            std::unique_ptr<boost::asio::ip::udp::socket> eki_server_socket_;
 
-        public:
-            KukaEkiIOInterface(const std::string& eki_server_address, const std::string& eki_server_port, int n_io);
-            ~KukaEkiIOInterface(){};
-            bool eki_read_state(std::vector<bool> &io_states, std::vector<int> &io_pins, std::vector<int> &io_types, int &cmd_buff_len);
-            bool eki_write_command(const std::vector<int> &io_pins, const std::vector<int> &io_modes, const std::vector<bool> &target_ios);
+            void eki_check_read_state_deadline();
+            static void eki_handle_receive(const boost::system::error_code & ec, size_t length, boost::system::error_code * out_ec, size_t * out_length);
+            bool eki_read_state(std::vector<double> & joint_position, std::vector<double> & joint_velocity, std::vector<double> & joint_effort, int & cmd_buff_len);
+            bool eki_write_command(const std::vector<double> & joint_position);
+
     };
-}
-#endif
+} // namespace kuka_eki_io_interface
+
+#endif // ROS2_CONTROL_KUKA_EKI_IO_HPP_

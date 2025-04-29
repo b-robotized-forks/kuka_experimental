@@ -1,23 +1,12 @@
-// Copyright (c) 2021 Gergely Sóti
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 #include <boost/array.hpp>
 #include <boost/bind.hpp>
 #include <boost/date_time/posix_time/posix_time_types.hpp>
 #include <tinyxml.h>
 
 #include <kuka_eki_io_interface/kuka_eki_io_interface.h>
+
+// TODOs
+// Readability -> "ec" to "errorcode".
 
 namespace kuka_eki_io_interface
 {
@@ -55,8 +44,10 @@ namespace kuka_eki_io_interface
 //        }
     }
 //    KukaEkiIOInterface::~KukaEkiIOInterface() {}
+    
 
-    void KukaEkiIOInterface::eki_check_read_state_deadline()
+    // PRIVATE // PRIVATE // PRIVATE // PRIVATE // PRIVATE // PRIVATE
+    void KukaEkiIoInterface::eki_check_read_state_deadline()
     {
         // Check if deadline has already passed
         if (deadline_.expires_at() <= boost::asio::deadline_timer::traits_type::now())
@@ -65,28 +56,36 @@ namespace kuka_eki_io_interface
             deadline_.expires_at(boost::posix_time::pos_infin);
         }
         // Sleep until deadline exceeded
-        deadline_.async_wait(boost::bind(&KukaEkiIOInterface::eki_check_read_state_deadline, this));
+        deadline_.async_wait(boost::bind(&KukaEkiIoInterface::eki_check_read_state_deadline, this));
     }
 
-    bool KukaEkiIOInterface::eki_read_state(std::vector<bool> &io_states, std::vector<int> &io_pins, std::vector<int> &io_types, int &cmd_buff_len)
+    void KukaEkiIoInterface::eki_handle_receive(const boost::system::error_code & ec, size_t length, boost::system::error_code * out_ec, size_t * out_length)
+    {
+        *out_ec = ec;
+        *out_length = length;
+    }
+
+    bool KukaEkiIoInterface::eki_read_state(std::vector<bool> &io_states, std::vector<int> &io_pins, std::vector<int> &io_types, int &cmd_buff_len)
     {
         io_states.resize(n_io_);
         io_pins.resize(n_io_);
         io_types.resize(n_io_);
         static boost::array<char, 2048> in_buffer;
-        deadline_.expires_from_now(boost::posix_time::seconds(eki_read_state_timeout_));  // set deadline
+
+        // Based off of Boost documentation example: doc/html/boost_asio/example/timeouts/blocking_udp_client.cpp
+        deadline_ -> expires_from_now(boost::posix_time::seconds(eki_read_state_timeout_));
         boost::system::error_code ec = boost::asio::error::would_block;
         size_t len = 0;
-        eki_server_socket_.async_receive(boost::asio::buffer(in_buffer),
-                               boost::bind(&KukaEkiIOInterface::eki_handle_receive, _1, _2, &ec, &len));
 
-        do {
+        eki_server_socket_.async_receive(boost::asio::buffer(in_buffer), boost::bind(&KukaEkiIoInterface::eki_handle_receive, _1, _2, &ec, &len));
+
+        do
             ios_.run_one();
-            }
         while (ec == boost::asio::error::would_block);
+
         if (ec)
         {
-            std::cout << ec << std::endl;
+            RCLCPP_WARN(rclcpp::get_logger("KukaEkiHardwareInterface"), " communication error code: %s", ec.message().c_str());
             return false;
         }
         if (len == 0)
@@ -160,11 +159,4 @@ namespace kuka_eki_io_interface
                                               eki_server_endpoint_);
         return true;
     }
-
-    void KukaEkiIOInterface::eki_handle_receive(const boost::system::error_code &ec, size_t length,
-                                                  boost::system::error_code* out_ec, size_t* out_length)
-    {
-        *out_ec = ec;
-        *out_length = length;
-    }
-}
+}  // namespace kuka_eki_io_interface
