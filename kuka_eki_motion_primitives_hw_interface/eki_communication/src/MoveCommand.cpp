@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// Authors: Moritz Weisenböhler
+// Authors: Moritz Weisenböhler, Mathias Fuhrer
 
 #include <eki_communication/MoveCommand.h>
 
@@ -34,6 +34,13 @@ rbt::MoveCommand::MoveCommand(PoseCartesian target, bool lin, const rbt::MoveCom
 {
     mode = lin ? MoveMode::CARTESIAN_LIN : MoveMode::CARTESIAN_PTP;
     target_cartesian = target;
+}
+
+rbt::MoveCommand::MoveCommand(PoseCartesian via, PoseCartesian target, const rbt::MoveCommand *base) : MoveCommand(base)
+{
+    mode = MoveMode::CARTESIAN_CIRC;
+    target_cartesian = target;
+    via_cartesian = via;
 }
 
 rbt::MoveCommand::MoveCommand(int target, const rbt::MoveCommand *base) : MoveCommand(base)
@@ -64,6 +71,13 @@ void rbt::MoveCommand::to_xml(XmlWriter &writer) const
                                      {"A", std::to_string(target_cartesian.a)},
                                      {"B", std::to_string(target_cartesian.b)},
                                      {"C", std::to_string(target_cartesian.c)}});
+
+    writer.add_element("Cartesian_Aux", {{"X", std::to_string(via_cartesian.x)},
+                                        {"Y", std::to_string(via_cartesian.y)},
+                                        {"Z", std::to_string(via_cartesian.z)},
+                                        {"A", std::to_string(via_cartesian.a)},
+                                        {"B", std::to_string(via_cartesian.b)},
+                                        {"C", std::to_string(via_cartesian.c)}});
 
     writer.add_element("Teached", {{"PositionIndex", std::to_string(target_teached)}});
 

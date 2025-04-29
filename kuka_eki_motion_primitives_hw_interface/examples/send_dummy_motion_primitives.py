@@ -44,6 +44,10 @@ msg_PTP_2 = MotionPrimitive()
 msg_PTP_2.type = MotionPrimitive.LINEAR_JOINT
 msg_PTP_2.joint_positions = [0.5, -1.57, 1.57, 0.0, 1.57, 0.0]
 
+msg_PTP_3 = MotionPrimitive()
+msg_PTP_3.type = MotionPrimitive.LINEAR_JOINT
+msg_PTP_3.joint_positions = [1.0, -1.57, 1.57, 0.0, 1.57, 0.0]
+
 msg_LIN_1 = MotionPrimitive()
 msg_LIN_1.type = MotionPrimitive.LINEAR_CARTESIAN
 pose_L1 = PoseStamped()
@@ -51,7 +55,7 @@ pose_L1.pose.position.x = 0.280
 pose_L1.pose.position.y = 0.0
 pose_L1.pose.position.z = 0.550
 pose_L1.pose.orientation.x = 0.0
-pose_L1.pose.orientation.y = 0.0 
+pose_L1.pose.orientation.y = 1.0 
 pose_L1.pose.orientation.z = 0.0 
 pose_L1.pose.orientation.w = 0.0 
 msg_LIN_1.poses = [pose_L1]
@@ -63,11 +67,30 @@ pose_L2.pose.position.x = 0.240
 pose_L2.pose.position.y = -0.140
 pose_L2.pose.position.z = 0.550
 pose_L2.pose.orientation.x = 0.0
-pose_L2.pose.orientation.y = 0.0 
+pose_L2.pose.orientation.y = 1.0 
 pose_L2.pose.orientation.z = 0.0 
 pose_L2.pose.orientation.w = 0.0 
 msg_LIN_2.poses = [pose_L2]
 
+msg_moveC_1 = MotionPrimitive()
+msg_moveC_1.type = MotionPrimitive.CIRCULAR_CARTESIAN
+pose_C1_via = PoseStamped()
+pose_C1_via.pose.position.x = 0.340
+pose_C1_via.pose.position.y = 0.0
+pose_C1_via.pose.position.z = 0.570
+pose_C1_via.pose.orientation.x = 0.0
+pose_C1_via.pose.orientation.y = 1.0
+pose_C1_via.pose.orientation.z = 0.0
+pose_C1_via.pose.orientation.w = 0.0
+pose_C1_goal = PoseStamped()
+pose_C1_goal.pose.position.x = 0.255
+pose_C1_goal.pose.position.y = 0.170
+pose_C1_goal.pose.position.z = 0.550
+pose_C1_goal.pose.orientation.x = 0.0
+pose_C1_goal.pose.orientation.y = 1.0
+pose_C1_goal.pose.orientation.z = 0.0
+pose_C1_goal.pose.orientation.w = 0.05
+msg_moveC_1.poses = [pose_C1_goal, pose_C1_via] 
 
 
 
@@ -116,8 +139,13 @@ class MotionPublisher(Node):
 
         self.publisher_ = self.create_publisher(MotionPrimitive, '/motion_primitive_controller/reference', 10)
 
-        # self.messages = [msg_PTP_1, msg_PTP_2, msg_LIN_1, msg_LIN_2]
-        self.messages = [msg_start_sequence, msg_PTP_1, msg_PTP_2, msg_LIN_1, msg_LIN_2, msg_end_sequence]
+        # self.messages = [msg_PTP_1, msg_PTP_2, msg_PTP_3, msg_PTP_2, msg_LIN_1, msg_LIN_2]
+        # self.sequence = [msg_start_sequence, msg_PTP_1, msg_PTP_2, msg_PTP_3, msg_LIN_1, msg_LIN_2, msg_end_sequence]
+        # self.messages = self.sequence * 2  # Repeat the sequence twice
+        # self.messages = [msg_PTP_2, msg_moveC_1]
+        # self.messages = [msg_PTP_2, msg_LIN_test1, msg_LIN_test2]
+        self.messages = [msg_PTP_1, msg_moveC_1]
+
         self.current_index = 0
 
         self.get_logger().info(f"Number of messages: {len(self.messages)}")

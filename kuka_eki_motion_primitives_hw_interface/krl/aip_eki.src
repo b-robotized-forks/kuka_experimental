@@ -2,6 +2,7 @@
 &REL 48
 def aip_eki()
    ; Author: Moritz Weisenboehler (HsKA) <moritz.weisenboehler@hs-karlsruhe.de>
+   ; Modifications: Mathias Fuhrer <mathias.fuhrer@b-robotized.de>
    
    ; Declarations
    decl int index
@@ -51,6 +52,7 @@ end
 deffct command_type null_command()
    decl axis joint
    decl frame cartesian
+   decl frame cartesian_aux ;mathias31415 added for circ
    decl move_type move_data
    decl vacuum_type vacuum
    decl jaw_type jaw
@@ -62,6 +64,8 @@ deffct command_type null_command()
    move_data.joint = joint
    cartesian = { x 0, y 0, z 0, a 0, b 0, c 0 }
    move_data.cartesian = cartesian
+   cartesian_aux = { x 0, y 0, z 0, a 0, b 0, c 0 } ;mathias31415 added for circ
+   move_data.cartesian_aux = cartesian_aux
    
    grip_data.mode = 0
    jaw = { tolerance 0, velocity 0, force 0, base_pos 0, work_pos 0, teach_pos 0, shift_pos 0, direction_mode 0 }
@@ -255,6 +259,14 @@ deffct bool get_command(command :out)
    status = eki_getreal("AIP_EKI", "RobotCommand/Move/Cartesian/@B", command.move_data.cartesian.b)
    status = eki_getreal("AIP_EKI", "RobotCommand/Move/Cartesian/@C", command.move_data.cartesian.c)
    
+   ; mathias31415 added circ
+   status = eki_getreal("AIP_EKI", "RobotCommand/Move/Cartesian_Aux/@X", command.move_data.cartesian_aux.x)
+   status = eki_getreal("AIP_EKI", "RobotCommand/Move/Cartesian_Aux/@Y", command.move_data.cartesian_aux.y)
+   status = eki_getreal("AIP_EKI", "RobotCommand/Move/Cartesian_Aux/@Z", command.move_data.cartesian_aux.z)
+   status = eki_getreal("AIP_EKI", "RobotCommand/Move/Cartesian_Aux/@A", command.move_data.cartesian_aux.a)
+   status = eki_getreal("AIP_EKI", "RobotCommand/Move/Cartesian_Aux/@B", command.move_data.cartesian_aux.b)
+   status = eki_getreal("AIP_EKI", "RobotCommand/Move/Cartesian_Aux/@C", command.move_data.cartesian_aux.c)
+   
    status = eki_getint("AIP_EKI", "RobotCommand/Move/Teached/@PositionIndex", command.move_data.teached)
    
    status = eki_getint("AIP_EKI", "RobotCommand/Grip/@Mode", command.grip_data.mode)
@@ -320,6 +332,8 @@ deffct int do_move(step :in, move_data :in)
          ptp teached_points[move_data.teached] c_ptp
       ;case 5
       ;   lin teached_points[move_data.teached]
+      case 6   ; mathias31415 added circ
+         circ move_data.cartesian_aux, move_data.cartesian
    endswitch
    
    return error_code

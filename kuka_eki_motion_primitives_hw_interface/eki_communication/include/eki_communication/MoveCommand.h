@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// Authors: Moritz Weisenböhler
+// Authors: Moritz Weisenböhler, Mathias Fuhrer
 
 #pragma once
 
@@ -25,6 +25,7 @@ class MoveCommand
 {
 private:
 public:
+public:
     MoveCommand(const rbt::MoveCommand *base = nullptr);
     MoveCommand(PoseJoints target, const rbt::MoveCommand *base = nullptr);
     MoveCommand(PoseJoints target, const rbt::MoveCommand &base) : MoveCommand(target, &base) {}
@@ -32,6 +33,8 @@ public:
     MoveCommand(PoseCartesian target, bool lin, const rbt::MoveCommand &base) : MoveCommand(target, lin, &base) {}
     MoveCommand(PoseCartesian target, const rbt::MoveCommand *base = nullptr) : MoveCommand(target, false, base) {}
     MoveCommand(PoseCartesian target, const rbt::MoveCommand &base) : MoveCommand(target, &base) {}
+    MoveCommand(PoseCartesian via, PoseCartesian target, const rbt::MoveCommand *base = nullptr);
+    MoveCommand(PoseCartesian via, PoseCartesian target, const rbt::MoveCommand &base) : MoveCommand(via, target, &base) {}
     MoveCommand(int target, const rbt::MoveCommand *base = nullptr);
     MoveCommand(int target, const rbt::MoveCommand &base) : MoveCommand(target, &base) {}
     ~MoveCommand() {}
@@ -44,6 +47,7 @@ public:
 
     PoseJoints target_joints;
     PoseCartesian target_cartesian;
+    PoseCartesian via_cartesian;
     int target_teached = 0;
 
     void to_xml(XmlWriter &writer) const;

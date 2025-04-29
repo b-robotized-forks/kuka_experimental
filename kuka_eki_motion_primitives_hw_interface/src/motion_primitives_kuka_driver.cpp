@@ -266,7 +266,7 @@ hardware_interface::return_type MotionPrimitivesKukaDriver::write(
         break;
       }
       case MotionType::LINEAR_CARTESIAN: { // MoveL/ LIN
-        RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "LINEAR_CARTESIAN command received (handeling not implemented yet)");
+        RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "LINEAR_CARTESIAN command received");
         if(!add_linear_cartesian_cmd()) {
           RCLCPP_ERROR(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Failed to add LINEAR_CARTESIAN command");
           current_execution_status_ = ExecutionState::ERROR;
@@ -286,11 +286,23 @@ hardware_interface::return_type MotionPrimitivesKukaDriver::write(
         break;
       }
       case MotionType::CIRCULAR_CARTESIAN: {  // MoveC/ CIRC
-        RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "CIRCULAR_CARTESIAN command received (handeling not implemented yet)");
-        // TODO(mathias31415): Handle CIRCULAR_CARTESIAN command
-
+        RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "CIRCULAR_CARTESIAN command received");
+        if(!add_circular_cartesian_cmd()) {
+          RCLCPP_ERROR(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Failed to add CIRCULAR_CARTESIAN command");
+          current_execution_status_ = ExecutionState::ERROR;
+          return hardware_interface::return_type::ERROR;
+        }
         reset_command_interfaces();
-        ready_for_new_primitive_ = true; // TODO(mathias31415): Only for testing --> adjust later
+        if(!build_motion_sequence_) { // send single command imimediately
+          bool success = robot_.run();
+          // current_execution_status_ = success ? ExecutionState::EXECUTING : ExecutionState::ERROR;  // TODO(mathias31415): Its not the execution status, but the send status?
+          RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "%s CIRCULAR_CARTESIAN command to robot.", success? "Sent" : "Failed to send");
+          if(success){
+            ready_for_new_primitive_ = true; // set to true to allow sending new commands
+          }
+        } else {
+          ready_for_new_primitive_ = true; // set to true to allow sending new commands
+        }
         break;
       }
       default: {
@@ -361,7 +373,44 @@ bool MotionPrimitivesKukaDriver::add_linear_cartesian_cmd()
 
 bool MotionPrimitivesKukaDriver::add_circular_cartesian_cmd()
 {
- 
+  // Check if pose values (position and quaternion) are valid
+  for (int i = 7; i <= 20; ++i) {
+    if (std::isnan(hw_mo_prim_commands_[i])) {
+        RCLCPP_ERROR(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Invalid motion command: pose contains NaN values");
+        return false;
+    }
+  }
+  double goal_rx, goal_ry, goal_rz;
+  quaternionToEuler(hw_mo_prim_commands_[10], hw_mo_prim_commands_[11], hw_mo_prim_commands_[12], hw_mo_prim_commands_[13], goal_rx, goal_ry, goal_rz);
+
+  double via_rx, via_ry, via_rz;
+  quaternionToEuler(hw_mo_prim_commands_[17], hw_mo_prim_commands_[18], hw_mo_prim_commands_[19], hw_mo_prim_commands_[20], via_rx, via_ry, via_rz);
+
+  constexpr double rad_to_deg = 180.0 / M_PI;
+  std::vector<double> goal_pose = {
+    hw_mo_prim_commands_[7] * 1000.0, // from m to mm
+    hw_mo_prim_commands_[8] * 1000.0,
+    hw_mo_prim_commands_[9] * 1000.0,
+    goal_rx * rad_to_deg,  // from rad to deg
+    goal_ry * rad_to_deg,
+    goal_rz * rad_to_deg};
+  std::vector<double> via_pose = {
+    hw_mo_prim_commands_[14] * 1000.0, // from m to mm
+    hw_mo_prim_commands_[15] * 1000.0,
+    hw_mo_prim_commands_[16] * 1000.0,
+    via_rx * rad_to_deg,  // from rad to deg
+    via_ry * rad_to_deg,
+    via_rz * rad_to_deg};
+
+  RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), 
+        "Adding CIRCULAR_CARTESIAN with goal_pose: [%f, %f, %f, %f, %f, %f] and via_pose: [%f, %f, %f, %f, %f, %f]", 
+        goal_pose[0], goal_pose[1], goal_pose[2], goal_pose[3], goal_pose[4], goal_pose[5],
+        via_pose[0], via_pose[1], via_pose[2], via_pose[3], via_pose[4], via_pose[5]);
+  rbt::MoveCommand command;
+  command = rbt::MoveCommand(rbt::PoseCartesian(via_pose[0], via_pose[1], via_pose[2], via_pose[3], via_pose[4], via_pose[5]),
+                             rbt::PoseCartesian(goal_pose[0], goal_pose[1], goal_pose[2], goal_pose[3], goal_pose[4], goal_pose[5]));
+  robot_.perform(command);
+
   return true;
 }
 

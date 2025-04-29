@@ -20,7 +20,7 @@
          <ELEMENT Tag="RobotCommand/@Id" Type="INT"/>
          <ELEMENT Tag="RobotCommand/@Type" Type="INT"/> <!-- Type: 1=Move, 2=Gripper -->
          <!-- Move parameter -->
-         <ELEMENT Tag="RobotCommand/Move/@Mode" Type="INT"/> <!-- Mode: 1=Joint, 2=Cartesian-Ptp, 3=Cartesian-Lin, 4=Teached-Ptp, 5=Teached-Lin -->
+         <ELEMENT Tag="RobotCommand/Move/@Mode" Type="INT"/> <!-- Mode: 1=Joint, 2=Cartesian-Ptp, 3=Cartesian-Lin, 6=Cartesian-Circ (4=Teached-Ptp, 5=Teached-Lin) -->
          <ELEMENT Tag="RobotCommand/Move/@BaseIndex" Type="INT"/>
          <ELEMENT Tag="RobotCommand/Move/@ToolIndex" Type="INT"/>
          <ELEMENT Tag="RobotCommand/Move/@Velocity" Type="REAL"/>
@@ -40,6 +40,13 @@
          <ELEMENT Tag="RobotCommand/Move/Cartesian/@A" Type="REAL"/>
          <ELEMENT Tag="RobotCommand/Move/Cartesian/@B" Type="REAL"/>
          <ELEMENT Tag="RobotCommand/Move/Cartesian/@C" Type="REAL"/>
+         <!-- mathias31415 added cartesian_aux for circ command -->
+         <ELEMENT Tag="RobotCommand/Move/Cartesian_Aux/@X" Type="REAL"/>
+         <ELEMENT Tag="RobotCommand/Move/Cartesian_Aux/@Y" Type="REAL"/>
+         <ELEMENT Tag="RobotCommand/Move/Cartesian_Aux/@Z" Type="REAL"/>
+         <ELEMENT Tag="RobotCommand/Move/Cartesian_Aux/@A" Type="REAL"/>
+         <ELEMENT Tag="RobotCommand/Move/Cartesian_Aux/@B" Type="REAL"/>
+         <ELEMENT Tag="RobotCommand/Move/Cartesian_Aux/@C" Type="REAL"/>
          <!-- Move teached position index -->
          <ELEMENT Tag="RobotCommand/Move/Teached/@PositionIndex" Type="INT"/>
          <!-- Gripper parameter -->

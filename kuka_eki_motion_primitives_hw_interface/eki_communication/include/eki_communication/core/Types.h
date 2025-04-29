@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// Authors: Moritz Weisenböhler
+// Authors: Moritz Weisenböhler, Mathias Fuhrer
 
 #pragma once
 #include <limits>
@@ -33,7 +33,8 @@ enum class MoveMode
     JOINT = 1,
     CARTESIAN_PTP = 2,
     CARTESIAN_LIN = 3,
-    TEACHED = 4
+    TEACHED = 4,
+    CARTESIAN_CIRC =6
 };
 
 enum class GripMode
