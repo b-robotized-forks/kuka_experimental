@@ -1,0 +1,83 @@
+<ETHERNETKRL>
+    <CONFIGURATION>
+        <EXTERNAL>
+            <TYPE>Client</TYPE>                  <!-- Users connect as clients -->
+        </EXTERNAL>
+        <INTERNAL>
+            <ENVIRONMENT>Program</ENVIRONMENT>   <!-- Server run via robot interpreter -->
+            <BUFFERING Limit="512"/>            <!-- Allow buffering of up to 512 messages (system max) -->
+            <ALIVE Set_Flag="2"/>               <!-- Use $flag[1] to indicate alive/good connection status -->
+            <IP>10.181.116.41</IP> <!-- IP address for EKI interface on robot controller (KRC) -->
+            <PORT>54601</PORT>                   <!-- Port of EKI interface on robot controller (in [54600, 54615]) -->
+            <PROTOCOL>UDP</PROTOCOL>             <!-- Use UDP protocol -->
+        </INTERNAL>
+    </CONFIGURATION>
+
+
+    <RECEIVE>
+        <XML>
+            <ELEMENT Tag="IOCommand/IO1/@Mode"
+                     Type="INT"/> <!--Mode: 0=Nothing, 1=GetInput, 2=SetOutput, 3=GetOutput -->
+            <ELEMENT Tag="IOCommand/IO1/@Pin" Type="INT"/>
+            <ELEMENT Tag="IOCommand/IO1/@Value" Type="INT"/>
+            <ELEMENT Tag="IOCommand/IO2/@Mode"
+                     Type="INT"/> <!--Mode: 0=Nothing, 1=GetInput, 2=SetOutput, 3=GetOutput -->
+            <ELEMENT Tag="IOCommand/IO2/@Pin" Type="INT"/>
+            <ELEMENT Tag="IOCommand/IO2/@Value" Type="INT"/>
+<!--            <ELEMENT Tag="IOCommand/IO3/@Mode"-->
+<!--                     Type="INT"/> &lt;!&ndash;Mode: 0=Nothing, 1=GetInput, 2=SetOutput, 3=GetOutput &ndash;&gt;-->
+<!--            <ELEMENT Tag="IOCommand/IO3/@Pin" Type="INT"/>-->
+<!--            <ELEMENT Tag="IOCommand/IO3/@Value" Type="INT"/>-->
+<!--            <ELEMENT Tag="IOCommand/IO4/@Mode"-->
+<!--                     Type="INT"/> &lt;!&ndash;Mode: 0=Nothing, 1=GetInput, 2=SetOutput, 3=GetOutput &ndash;&gt;-->
+<!--            <ELEMENT Tag="IOCommand/IO4/@Pin" Type="INT"/>-->
+<!--            <ELEMENT Tag="IOCommand/IO4/@Value" Type="INT"/>-->
+<!--            <ELEMENT Tag="IOCommand/IO5/@Mode"-->
+<!--                     Type="INT"/> &lt;!&ndash;Mode: 0=Nothing, 1=GetInput, 2=SetOutput, 3=GetOutput &ndash;&gt;-->
+<!--            <ELEMENT Tag="IOCommand/IO5/@Pin" Type="INT"/>-->
+<!--            <ELEMENT Tag="IOCommand/IO5/@Value" Type="INT"/>-->
+<!--            <ELEMENT Tag="IOCommand/IO6/@Mode"-->
+<!--                     Type="INT"/> &lt;!&ndash;Mode: 0=Nothing, 1=GetInput, 2=SetOutput, 3=GetOutput &ndash;&gt;-->
+<!--            <ELEMENT Tag="IOCommand/IO6/@Pin" Type="INT"/>-->
+<!--            <ELEMENT Tag="IOCommand/IO6/@Value" Type="INT"/>-->
+<!--            <ELEMENT Tag="IOCommand/IO7/@Mode"-->
+<!--                     Type="INT"/> &lt;!&ndash;Mode: 0=Nothing, 1=GetInput, 2=SetOutput, 3=GetOutput &ndash;&gt;-->
+<!--            <ELEMENT Tag="IOCommand/IO7/@Pin" Type="INT"/>-->
+<!--            <ELEMENT Tag="IOCommand/IO7/@Value" Type="INT"/>-->
+<!--            <ELEMENT Tag="IOCommand/IO8/@Mode"-->
+<!--                     Type="INT"/> &lt;!&ndash;Mode: 0=Nothing, 1=GetInput, 2=SetOutput, 3=GetOutput &ndash;&gt;-->
+<!--            <ELEMENT Tag="IOCommand/IO8/@Pin" Type="INT"/>-->
+<!--            <ELEMENT Tag="IOCommand/IO8/@Value" Type="INT"/>-->
+        </XML>
+    </RECEIVE>
+
+    <SEND>
+        <XML>
+            <ELEMENT Tag="IOState/IO1/@Type"/> <!--Type: 0=None, 1=Input, 2=Output -->
+            <ELEMENT Tag="IOState/IO1/@Pin"/>
+            <ELEMENT Tag="IOState/IO1/@State"/>
+            <ELEMENT Tag="IOState/IO2/@Type"/> <!--Type: 0=None, 1=Input, 2=Output -->
+            <ELEMENT Tag="IOState/IO2/@Pin"/>
+            <ELEMENT Tag="IOState/IO2/@State"/>
+<!--            <ELEMENT Tag="IOState/IO3/@Type"/> &lt;!&ndash;Type: 0=None, 1=Input, 2=Output &ndash;&gt;-->
+<!--            <ELEMENT Tag="IOState/IO3/@Pin"/>-->
+<!--            <ELEMENT Tag="IOState/IO3/@State"/>-->
+<!--            <ELEMENT Tag="IOState/IO4/@Type"/> &lt;!&ndash;Type: 0=None, 1=Input, 2=Output &ndash;&gt;-->
+<!--            <ELEMENT Tag="IOState/IO4/@Pin"/>-->
+<!--            <ELEMENT Tag="IOState/IO4/@State"/>-->
+<!--            <ELEMENT Tag="IOState/IO5/@Type"/> &lt;!&ndash;Type: 0=None, 1=Input, 2=Output &ndash;&gt;-->
+<!--            <ELEMENT Tag="IOState/IO5/@Pin"/>-->
+<!--            <ELEMENT Tag="IOState/IO5/@State"/>-->
+<!--            <ELEMENT Tag="IOState/IO6/@Type"/> &lt;!&ndash;Type: 0=None, 1=Input, 2=Output &ndash;&gt;-->
+<!--            <ELEMENT Tag="IOState/IO6/@Pin"/>-->
+<!--            <ELEMENT Tag="IOState/IO6/@State"/>-->
+<!--            <ELEMENT Tag="IOState/IO7/@Type"/> &lt;!&ndash;Type: 0=None, 1=Input, 2=Output &ndash;&gt;-->
+<!--            <ELEMENT Tag="IOState/IO7/@Pin"/>-->
+<!--            <ELEMENT Tag="IOState/IO7/@State"/>-->
+<!--            <ELEMENT Tag="IOState/IO8/@Type"/> &lt;!&ndash;Type: 0=None, 1=Input, 2=Output &ndash;&gt;-->
+<!--            <ELEMENT Tag="IOState/IO8/@Pin"/>-->
+<!--            <ELEMENT Tag="IOState/IO8/@State"/>-->
+            <ELEMENT Tag="IOState/IOCommand/@Size"/>
+        </XML>
+    </SEND>
+</ETHERNETKRL>
