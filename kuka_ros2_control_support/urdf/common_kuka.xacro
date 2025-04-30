@@ -9,6 +9,7 @@
   <xacro:arg name="use_motion_primitives_driver" default="false" />
   <xacro:arg name="eki_robot_ip" default="127.0.0.1" />
   <xacro:arg name="eki_robot_port" default="54600" />
+  <xacro:arg name="eki_robot_meta_port" default="54601" />
   <xacro:arg name="use_rsi_communication" default="false" />
   <xacro:arg name="rsi_listen_ip" default="127.0.0.1" />
   <xacro:arg name="rsi_listen_port" default="49152" />
@@ -41,6 +42,7 @@
     use_motion_primitives_driver="$(arg use_motion_primitives_driver)"
     eki_robot_ip="$(arg eki_robot_ip)"
     eki_robot_port="$(arg eki_robot_port)"
+    eki_robot_meta_port="$(arg eki_robot_meta_port)"
     use_rsi_communication="$(arg use_rsi_communication)"
     rsi_listen_ip="$(arg rsi_listen_ip)"
     rsi_listen_port="$(arg rsi_listen_port)"

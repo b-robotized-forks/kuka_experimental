@@ -135,6 +135,13 @@ def generate_launch_description():
     )
     declared_arguments.append(
         DeclareLaunchArgument(
+            "eki_robot_meta_port",
+            default_value="54601",
+            description="Port by which the robot can be reached for meta communication using EKI protocol. (To stop the motion)",
+        )
+    )
+    declared_arguments.append(
+        DeclareLaunchArgument(
             "use_rsi_communication",
             default_value="false",
             description="Use RSI communication to the KUKA Robot Controller (KR-C). \
@@ -251,6 +258,7 @@ def generate_launch_description():
     use_motion_primitives_driver = LaunchConfiguration("use_motion_primitives_driver")
     eki_robot_ip = LaunchConfiguration("eki_robot_ip")
     eki_robot_port = LaunchConfiguration("eki_robot_port")
+    eki_robot_meta_port = LaunchConfiguration("eki_robot_meta_port")
     use_rsi_communication = LaunchConfiguration("use_rsi_communication")
     rsi_listen_ip = LaunchConfiguration("rsi_listen_ip")
     rsi_listen_port = LaunchConfiguration("rsi_listen_port")
@@ -301,6 +309,9 @@ def generate_launch_description():
             " ",
             "eki_robot_port:=",
             eki_robot_port,
+            " ",
+            "eki_robot_meta_port:=",
+            eki_robot_meta_port,
             " ",
             "use_rsi_communication:=",
             use_rsi_communication,

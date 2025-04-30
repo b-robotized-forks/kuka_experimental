@@ -9,6 +9,7 @@
                use_motion_primitives_driver:=^|false
                eki_robot_ip:=^|127.0.0.1
                eki_robot_port:=^|54600
+               eki_robot_meta_port:=^|54601
                use_rsi_communication:=^|false
                rsi_listen_ip:=^|127.0.0.1
                rsi_listen_port:=^|49152
@@ -48,6 +49,7 @@
           <plugin>kuka_eki_motion_primitives_hw_interface/MotionPrimitivesKukaDriver</plugin>
           <param name="robot_ip">${eki_robot_ip}</param>
           <param name="eki_robot_port">${eki_robot_port}</param>
+          <param name="eki_robot_meta_port">${eki_robot_meta_port}</param>
         </xacro:if>
         <xacro:if value="${use_rsi_communication}">
           <plugin>kuka_rsi_hw_interface/RobotControlInterface</plugin>

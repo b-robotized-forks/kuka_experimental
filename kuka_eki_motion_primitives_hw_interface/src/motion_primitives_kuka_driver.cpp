@@ -141,8 +141,7 @@ hardware_interface::CallbackReturn MotionPrimitivesKukaDriver::on_activate(
 
   robot_ip_ = info_.hardware_parameters["robot_ip"];
   eki_robot_port_ = std::stoi(info_.hardware_parameters["eki_robot_port"]);
-  // eki_robot_meta_port_ = std::stoi(info_.hardware_parameters["eki_robot_meta_port"]);
-  eki_robot_meta_port_ = 0; // TODO(mathias31415): Read parameter instead of hardcodeing
+  eki_robot_meta_port_ = std::stoi(info_.hardware_parameters["eki_robot_meta_port"]);
   RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Trying to connect to the host: [%s], port: [%d], meta_port: [%d]", robot_ip_.c_str(), eki_robot_port_, eki_robot_meta_port_);
   if (robot_ip_.empty() || eki_robot_port_ == 0)
   {
