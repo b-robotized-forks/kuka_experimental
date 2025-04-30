@@ -113,4 +113,6 @@ void rbt::EKInterface::disconnect()
     close(socket_);
 
     connected_ = false;
+
+    std::cout << "[EKInterface] Closed socket " << socket_ << std::endl;
 }

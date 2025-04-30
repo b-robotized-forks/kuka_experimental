@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// Authors: Moritz Weisenböhler
+// Authors: Moritz Weisenböhler, Mathias Fuhrer
 
 #include <eki_communication/Robot.h>
 
@@ -55,7 +55,17 @@ void rbt::Robot::connect_async(const std::string &host, int port, int meta_port)
 
 void rbt::Robot::disconnect()
 {
+    if (interface_used_)
+    {
+        std::cout << "[Robot] Disconnecting EKI Interface ..." << std::endl;
     interface_.disconnect();
+    }
+
+    if (meta_interface_used_)
+    {
+        std::cout << "[Robot] Disconnecting Meta EKI Interface ..." << std::endl;
+        meta_interface_.disconnect();
+    }
 }
 
 void rbt::Robot::await_connection()
