@@ -67,6 +67,7 @@ ros2 run kuka_eki_motion_primitives_hw_interface send_dummy_motion_primitives.py
 ```
 
 ### 4.2 hka_motion_primitive_kuka_driver branch using robot_interface_eki implementation from Moritz
+#### With Simulation
 ```
 ros2 run kuka_eki_simulator kuka_eki_simulator_tcp
 ```
@@ -74,9 +75,17 @@ ros2 run kuka_eki_simulator kuka_eki_simulator_tcp
 ```
 ros2 launch kuka_ros2_control_support motion_primitives_bringup.launch.py description_package:=kuka_kr3_support description_macro_file:=kr3r540_macro.xacro
 ```
-**Publish dummy commands**
+#### With r2e cell 2
+**Launch kr3 with motion primitive driver**
+```
+ros2 launch kuka_ros2_control_support motion_primitives_bringup.launch.py description_package:=kuka_kr3_support description_macro_file:=kr3r540_macro.xacro eki_robot_ip:=10.181.116.51
+```
+#### Publish dummy commands
+**Commands from script**
 ```
 ros2 run kuka_eki_motion_primitives_hw_interface send_dummy_motion_primitives.py
 ```
-
-
+**Stop command in terminal**
+```
+ros2 topic pub /motion_primitive_controller/reference industrial_robot_motion_interfaces/msg/MotionPrimitive "{type: 66, blend_radius: 0.0, additional_arguments: [], poses: [], joint_positions: []}" --once
+```
