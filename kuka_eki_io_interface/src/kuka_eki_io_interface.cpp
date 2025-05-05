@@ -8,6 +8,8 @@
 // TODOs
 // Readability -> "ec" to "errorcode".
 
+#define LOGGER_NAME "KukaEkiIoInterface"
+
 namespace kuka_eki_io_interface
 {
     //KukaEkiIOInterface::KukaEkiIOInterface(const std::string& eki_server_address, const std::string& eki_server_port, int n_io) : deadline_(ios_),
