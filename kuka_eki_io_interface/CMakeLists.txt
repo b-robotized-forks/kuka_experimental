@@ -17,6 +17,7 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
+find_package(hardware_interface REQUIRED)
 find_package(Boost REQUIRED COMPONENTS system)
 find_package(tinyxml_vendor REQUIRED)
 find_package(TinyXML REQUIRED)
@@ -51,10 +52,13 @@ target_include_directories(
 )
 ament_target_dependencies(
   ${PROJECT_NAME}
+  hardware_interface
+  pluginlib
   rclcpp
   rclcpp_lifecycle
   TinyXML
 )
+pluginlib_export_plugin_description_file(hardware_interface ros2_control_kuka_eki_io.xml)
 
 ament_export_include_directories(
   include
@@ -63,6 +67,8 @@ ament_export_libraries(
   ${PROJECT_NAME}
 )
 ament_export_dependencies(
+  hardware_interface
+  pluginlib
   rclcpp
   rclcpp_lifecycle
 )
@@ -75,7 +81,7 @@ install(
 )
 install(
   DIRECTORY include/
-  DESTINATION include
+  DESTINATION include/
 )
 
 add_executable(eki_io_node src/kuka_eki_io_interface_node.cpp src/kuka_eki_io_interface.cpp)
