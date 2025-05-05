@@ -117,7 +117,9 @@ namespace kuka_eki_io_interface
 
         // KUKAEKIIO_00006 // Materialize incoming c-string as XML DOM. 
         tinyxml2::XMLDocument xmlDocument;
-        tinyxml2::XMLError xmlDocument = xmlDocument.Parse(in_buffer.data());
+        tinyxml2::XMLError xmlDocumentParseError = xmlDocument.Parse(in_buffer.data());
+
+        // TODO // HAndle parse error.
 
         tinyxml2::XMLElement * robotState = xmlDocument.FirstChildElement("IOState");
 
