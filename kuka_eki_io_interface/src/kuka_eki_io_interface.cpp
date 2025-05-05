@@ -63,6 +63,7 @@ namespace kuka_eki_io_interface
         if (hardware_interface::SystemInterface::on_init(info) != hardware_interface::CallbackReturn::SUCCESS)
             return hardware_interface::CallbackReturn::ERROR;
 
+        info_ = info;
         //status_ = hardware_interface::status::CONFIGURED;
         return hardware_interface::CallbackReturn::SUCCESS;
     }
