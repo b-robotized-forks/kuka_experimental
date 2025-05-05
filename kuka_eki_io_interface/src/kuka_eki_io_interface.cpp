@@ -62,13 +62,13 @@ namespace kuka_eki_io_interface
     void KukaEkiIoInterface::eki_check_read_state_deadline()
     {
         // Check if deadline has already passed
-        if (deadline_.expires_at() <= boost::asio::deadline_timer::traits_type::now())
+        if (deadline_->expires_at() <= boost::asio::deadline_timer::traits_type::now())
         {
-            eki_server_socket_.cancel();
-            deadline_.expires_at(boost::posix_time::pos_infin);
+            eki_server_socket_->cancel();
+            deadline_->expires_at(boost::posix_time::pos_infin);
         }
         // Sleep until deadline exceeded
-        deadline_.async_wait(boost::bind(&KukaEkiIoInterface::eki_check_read_state_deadline, this));
+        deadline_->async_wait(boost::bind(&KukaEkiIoInterface::eki_check_read_state_deadline, this));
     }
 
     void KukaEkiIoInterface::eki_handle_receive(const boost::system::error_code & ec, size_t length, boost::system::error_code * out_ec, size_t * out_length)
