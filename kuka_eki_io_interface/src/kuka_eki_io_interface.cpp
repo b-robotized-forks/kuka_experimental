@@ -1,7 +1,7 @@
 #include <boost/array.hpp>
 #include <boost/bind.hpp>
 #include <boost/date_time/posix_time/posix_time_types.hpp>
-#include <tinyxml.h>
+#include <tinyxml2.h>
 
 #include <kuka_eki_io_interface/kuka_eki_io_interface.h>
 
@@ -10,25 +10,25 @@
 
 namespace kuka_eki_io_interface
 {
-    KukaEkiIOInterface::KukaEkiIOInterface(const std::string& eki_server_address, const std::string& eki_server_port, int n_io) : deadline_(ios_),
-    eki_server_socket_(ios_, boost::asio::ip::udp::endpoint(boost::asio::ip::udp::v4(), 0))
-    {
-        eki_server_address_ = eki_server_address;
-        eki_server_port_ = eki_server_port;
-        n_io_ = n_io;
+    //KukaEkiIOInterface::KukaEkiIOInterface(const std::string& eki_server_address, const std::string& eki_server_port, int n_io) : deadline_(ios_),
+    //eki_server_socket_(ios_, boost::asio::ip::udp::endpoint(boost::asio::ip::udp::v4(), 0))
+    //{
+    //    eki_server_address_ = eki_server_address;
+    //    eki_server_port_ = eki_server_port;
+    //    n_io_ = n_io;
 
-        std::cout << eki_server_address_ << std::endl;
-        std::cout << eki_server_port_ << std::endl;
-        std::cout << n_io_ << std::endl;
+    //    std::cout << eki_server_address_ << std::endl;
+    //    std::cout << eki_server_port_ << std::endl;
+    //    std::cout << n_io_ << std::endl;
 
-        boost::asio::ip::udp::resolver resolver(ios_);
-        eki_server_endpoint_ = *resolver.resolve({boost::asio::ip::udp::v4(), eki_server_address_, eki_server_port_});
+    //    boost::asio::ip::udp::resolver resolver(ios_);
+    //    eki_server_endpoint_ = *resolver.resolve({boost::asio::ip::udp::v4(), eki_server_address_, eki_server_port_});
 
-        boost::array<char, 1> ini_buf = { 0 };
-        eki_server_socket_.send_to(boost::asio::buffer(ini_buf), eki_server_endpoint_);
+    //    boost::array<char, 1> ini_buf = { 0 };
+    //    eki_server_socket_.send_to(boost::asio::buffer(ini_buf), eki_server_endpoint_);
 
-        deadline_.expires_at(boost::posix_time::pos_infin);  // do nothing unit a read is invoked (deadline_ = +inf)
-        eki_check_read_state_deadline();
+    //    deadline_.expires_at(boost::posix_time::pos_infin);  // do nothing unit a read is invoked (deadline_ = +inf)
+    //    eki_check_read_state_deadline();
 
 //        std::vector<bool> io_states;
 //        std::vector<int> io_pins;
@@ -42,9 +42,23 @@ namespace kuka_eki_io_interface
 //            std::cout << msg << std::endl;
 //            throw std::runtime_error(msg);
 //        }
-    }
+    //}
 //    KukaEkiIOInterface::~KukaEkiIOInterface() {}
     
+
+
+    hardware_interface::CallbackReturn KukaEkiIoInterface::on_init(const hardware_interface::HardwareInfo & info)
+    {
+        if (hardware_interface::SystemInterface::on_init(info) != hardware_interface::CallbackReturn::SUCCESS)
+            return hardware_interface::CallbackReturn::ERROR;
+
+        
+
+        status_ = hardware_interface::status::CONFIGURED;
+        return hardware_interface::CallbackReturn::SUCCESS;
+    }
+
+
 
     // PRIVATE // PRIVATE // PRIVATE // PRIVATE // PRIVATE // PRIVATE
     void KukaEkiIoInterface::eki_check_read_state_deadline()
@@ -67,12 +81,13 @@ namespace kuka_eki_io_interface
 
     bool KukaEkiIoInterface::eki_read_state(std::vector<bool> &io_states, std::vector<int> &io_pins, std::vector<int> &io_types, int &cmd_buff_len)
     {
+        // Declarations & Allocations
         io_states.resize(n_io_);
         io_pins.resize(n_io_);
         io_types.resize(n_io_);
         static boost::array<char, 2048> in_buffer;
 
-        // Based off of Boost documentation example: doc/html/boost_asio/example/timeouts/blocking_udp_client.cpp
+        // Read socket buffer (with timeout) // Based off of Boost documentation example: doc/html/boost_asio/example/timeouts/blocking_udp_client.cpp
         deadline_ -> expires_from_now(boost::posix_time::seconds(eki_read_state_timeout_));
         boost::system::error_code ec = boost::asio::error::would_block;
         size_t len = 0;
@@ -83,27 +98,45 @@ namespace kuka_eki_io_interface
             ios_.run_one();
         while (ec == boost::asio::error::would_block);
 
+        // KUKAEKIIO_00001 // KUKAEKIIO_00002 // Log warning when errorcode is set and do not continue processing.
         if (ec)
         {
-            RCLCPP_WARN(rclcpp::get_logger("KukaEkiHardwareInterface"), " communication error code: %s", ec.message().c_str());
-            return false;
-        }
-        if (len == 0)
-        {
-            std::cout << "2" << std::endl;
+            RCLCPP_WARN(rclcpp::get_logger("KukaEkiIoInterface"), " communication error code: %s", ec.message().c_str());
             return false;
         }
 
-        TiXmlDocument xml_in;
-        in_buffer[len] = '\0';  // null-terminate data buffer for parsing (expects c-string)
-        xml_in.Parse(in_buffer.data());
-        TiXmlElement* robot_state = xml_in.FirstChildElement("IOState");
-        if (!robot_state)
+        // KUKAEKIIO_00003 // KUKAEKIIO_00004 // Log warning when packages with zero lenght are received and do not continue processing.
+        if (len == 0)
         {
-            std::cout << "3" << std::endl;
+            RCLCPP_WARN(rclcpp::get_logger("KukaEkiIoInterface"), " packet of len 0 received.");
             return false;
         }
-        xml_in.Print();
+
+        // KUKAEKIIO_00005 // Ensure null-terminated data buffer for parsing it as c-string.
+        in_buffer[len] = '\0';
+
+        // KUKAEKIIO_00006 // Materialize incoming c-string as XML DOM. 
+        tinyxml2::XMLDocument xmlDocument;
+        tinyxml2::XMLError xmlDocument = xmlDocument.Parse(in_buffer.data());
+
+        tinyxml2::XMLElement * robotState = xmlDocument.FirstChildElement("IOState");
+
+        // KUKAEKIIO_00007 // KUKAEKIIO_00008 // Log warning when no "IOState" is child-element contained and do not continue processing. 
+        if (!robotState)
+        {
+            RCLCPP_WARN(rclcpp::get_logger("KukaEkiIoInterface"), " no IOState-element found in XML.");
+            return false;
+        }
+        
+        // KUKAEKIIO_00009 // Log debug the XML DOM.
+        tinyxml2::XMLPrinter printer;
+        RCLCPP_DEBUG(rclcpp::get_logger("KukaEkiIoInterface"), " received XML: %s", xmlDocument.Print(&printer));
+        
+        // Transform data from XML DOM into an c-typed structure.
+        // 
+
+
+        
         char io_name[] = "IO1";
         for (int i = 0; i < n_io_; ++i)
         {
