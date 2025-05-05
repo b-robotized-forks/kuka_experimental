@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(kuka_eki_io_interface)
+project(iras_kuka_eki_io_interface)
 
 # Default to C99
 if(NOT CMAKE_C_STANDARD)
