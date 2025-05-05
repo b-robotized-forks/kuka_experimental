@@ -47,7 +47,7 @@ namespace kuka_eki_io_interface
     
 
 
-    hardware_interface::CallbackReturn KukaEkiIoInterface::on_init(const hardware_interface::HardwareInfo & info)
+    hardware_interface::CallbackReturn KukaEkiIoInterface::on_init(const hardware_interface::HardwareInfo& info)
     {
         if (hardware_interface::SystemInterface::on_init(info) != hardware_interface::CallbackReturn::SUCCESS)
             return hardware_interface::CallbackReturn::ERROR;
@@ -71,13 +71,13 @@ namespace kuka_eki_io_interface
         deadline_->async_wait(boost::bind(&KukaEkiIoInterface::eki_check_read_state_deadline, this));
     }
 
-    void KukaEkiIoInterface::eki_handle_receive(const boost::system::error_code & ec, size_t length, boost::system::error_code * out_ec, size_t * out_length)
+    void KukaEkiIoInterface::eki_handle_receive(const boost::system::error_code& ec, size_t length, boost::system::error_code* out_ec, size_t* out_length)
     {
         *out_ec = ec;
         *out_length = length;
     }
 
-    bool KukaEkiIoInterface::eki_read_state(std::vector<bool> &io_states, std::vector<int> &io_pins, std::vector<int> &io_types, int &cmd_buff_len)
+    bool KukaEkiIoInterface::eki_read_state(std::vector<bool>& io_states, std::vector<int>& io_pins, std::vector<int>& io_types, int& cmd_buff_len)
     {
         // Declarations & Allocations
         io_states.resize(n_io_);
@@ -119,7 +119,7 @@ namespace kuka_eki_io_interface
 
         // TODO // HAndle parse error.
 
-        tinyxml2::XMLElement * robotState = xmlDocument.FirstChildElement("IOState");
+        tinyxml2::XMLElement* robotState = xmlDocument.FirstChildElement("IOState");
 
         // KUKAEKIIO_00007 // KUKAEKIIO_00008 // Log warning when no "IOState" is child-element contained and do not continue processing. 
         if (!robotState)
