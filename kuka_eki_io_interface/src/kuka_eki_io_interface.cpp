@@ -98,11 +98,11 @@ namespace kuka_eki_io_interface
         static boost::array<char, 2048> in_buffer;
 
         // Read socket buffer (with timeout) // Based off of Boost documentation example: doc/html/boost_asio/example/timeouts/blocking_udp_client.cpp
-        deadline_ -> expires_from_now(boost::posix_time::seconds(eki_read_state_timeout_));
+        deadline_->expires_from_now(boost::posix_time::seconds(eki_read_state_timeout_));
         boost::system::error_code ec = boost::asio::error::would_block;
         size_t len = 0;
 
-        eki_server_socket_.async_receive(boost::asio::buffer(in_buffer), boost::bind(&KukaEkiIoInterface::eki_handle_receive, _1, _2, &ec, &len));
+        eki_server_socket_->async_receive(boost::asio::buffer(in_buffer), boost::bind(&KukaEkiIoInterface::eki_handle_receive, _1, _2, &ec, &len));
 
         do
             ios_.run_one();
