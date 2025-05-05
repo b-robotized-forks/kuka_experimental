@@ -12,42 +12,51 @@
 
 namespace kuka_eki_io_interface
 {
-    //KukaEkiIOInterface::KukaEkiIOInterface(const std::string& eki_server_address, const std::string& eki_server_port, int n_io) : deadline_(ios_),
-    //eki_server_socket_(ios_, boost::asio::ip::udp::endpoint(boost::asio::ip::udp::v4(), 0))
-    //{
-    //    eki_server_address_ = eki_server_address;
-    //    eki_server_port_ = eki_server_port;
-    //    n_io_ = n_io;
+    KukaEkiIoInterface::~KukaEkiIoInterface() 
+    {
+        on_deactivate(rclcpp_lifecycle::State());
+    }
 
-    //    std::cout << eki_server_address_ << std::endl;
-    //    std::cout << eki_server_port_ << std::endl;
-    //    std::cout << n_io_ << std::endl;
+    hardware_interface::CallbackReturn KukaEkiIoInterface::on_activate(const rclcpp_lifecycle::State& previous_state)
+    {
+        auto logger = rclcpp::get_logger(LOGGER_NAME);
+        RCLCPP_INFO(logger, "Starting ... please wait...");
 
-    //    boost::asio::ip::udp::resolver resolver(ios_);
-    //    eki_server_endpoint_ = *resolver.resolve({boost::asio::ip::udp::v4(), eki_server_address_, eki_server_port_});
+        eki_server_address_ = info_.hardware_parameters["robot_ip"];
+        eki_server_port_ = info_.hardware_parameters["eki_robot_port"];
+        RCLCPP_INFO(logger, "using IP: %s", eki_server_address_.c_str());
+        RCLCPP_INFO(logger, "using port: %s", eki_server_port_.c_str());
 
-    //    boost::array<char, 1> ini_buf = { 0 };
-    //    eki_server_socket_.send_to(boost::asio::buffer(ini_buf), eki_server_endpoint_);
+        if (eki_server_address_.empty() || eki_server_port_.empty())
+        {
+            RCLCPP_FATAL(logger, "robot_ip or eki_robot_port cannot be empty");
+            return hardware_interface::CallbackReturn::ERROR;
+        }
 
-    //    deadline_.expires_at(boost::posix_time::pos_infin);  // do nothing unit a read is invoked (deadline_ = +inf)
-    //    eki_check_read_state_deadline();
+        deadline_.reset(new boost::asio::deadline_timer(ios_));
+        eki_server_socket_.reset(new boost::asio::ip::udp::socket(ios_, boost::asio::ip::udp::endpoint(boost::asio::ip::udp::v4(), 0)));
 
-//        std::vector<bool> io_states;
-//        std::vector<int> io_pins;
-//        std::vector<int> io_types;
-//        int buff_len;
-//        if (!eki_read_state(io_states, io_pins, io_types, buff_len))
-//        {
-//            std::string msg = "Failed to read from robot EKI server within alloted time of "
-//                              + std::to_string(eki_read_state_timeout_) + " seconds.  Make sure eki_hw_interface is running "
-//                              "on the robot controller and all configurations are correct.";
-//            std::cout << msg << std::endl;
-//            throw std::runtime_error(msg);
-//        }
-    //}
-//    KukaEkiIOInterface::~KukaEkiIOInterface() {}
-    
+        boost::asio::ip::udp::resolver resolver(ios_);
+        eki_server_endpoint_ = *resolver.resolve({boost::asio::ip::udp::v4(), eki_server_address_, eki_server_port_});
 
+        boost::array<char, 1> ini_buf = { 0 };
+        eki_server_socket_->send_to(boost::asio::buffer(ini_buf), eki_server_endpoint_);  // initiate contact to start server
+
+        // Start persistent actor to check for eki_read_state timeouts
+        deadline_->expires_at(boost::posix_time::pos_infin);  // do nothing until a read is invoked (deadline_ = +inf)
+        eki_check_read_state_deadline();
+
+        std::vector<bool> io_states;
+        std::vector<int> io_pins;
+        std::vector<int> io_types;
+        int buff_len;
+        if (!eki_read_state(io_states, io_pins, io_types, buff_len))
+        {
+            std::string errorMessage = "Failed to read from robot EKI server within alloted time of " + std::to_string(eki_read_state_timeout_) + " seconds. Make sure eki_hw_interface is running on the robot controller and all configurations are correct.";
+            RCLCPP_FATAL(logger, errorMessage.c_str());
+            throw std::runtime_error(errorMessage);
+        }
+    }
 
     hardware_interface::CallbackReturn KukaEkiIoInterface::on_init(const hardware_interface::HardwareInfo& info)
     {
