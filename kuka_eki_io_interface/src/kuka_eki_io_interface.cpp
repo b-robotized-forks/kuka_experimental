@@ -147,7 +147,7 @@ namespace kuka_eki_io_interface
         // KUKAEKIIO_00007 // KUKAEKIIO_00008 // Log warning when no "IOState" is child-element contained and do not continue processing. 
         if (!robotState)
         {
-            RCLCPP_WARN(logger, " no IOState-element found in XML.");
+            RCLCPP_ERROR(logger, " no IOState-element found in XML.");
             return false;
         }
         
@@ -158,31 +158,33 @@ namespace kuka_eki_io_interface
         
         // Transform data from XML DOM into an c-typed structure.
         // 
-
-
-        
-        char io_name[] = "IO1";
-        for (int i = 0; i < n_io_; ++i)
+        for (int i = 0; i < numberOfIos_; i++)
         {
-            TiXmlElement* state = robot_state->FirstChildElement(io_name);
+            tinyxml2::XMLElement* state = robotState->FirstChildElement(ioNames[i].c_str());
             if (!state)
             {
-                std::cout << "4" << std::endl;
+                RCLCPP_ERROR(logger, " no %s-element found in XML.", ioNames[i].c_str());
                 return false;
             }
-            int io_state;  // [Nm]
-            state->Attribute("State", &io_state);
-            int io_pin;
-            state->Attribute("Pin", &io_pin);
-            int io_type;
-            state->Attribute("Type", &io_type);
-            io_states[i] = io_state;
-            io_pins[i] = io_pin;
-            io_types[i] = io_type;
-            io_name[2]++;
+            
+            int ioState = myCustomTemporaryDefaultValue;
+            int ioPin = myCustomTemporaryDefaultValue;
+            int ioMode = myCustomTemporaryDefaultValue;
+
+            state->QueryIntAttribute("State", &ioState);
+            state->QueryIntAttribute("Pin", &ioPin);
+            state->QueryIntAttribute("Mode", &ioMode);
+
+            if (ioState == myCustomTemporaryDefaultValue || ioPin == myCustomTemporaryDefaultValue || ioMode == myCustomTemporaryDefaultValue)
+            {
+                RCLCPP_ERROR(logger, " invalid %s-element found in XML.", ioNames[i].c_str());
+                return false;
+            }
+
+            ioStates[i] = ioState;
+            ioPins[i] = ioPin;
+            ioModes[i] = ioMode;
         }
-        TiXmlElement* robot_command = robot_state->FirstChildElement("IOCommand");
-        robot_command->Attribute("Size", &cmd_buff_len);
         return true;
     }
 
