@@ -149,7 +149,8 @@ namespace kuka_eki_io_interface
         
         // KUKAEKIIO_00009 // Log debug the XML DOM.
         tinyxml2::XMLPrinter printer;
-        RCLCPP_DEBUG(rclcpp::get_logger("KukaEkiIoInterface"), " received XML: %s", xmlDocument.Print(&printer));
+        xmlDocument.Print(&printer);
+        RCLCPP_DEBUG(logger, " received XML: %s", printer.CStr());
         
         // Transform data from XML DOM into an c-typed structure.
         // 
