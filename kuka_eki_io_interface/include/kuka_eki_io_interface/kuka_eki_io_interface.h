@@ -18,6 +18,14 @@
 
 namespace kuka_eki_io_interface
 {
+    const std::string LOGGER_NAME = "KukaEkiIoInterface";
+    const std::string ioNames[] = {"IO1", "IO2", "IO3", "IO4", "IO5", "IO6", "IO7", "IO8"};
+    const int myCustomTemporaryDefaultValue = -42069;
+    const int pinNumberOffset_ = 500;
+    const int __defaultNumberOfIos_ = 8;
+    const int __ekiModeWrite_ = 2;
+    const int __ekiModeRead_ = 1;
+
     class KukaEkiIoInterface : public hardware_interface::SystemInterface
     {
         public:
@@ -65,6 +73,8 @@ namespace kuka_eki_io_interface
             static void eki_handle_receive(const boost::system::error_code& ec, size_t length, boost::system::error_code*  out_ec, size_t*  out_length);
             bool eki_read_state(std::vector<double>& joint_position, std::vector<double>& joint_velocity, std::vector<double>& joint_effort, int& cmd_buff_len);
             bool eki_write_command(const std::vector<double>& joint_position);
+
+            static int ekiCommandBufferSize_;
 
     };
 } // namespace kuka_eki_io_interface
