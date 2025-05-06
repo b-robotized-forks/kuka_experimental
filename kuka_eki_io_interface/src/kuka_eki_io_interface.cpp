@@ -138,10 +138,10 @@ namespace kuka_eki_io_interface
             return false;
         }
 
-        tinyxml2::XMLElement* robotState = xmlDocument.FirstChildElement("IOState");
+        tinyxml2::XMLElement* ioState = xmlDocument.FirstChildElement("IOState");
 
         // KUKAEKIIO_00007 // KUKAEKIIO_00008 // Log warning when no "IOState" is child-element contained and do not continue processing. 
-        if (!robotState)
+        if (!ioState)
         {
             RCLCPP_WARN(logger, " no IOState-element found in XML.");
             return false;
