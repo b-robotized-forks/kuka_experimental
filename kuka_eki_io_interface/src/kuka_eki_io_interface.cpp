@@ -132,6 +132,11 @@ namespace kuka_eki_io_interface
         tinyxml2::XMLError xmlDocumentParseError = xmlDocument.Parse(in_buffer.data());
 
         // TODO // HAndle parse error.
+        if (xmlDocumentParseError != tinyxml2::XML_SUCCESS)
+        {
+            RCLCPP_ERROR(logger, "Error parsing incoming XML telegram: %s", xmlDocument.ErrorStr());
+            return false;
+        }
 
         tinyxml2::XMLElement* robotState = xmlDocument.FirstChildElement("IOState");
 
