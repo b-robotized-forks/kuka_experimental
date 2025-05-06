@@ -232,4 +232,28 @@ namespace kuka_eki_io_interface
         eki_server_socket_->send_to(boost::asio::buffer(printer.CStr(), printer.CStrSize()), eki_server_endpoint_);
         return true;
     }
+
+    hardware_interface::return_type KukaEkiIoInterface::read(const rclcpp::Time& time, const rclcpp::Duration& period)
+    {
+        auto logger = rclcpp::get_logger(LOGGER_NAME);
+
+        std::vector<int> ioPins;
+        std::vector<int> ioModes;
+        std::vector<bool> ioStates;
+
+        ioPins.resize(numberOfIos_);
+        ioModes.resize(numberOfIos_);
+        ioStates.resize(numberOfIos_);
+
+        if (!eki_read_state(ioStates, ioPins, ioModes, 0))
+        {
+            std::string msg = "Failed to read from robot EKI server within alloted time of " + std::to_string(eki_read_state_timeout_) + " seconds. Make sure eki_hw_interface is running on the robot controller and all configurations are correct.";
+            RCLCPP_ERROR(logger, msg.c_str());
+            throw std::runtime_error(msg);
+        }
+
+        ioStates_ = ioStates;
+        ioPins_ = ioPins;
+        ioModes_ = ioModes;
+    }
 }  // namespace kuka_eki_io_interface
