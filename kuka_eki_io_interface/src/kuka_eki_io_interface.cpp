@@ -188,34 +188,48 @@ namespace kuka_eki_io_interface
         return true;
     }
 
-    bool KukaEkiIOInterface::eki_write_command(const std::vector<int> &io_pins, const std::vector<int> &io_modes, const std::vector<bool> &target_ios)
+    bool KukaEkiIoInterface::eki_write_command(const std::vector<int> &ioPins, const std::vector<int> &ioModes, const std::vector<bool> &targetIos)
     {
+        auto logger = rclcpp::get_logger(LOGGER_NAME);
+
         // TODO: assert vectors' lengths
-        // TODO: extend vector if length < n_io_
-        TiXmlDocument xml_out;
-        TiXmlElement* io_command = new TiXmlElement("IOCommand");
-        char io_name[] = "IO1";
-        for (int i = 0; i < n_io_; i++)
+        // TODO: extend vector if length < n_io_ // pk // Doesn't make sense.
+        if (ioPins.size() != numberOfIos_ || ioModes.size() != numberOfIos_ || ioModes.size() != numberOfIos_)
         {
-            TiXmlElement* io_element = new TiXmlElement(io_name);
-            TiXmlText* empty_text = new TiXmlText("");
-            io_command->LinkEndChild(io_element);
-            io_element->LinkEndChild(empty_text);
-
-            io_element->SetAttribute("Pin", io_pins[i]);
-            io_element->SetAttribute("Mode", io_modes[i]);
-            io_element->SetAttribute("Value", (int)target_ios[i]);
-
-            io_name[2]++;
+            RCLCPP_ERROR(logger, "Invalid command: size of ioPins, ioModes and targetIos must be equal to numberOfIos_=%d", numberOfIos_);
+            return false;
         }
-        xml_out.LinkEndChild(io_command);
-        xml_out.Print();
-        TiXmlPrinter xml_printer;
-        xml_printer.SetStreamPrinting();  // no linebreaks
-        xml_out.Accept(&xml_printer);
+        
+        // TODO: Check command validity
+        for (int i = 0; i < numberOfIos_; i++)
+        {
+            if (ioModes[i] != __ekiModeWrite_)
+            {
+                RCLCPP_ERROR(logger, "Invalid command: ioMode %d is not valid for %s", ioModes[i], ioNames[i].c_str());
+                return false;
+            }
+        }
 
-        eki_server_socket_.send_to(boost::asio::buffer(xml_printer.CStr(), xml_printer.Size()),
-                                              eki_server_endpoint_);
+        tinyxml2::XMLDocument xmlCommand;
+        tinyxml2::XMLElement* ioCommand = xmlCommand.NewElement("IOCommand");
+        for (int i = 0; i < numberOfIos_; i++)
+        {
+            tinyxml2::XMLElement* ioElement = xmlCommand.NewElement(ioNames[i].c_str());
+            ioCommand->InsertEndChild(ioElement);
+
+            // pk // What was the purpose of this??
+            // TiXmlText* empty_text = new TiXmlText("");
+            // io_element->LinkEndChild(empty_text);
+
+            ioElement->SetAttribute("Pin", targetIos[i]);
+            ioElement->SetAttribute("Mode", __ekiModeWrite_);
+            ioElement->SetAttribute("Value", (int)targetIos[i]);
+        }
+        xmlCommand.InsertEndChild(ioCommand);
+
+        tinyxml2::XMLPrinter printer;
+        xmlCommand.Print(&printer);
+        eki_server_socket_->send_to(boost::asio::buffer(printer.CStr(), printer.CStrSize()), eki_server_endpoint_);
         return true;
     }
 }  // namespace kuka_eki_io_interface
