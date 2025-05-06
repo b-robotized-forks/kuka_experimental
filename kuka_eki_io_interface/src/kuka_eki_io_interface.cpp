@@ -39,7 +39,7 @@ namespace kuka_eki_io_interface
         boost::asio::ip::udp::resolver resolver(ios_);
         eki_server_endpoint_ = *resolver.resolve({boost::asio::ip::udp::v4(), eki_server_address_, eki_server_port_});
 
-        boost::array<char, 1> ini_buf = { 0 };
+        boost::array<char, 1> ini_buf = {0};
         eki_server_socket_->send_to(boost::asio::buffer(ini_buf), eki_server_endpoint_);  // initiate contact to start server
 
         // Start persistent actor to check for eki_read_state timeouts
@@ -63,7 +63,7 @@ namespace kuka_eki_io_interface
         if (hardware_interface::SystemInterface::on_init(info) != hardware_interface::CallbackReturn::SUCCESS)
             return hardware_interface::CallbackReturn::ERROR;
 
-        info_ = info;
+        info_ = info; // pk // Where does this come from? Probably inherited from SystemInterface.
         //status_ = hardware_interface::status::CONFIGURED;
         return hardware_interface::CallbackReturn::SUCCESS;
     }
