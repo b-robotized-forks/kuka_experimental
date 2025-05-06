@@ -9,6 +9,11 @@
 // Readability -> "ec" to "errorcode".
 
 #define LOGGER_NAME "KukaEkiIoInterface"
+const std::string ioNames[] = {"IO1", "IO2", "IO3", "IO4", "IO5", "IO6", "IO7", "IO8"};
+const int myCustomTemporaryDefaultValue = -42069;
+const int pinNumberOffset_ = 500;
+const int __ekiModeWrite_ = 2;
+const int __ekiModeRead_ = 1;
 
 namespace kuka_eki_io_interface
 {
