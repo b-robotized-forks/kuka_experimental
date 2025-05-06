@@ -36,8 +36,11 @@ namespace kuka_eki_io_interface
 
             bool eki_read_state(std::vector<bool>& io_states, std::vector<int>& io_pins, std::vector<int>& io_types, int& cmd_buff_len);
             bool eki_write_command(const std::vector<int>& io_pins, const std::vector<int>& io_modes,const std::vector<bool>& target_ios);
+
+            virtual std::vector<hardware_interface::StateInterface::ConstSharedPtr> on_export_state_interfaces() final;
+            virtual std::vector<hardware_interface::CommandInterface::SharedPtr> on_export_command_interfaces() final;
     
-             KukaEkiIoInterface(const std::string& eki_server_address, const std::string& eki_server_port, int n_io);
+            KukaEkiIoInterface(const std::string& eki_server_address, const std::string& eki_server_port, int n_io);
         private:
             int numberOfIos_ = 8;
 
