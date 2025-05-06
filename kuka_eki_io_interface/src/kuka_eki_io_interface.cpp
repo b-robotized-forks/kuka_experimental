@@ -256,4 +256,16 @@ namespace kuka_eki_io_interface
         ioPins_ = ioPins;
         ioModes_ = ioModes;
     }
+
+    hardware_interface::return_type KukaEkiIoInterface::write(const rclcpp::Time& time, const rclcpp::Duration& period)
+    {
+        auto logger = rclcpp::get_logger(LOGGER_NAME);
+        if (!eki_write_command(ioPins_, ioModes_, ioCommands_))
+        {
+            std::string msg = "Failed to write to robot EKI server within alloted time of " + std::to_string(eki_read_state_timeout_) + " seconds. Make sure eki_hw_interface is running on the robot controller and all configurations are correct.";
+            RCLCPP_ERROR(logger, msg.c_str());
+            throw std::runtime_error(msg);
+        }
+        return hardware_interface::return_type::OK;
+    }
 }  // namespace kuka_eki_io_interface
