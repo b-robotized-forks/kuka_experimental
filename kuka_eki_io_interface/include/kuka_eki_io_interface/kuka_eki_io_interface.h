@@ -39,7 +39,7 @@ namespace kuka_eki_io_interface
     
              KukaEkiIoInterface(const std::string& eki_server_address, const std::string& eki_server_port, int n_io);
         private:
-            int n_io_ = 8;
+            int numberOfIos_ = 8;
 
             // Store the command for the simulated robot
             std::vector<double> hw_commands_;
