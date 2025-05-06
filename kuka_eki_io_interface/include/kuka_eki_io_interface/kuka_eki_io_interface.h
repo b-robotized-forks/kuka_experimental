@@ -42,20 +42,21 @@ namespace kuka_eki_io_interface
             hardware_interface::return_type read(const rclcpp::Time& time, const rclcpp::Duration& period) final;
             hardware_interface::return_type write(const rclcpp::Time& time, const rclcpp::Duration& period) final;
 
-            bool eki_read_state(std::vector<bool>& io_states, std::vector<int>& io_pins, std::vector<int>& io_types, int& cmd_buff_len);
-            bool eki_write_command(const std::vector<int>& io_pins, const std::vector<int>& io_modes,const std::vector<bool>& target_ios);
+            bool eki_read_state(std::vector<bool>& io_states, std::vector<int>& io_pins);
+            bool eki_write_command(const std::vector<int>& io_pins, const std::vector<bool>& target_ios);
 
             virtual std::vector<hardware_interface::StateInterface::ConstSharedPtr> on_export_state_interfaces() final;
             virtual std::vector<hardware_interface::CommandInterface::SharedPtr> on_export_command_interfaces() final;
     
             KukaEkiIoInterface(const std::string& eki_server_address, const std::string& eki_server_port, int n_io);
         private:
-            int numberOfIos_ = 8;
+            int numberOfIos_ = __defaultNumberOfIos_;
 
             // Store the command for the simulated robot
-            std::vector<double> hw_commands_;
-            std::vector<double> hw_states_;
-
+            std::vector<bool> ioStates_;
+            std::vector<bool> ioCommands_;
+            std::vector<int> ioPins_;
+            
             std::string eki_server_address_;
             std::string eki_server_port_;
 
@@ -71,7 +72,7 @@ namespace kuka_eki_io_interface
 
             void eki_check_read_state_deadline();
             static void eki_handle_receive(const boost::system::error_code& ec, size_t length, boost::system::error_code*  out_ec, size_t*  out_length);
-            bool eki_read_state(std::vector<double>& joint_position, std::vector<double>& joint_velocity, std::vector<double>& joint_effort, int& cmd_buff_len);
+            bool eki_read_state(std::vector<bool>& ioStates, std::vector<int>& ioPins);
             bool eki_write_command(const std::vector<double>& joint_position);
 
             static int ekiCommandBufferSize_;

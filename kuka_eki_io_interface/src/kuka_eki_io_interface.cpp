@@ -25,6 +25,8 @@ namespace kuka_eki_io_interface
 
         eki_server_address_ = info_.hardware_parameters["robot_ip"];
         eki_server_port_ = info_.hardware_parameters["eki_robot_port"];
+        numberOfIos_ = __defaultNumberOfIos_;
+
         RCLCPP_INFO(logger, "using IP: %s", eki_server_address_.c_str());
         RCLCPP_INFO(logger, "using port: %s", eki_server_port_.c_str());
 
@@ -50,12 +52,16 @@ namespace kuka_eki_io_interface
         std::vector<bool> ioStates;
         std::vector<int> ioPins;
         std::vector<int> ioModes;
-        if (!eki_read_state(ioStates, ioPins, ioModes, 0))
+        if (!eki_read_state(ioStates, ioPins))
         {
             std::string errorMessage = "Failed to read from robot EKI server within alloted time of " + std::to_string(eki_read_state_timeout_) + " seconds. Make sure eki_hw_interface is running on the robot controller and all configurations are correct.";
             RCLCPP_FATAL(logger, errorMessage.c_str());
             throw std::runtime_error(errorMessage);
         }
+
+        ioStates_ = ioStates;
+        ioCommands_ = ioStates;
+        return hardware_interface::CallbackReturn::SUCCESS;
     }
 
     hardware_interface::CallbackReturn KukaEkiIoInterface::on_init(const hardware_interface::HardwareInfo& info)
@@ -64,13 +70,10 @@ namespace kuka_eki_io_interface
             return hardware_interface::CallbackReturn::ERROR;
 
         info_ = info; // pk // Where does this come from? Probably inherited from SystemInterface.
-        //status_ = hardware_interface::status::CONFIGURED;
+        
         return hardware_interface::CallbackReturn::SUCCESS;
     }
 
-
-
-    // PRIVATE // PRIVATE // PRIVATE // PRIVATE // PRIVATE // PRIVATE
     void KukaEkiIoInterface::eki_check_read_state_deadline()
     {
         // Check if deadline has already passed
@@ -83,37 +86,36 @@ namespace kuka_eki_io_interface
         deadline_->async_wait(boost::bind(&KukaEkiIoInterface::eki_check_read_state_deadline, this));
     }
 
-    void KukaEkiIoInterface::eki_handle_receive(const boost::system::error_code& ec, size_t length, boost::system::error_code* out_ec, size_t* out_length)
+    void KukaEkiIoInterface::eki_handle_receive(const boost::system::error_code& systemErrorCode, size_t length, boost::system::error_code* out_ec, size_t* out_length)
     {
-        *out_ec = ec;
+        *out_ec = systemErrorCode;
         *out_length = length;
     }
 
-    bool KukaEkiIoInterface::eki_read_state(std::vector<bool>& ioStates, std::vector<int>& ioPins, std::vector<int>& ioModes, int commandBufferLength)
+    bool KukaEkiIoInterface::eki_read_state(std::vector<bool>& ioStates, std::vector<int>& ioPins)
     {
         auto logger = rclcpp::get_logger(LOGGER_NAME);
 
         // Declarations & Allocations
         ioStates.resize(numberOfIos_);
         ioPins.resize(numberOfIos_);
-        ioModes.resize(numberOfIos_);
         static boost::array<char, 2048> inBuffer;
 
         // Read socket buffer (with timeout) // Based off of Boost documentation example: doc/html/boost_asio/example/timeouts/blocking_udp_client.cpp
         deadline_->expires_from_now(boost::posix_time::seconds(eki_read_state_timeout_));
-        boost::system::error_code ec = boost::asio::error::would_block;
+        boost::system::error_code systemErrorCode = boost::asio::error::would_block;
         size_t len = 0;
 
-        eki_server_socket_->async_receive(boost::asio::buffer(inBuffer), boost::bind(&KukaEkiIoInterface::eki_handle_receive, _1, _2, &ec, &len));
+        eki_server_socket_->async_receive(boost::asio::buffer(inBuffer), boost::bind(&KukaEkiIoInterface::eki_handle_receive, _1, _2, &systemErrorCode, &len));
 
         do
             ios_.run_one();
-        while (ec == boost::asio::error::would_block);
+        while (systemErrorCode == boost::asio::error::would_block);
 
         // KUKAEKIIO_00001 // KUKAEKIIO_00002 // Log warning when errorcode is set and do not continue processing.
-        if (ec)
+        if (systemErrorCode)
         {
-            RCLCPP_WARN(logger, " communication error code: %s", ec.message().c_str());
+            RCLCPP_WARN(logger, " communication error code: %s", systemErrorCode.message().c_str());
             return false;
         }
 
@@ -179,18 +181,17 @@ namespace kuka_eki_io_interface
 
             ioStates[i] = ioState;
             ioPins[i] = ioPin;
-            ioModes[i] = ioMode;
         }
         return true;
     }
 
-    bool KukaEkiIoInterface::eki_write_command(const std::vector<int> &ioPins, const std::vector<int> &ioModes, const std::vector<bool> &targetIos)
+    bool KukaEkiIoInterface::eki_write_command(const std::vector<int> &ioPins, const std::vector<bool> &targetIos)
     {
         auto logger = rclcpp::get_logger(LOGGER_NAME);
 
         // TODO: assert vectors' lengths
         // TODO: extend vector if length < n_io_ // pk // Doesn't make sense.
-        if (ioPins.size() != numberOfIos_ || ioModes.size() != numberOfIos_ || ioModes.size() != numberOfIos_)
+        if (ioPins.size() != numberOfIos_ || targetIos.size() != numberOfIos_)
         {
             RCLCPP_ERROR(logger, "Invalid command: size of ioPins, ioModes and targetIos must be equal to numberOfIos_=%d", numberOfIos_);
             return false;
@@ -217,7 +218,7 @@ namespace kuka_eki_io_interface
             // TiXmlText* empty_text = new TiXmlText("");
             // io_element->LinkEndChild(empty_text);
 
-            ioElement->SetAttribute("Pin", targetIos[i]);
+            ioElement->SetAttribute("Pin", ioPins[i]);
             ioElement->SetAttribute("Mode", __ekiModeWrite_);
             ioElement->SetAttribute("Value", (int)targetIos[i]);
         }
@@ -225,6 +226,8 @@ namespace kuka_eki_io_interface
 
         tinyxml2::XMLPrinter printer;
         xmlCommand.Print(&printer);
+        RCLCPP_DEBUG(logger, " sending XML: %s", printer.CStr());
+
         eki_server_socket_->send_to(boost::asio::buffer(printer.CStr(), printer.CStrSize()), eki_server_endpoint_);
         return true;
     }
@@ -233,7 +236,7 @@ namespace kuka_eki_io_interface
     {
         std::vector<hardware_interface::StateInterface::ConstSharedPtr> stateInterfaces;
         for (int i = 0; i < numberOfIos_; i++)
-            stateInterfaces.push_back(std::make_shared<hardware_interface::StateInterface>(ioNames[i], "eki_io", &ioStates_[i]));
+            stateInterfaces.push_back(std::make_shared<hardware_interface::StateInterface>(ioNames[i], "eki_io_state", &ioStates_[i]));
         return stateInterfaces;
     }
 
@@ -241,7 +244,7 @@ namespace kuka_eki_io_interface
     {
         std::vector<hardware_interface::CommandInterface::SharedPtr> commandInterfaces;
         for (int i = 0; i < numberOfIos_; i++)
-            commandInterfaces.push_back(std::make_shared<hardware_interface::CommandInterface>(ioNames[i], "eki_io", &ioCommands_[i]));
+            commandInterfaces.push_back(std::make_shared<hardware_interface::CommandInterface>(ioNames[i], "eki_io_command", &ioCommands_[i]));
         return commandInterfaces;
     }
 
@@ -257,7 +260,7 @@ namespace kuka_eki_io_interface
         ioModes.resize(numberOfIos_);
         ioStates.resize(numberOfIos_);
 
-        if (!eki_read_state(ioStates, ioPins, ioModes, 0))
+        if (!eki_read_state(ioStates, ioPins))
         {
             std::string msg = "Failed to read from robot EKI server within alloted time of " + std::to_string(eki_read_state_timeout_) + " seconds. Make sure eki_hw_interface is running on the robot controller and all configurations are correct.";
             RCLCPP_ERROR(logger, msg.c_str());
@@ -266,13 +269,12 @@ namespace kuka_eki_io_interface
 
         ioStates_ = ioStates;
         ioPins_ = ioPins;
-        ioModes_ = ioModes;
     }
 
     hardware_interface::return_type KukaEkiIoInterface::write(const rclcpp::Time& time, const rclcpp::Duration& period)
     {
         auto logger = rclcpp::get_logger(LOGGER_NAME);
-        if (!eki_write_command(ioPins_, ioModes_, ioCommands_))
+        if (!eki_write_command(ioPins_, ioCommands_))
         {
             std::string msg = "Failed to write to robot EKI server within alloted time of " + std::to_string(eki_read_state_timeout_) + " seconds. Make sure eki_hw_interface is running on the robot controller and all configurations are correct.";
             RCLCPP_ERROR(logger, msg.c_str());
