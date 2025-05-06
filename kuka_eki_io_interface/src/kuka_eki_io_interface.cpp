@@ -51,11 +51,10 @@ namespace kuka_eki_io_interface
         deadline_->expires_at(boost::posix_time::pos_infin);  // do nothing until a read is invoked (deadline_ = +inf)
         eki_check_read_state_deadline();
 
-        std::vector<bool> io_states;
-        std::vector<int> io_pins;
-        std::vector<int> io_types;
-        int buff_len;
-        if (!eki_read_state(io_states, io_pins, io_types, buff_len))
+        std::vector<bool> ioStates;
+        std::vector<int> ioPins;
+        std::vector<int> ioModes;
+        if (!eki_read_state(ioStates, ioPins, ioModes, 0))
         {
             std::string errorMessage = "Failed to read from robot EKI server within alloted time of " + std::to_string(eki_read_state_timeout_) + " seconds. Make sure eki_hw_interface is running on the robot controller and all configurations are correct.";
             RCLCPP_FATAL(logger, errorMessage.c_str());
@@ -94,22 +93,22 @@ namespace kuka_eki_io_interface
         *out_length = length;
     }
 
-    bool KukaEkiIoInterface::eki_read_state(std::vector<bool>& io_states, std::vector<int>& io_pins, std::vector<int>& io_types, int& cmd_buff_len)
+    bool KukaEkiIoInterface::eki_read_state(std::vector<bool>& ioStates, std::vector<int>& ioPins, std::vector<int>& ioModes, int commandBufferLength)
     {
         auto logger = rclcpp::get_logger(LOGGER_NAME);
 
         // Declarations & Allocations
-        io_states.resize(n_io_);
-        io_pins.resize(n_io_);
-        io_types.resize(n_io_);
-        static boost::array<char, 2048> in_buffer;
+        ioStates.resize(numberOfIos_);
+        ioPins.resize(numberOfIos_);
+        ioModes.resize(numberOfIos_);
+        static boost::array<char, 2048> inBuffer;
 
         // Read socket buffer (with timeout) // Based off of Boost documentation example: doc/html/boost_asio/example/timeouts/blocking_udp_client.cpp
         deadline_->expires_from_now(boost::posix_time::seconds(eki_read_state_timeout_));
         boost::system::error_code ec = boost::asio::error::would_block;
         size_t len = 0;
 
-        eki_server_socket_->async_receive(boost::asio::buffer(in_buffer), boost::bind(&KukaEkiIoInterface::eki_handle_receive, _1, _2, &ec, &len));
+        eki_server_socket_->async_receive(boost::asio::buffer(inBuffer), boost::bind(&KukaEkiIoInterface::eki_handle_receive, _1, _2, &ec, &len));
 
         do
             ios_.run_one();
@@ -130,11 +129,11 @@ namespace kuka_eki_io_interface
         }
 
         // KUKAEKIIO_00005 // Ensure null-terminated data buffer for parsing it as c-string.
-        in_buffer[len] = '\0';
+        inBuffer[len] = '\0';
 
         // KUKAEKIIO_00006 // Materialize incoming c-string as XML DOM. 
         tinyxml2::XMLDocument xmlDocument;
-        tinyxml2::XMLError xmlDocumentParseError = xmlDocument.Parse(in_buffer.data());
+        tinyxml2::XMLError xmlDocumentParseError = xmlDocument.Parse(inBuffer.data());
 
         // TODO // HAndle parse error.
         if (xmlDocumentParseError != tinyxml2::XML_SUCCESS)
@@ -143,10 +142,10 @@ namespace kuka_eki_io_interface
             return false;
         }
 
-        tinyxml2::XMLElement* ioState = xmlDocument.FirstChildElement("IOState");
+        tinyxml2::XMLElement* robotState = xmlDocument.FirstChildElement("IOState");
 
         // KUKAEKIIO_00007 // KUKAEKIIO_00008 // Log warning when no "IOState" is child-element contained and do not continue processing. 
-        if (!ioState)
+        if (!robotState)
         {
             RCLCPP_WARN(logger, " no IOState-element found in XML.");
             return false;
