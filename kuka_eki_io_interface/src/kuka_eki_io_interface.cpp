@@ -19,6 +19,12 @@ namespace kuka_eki_io_interface
 {
     KukaEkiIoInterface::~KukaEkiIoInterface() 
     {
+        RCLCPP_INFO(rclcpp::get_logger(LOGGER_NAME), "Destructor called. Cleaning up ...");
+        if (eki_server_socket_)
+        {
+            eki_server_socket_->close();
+            eki_server_socket_.reset();
+        }
         on_deactivate(rclcpp_lifecycle::State());
     }
 
