@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// Authors: Moritz Weisenböhler, Mathias Fuhrer
+// Authors: Students of the Insitute for Robotics and Autonomous Systems (IRAS) 
+//          - (Supervisor: Prof. Dr.-Ing. Christian Wurll), 
+//          Moritz Weisenböhler, Mathias Fuhrer
 
 #include <eki_communication/Robot.h>
 
@@ -26,6 +28,7 @@ bool rbt::Robot::is_connected()
 
 bool rbt::Robot::connect(const std::string &host, int port, int meta_port)
 {
+    std::cout << "[Robot] Trying to connect to the host: [" << host << "], port: [" << port << "], meta_port: [" << meta_port << "]" << std::endl;
     interface_used_ = port > 0;
     meta_interface_used_ = meta_port > 0;
 
@@ -38,7 +41,7 @@ bool rbt::Robot::connect(const std::string &host, int port, int meta_port)
     {
         connect_to(meta_interface_, host, meta_port);
     }
-
+    std::cout << "[Robot] is_connected: " << is_connected() << std::endl;
     return is_connected();
 }
 
@@ -58,7 +61,7 @@ void rbt::Robot::disconnect()
     if (interface_used_)
     {
         std::cout << "[Robot] Disconnecting EKI Interface ..." << std::endl;
-    interface_.disconnect();
+        interface_.disconnect();
     }
 
     if (meta_interface_used_)
@@ -242,6 +245,7 @@ std::string rbt::Robot::collect_state_xml(EKInterface &interface, std::string &b
 
 void rbt::Robot::update_state(std::string &xml_message, bool is_meta)
 {
+    // std::cout << "[Robot update_state] " << (is_meta ? "Meta_XML message: " : "XML message: ") << xml_message << std::endl;
     if (xml_message.size() > 0)
     {
         XmlReader reader(xml_message);
@@ -286,6 +290,7 @@ void rbt::Robot::call_listener(RobotEvent event)
 
 void rbt::Robot::check_time()
 {
+    // TODO(mathias31415): Check/ Modifiy this?
     if (!chrono_running_tote_ && state_.position_joints.a1 < -5)
     {
         std::cout << "Chrono started" << std::endl;

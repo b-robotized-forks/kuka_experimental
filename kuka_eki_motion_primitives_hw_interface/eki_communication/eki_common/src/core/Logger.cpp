@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// Authors: Moritz Weisenböhler
+// Authors: Students of the Insitute for Robotics and Autonomous Systems (IRAS) 
+//          - (Supervisor: Prof. Dr.-Ing. Christian Wurll), 
+//          Moritz Weisenböhler
 
 #include <eki_common/core/Logger.h>
 
