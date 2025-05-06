@@ -91,6 +91,8 @@ namespace kuka_eki_io_interface
 
     bool KukaEkiIoInterface::eki_read_state(std::vector<bool>& io_states, std::vector<int>& io_pins, std::vector<int>& io_types, int& cmd_buff_len)
     {
+        auto logger = rclcpp::get_logger(LOGGER_NAME);
+
         // Declarations & Allocations
         io_states.resize(n_io_);
         io_pins.resize(n_io_);
@@ -111,14 +113,14 @@ namespace kuka_eki_io_interface
         // KUKAEKIIO_00001 // KUKAEKIIO_00002 // Log warning when errorcode is set and do not continue processing.
         if (ec)
         {
-            RCLCPP_WARN(rclcpp::get_logger("KukaEkiIoInterface"), " communication error code: %s", ec.message().c_str());
+            RCLCPP_WARN(logger, " communication error code: %s", ec.message().c_str());
             return false;
         }
 
         // KUKAEKIIO_00003 // KUKAEKIIO_00004 // Log warning when packages with zero lenght are received and do not continue processing.
         if (len == 0)
         {
-            RCLCPP_WARN(rclcpp::get_logger("KukaEkiIoInterface"), " packet of len 0 received.");
+            RCLCPP_WARN(logger, " packet of len 0 received.");
             return false;
         }
 
@@ -136,7 +138,7 @@ namespace kuka_eki_io_interface
         // KUKAEKIIO_00007 // KUKAEKIIO_00008 // Log warning when no "IOState" is child-element contained and do not continue processing. 
         if (!robotState)
         {
-            RCLCPP_WARN(rclcpp::get_logger("KukaEkiIoInterface"), " no IOState-element found in XML.");
+            RCLCPP_WARN(logger, " no IOState-element found in XML.");
             return false;
         }
         
