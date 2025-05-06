@@ -233,6 +233,22 @@ namespace kuka_eki_io_interface
         return true;
     }
 
+    std::vector<hardware_interface::StateInterface::ConstSharedPtr> KukaEkiIoInterface::on_export_state_interfaces()
+    {
+        std::vector<hardware_interface::StateInterface::ConstSharedPtr> stateInterfaces;
+        for (int i = 0; i < numberOfIos_; i++)
+            stateInterfaces.push_back(std::make_shared<hardware_interface::StateInterface>(ioNames[i], "eki_io", &ioStates_[i]));
+        return stateInterfaces;
+    }
+
+    std::vector<hardware_interface::CommandInterface::SharedPtr> KukaEkiIoInterface::on_export_command_interfaces()
+    {
+        std::vector<hardware_interface::CommandInterface::SharedPtr> commandInterfaces;
+        for (int i = 0; i < numberOfIos_; i++)
+            commandInterfaces.push_back(std::make_shared<hardware_interface::CommandInterface>(ioNames[i], "eki_io", &ioCommands_[i]));
+        return commandInterfaces;
+    }
+
     hardware_interface::return_type KukaEkiIoInterface::read(const rclcpp::Time& time, const rclcpp::Duration& period)
     {
         auto logger = rclcpp::get_logger(LOGGER_NAME);
