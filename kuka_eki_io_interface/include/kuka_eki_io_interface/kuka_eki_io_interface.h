@@ -25,21 +25,18 @@ namespace kuka_eki_io_interface
             virtual ~KukaEkiIoInterface();
 
             hardware_interface::CallbackReturn on_init(const hardware_interface::HardwareInfo& system_info) final;
-
-            std::vector<hardware_interface::StateInterface> export_state_interfaces() final;
-
-            std::vector<hardware_interface::CommandInterface> export_command_interfaces() final;
-
             hardware_interface::CallbackReturn on_activate(const rclcpp_lifecycle::State& previous_state) final;
             hardware_interface::CallbackReturn on_deactivate(const rclcpp_lifecycle::State& previous_state) final;
+
+            std::vector<hardware_interface::StateInterface> export_state_interfaces() final;
+            std::vector<hardware_interface::CommandInterface> export_command_interfaces() final;
 
             hardware_interface::return_type read(const rclcpp::Time& time, const rclcpp::Duration& period) final;
             hardware_interface::return_type write(const rclcpp::Time& time, const rclcpp::Duration& period) final;
 
             bool eki_read_state(std::vector<bool>& io_states, std::vector<int>& io_pins, std::vector<int>& io_types, int& cmd_buff_len);
             bool eki_write_command(const std::vector<int>& io_pins, const std::vector<int>& io_modes,const std::vector<bool>& target_ios);
-
-            
+    
              KukaEkiIoInterface(const std::string& eki_server_address, const std::string& eki_server_port, int n_io);
         private:
             int n_io_ = 8;
