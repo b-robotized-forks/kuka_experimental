@@ -196,16 +196,6 @@ namespace kuka_eki_io_interface
             RCLCPP_ERROR(logger, "Invalid command: size of ioPins, ioModes and targetIos must be equal to numberOfIos_=%d", numberOfIos_);
             return false;
         }
-        
-        // TODO: Check command validity
-        for (int i = 0; i < numberOfIos_; i++)
-        {
-            if (ioModes[i] != __ekiModeWrite_)
-            {
-                RCLCPP_ERROR(logger, "Invalid command: ioMode %d is not valid for %s", ioModes[i], ioNames[i].c_str());
-                return false;
-            }
-        }
 
         tinyxml2::XMLDocument xmlCommand;
         tinyxml2::XMLElement* ioCommand = xmlCommand.NewElement("IOCommand");
