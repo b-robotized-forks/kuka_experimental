@@ -285,3 +285,8 @@ namespace kuka_eki_io_interface
         return hardware_interface::return_type::OK;
     }
 }  // namespace kuka_eki_io_interface
+
+#include "pluginlib/class_list_macros.hpp"
+
+PLUGINLIB_EXPORT_CLASS(
+    kuka_eki_io_interface::KukaEkiIoInterface, hardware_interface::SystemInterface)
