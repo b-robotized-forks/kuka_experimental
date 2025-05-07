@@ -16,15 +16,29 @@
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "rclcpp_lifecycle/state.hpp"
 
+
+
 namespace kuka_eki_io_interface
 {
+    using Socket = boost::asio::ip::udp::socket;
+    using SocketPtr = std::unique_ptr<boost::asio::ip::udp::socket>;
+    using Endpoint = boost::asio::ip::udp::endpoint;
+    using IoService = boost::asio::io_service;
+    using Resolver = boost::asio::ip::udp::resolver;
+    using SystemErrorCode = boost::system::error_code;
+    using DeadlineTimer = boost::asio::deadline_timer;
+    using DeadlineTimerPtr = std::unique_ptr<boost::asio::deadline_timer>;
+    using Udp = boost::asio::ip::udp;
+    using Seconds = boost::posix_time::seconds;
+
     const std::string LOGGER_NAME = "KukaEkiIoInterface";
     const std::string ioNames[] = {"IO1", "IO2", "IO3", "IO4", "IO5", "IO6", "IO7", "IO8"};
-    const int myCustomTemporaryDefaultValue = -42069;
-    const int pinNumberOffset_ = 500;
-    const int __defaultNumberOfIos_ = 8;
-    const int __ekiModeWrite_ = 2;
-    const int __ekiModeRead_ = 1;
+    const int __maxIoNumber = 8;
+    const int __myCustomTemporaryDefaultValue = -42069;
+    const int __pinNumberOffset = 500;
+    const int __defaultNumberOfIos = 8;
+    const int __ekiModeWrite = 2;
+    const int __ekiModeRead = 1;
 
     class KukaEkiIoInterface : public hardware_interface::SystemInterface
     {
@@ -36,21 +50,20 @@ namespace kuka_eki_io_interface
             hardware_interface::CallbackReturn on_activate(const rclcpp_lifecycle::State& previous_state) final;
             hardware_interface::CallbackReturn on_deactivate(const rclcpp_lifecycle::State& previous_state) final;
 
-            std::vector<hardware_interface::StateInterface> export_state_interfaces() final;
-            std::vector<hardware_interface::CommandInterface> export_command_interfaces() final;
+            // std::vector<hardware_interface::StateInterface> export_state_interfaces() final;                             // pk // DEPRECATED USE on_export_state_interfaces instead
+            // std::vector<hardware_interface::CommandInterface> export_command_interfaces() final;                         // pk // DEPRECATED USE on_export_command_interfaces instead
+            virtual std::vector<hardware_interface::StateInterface::ConstSharedPtr> on_export_state_interfaces() final;     // pk // !! If hardware_interface::SystemInterface is implemented correctly and used as intended you do not need to override this function !!
+            virtual std::vector<hardware_interface::CommandInterface::SharedPtr> on_export_command_interfaces() final;      // pk // !! If hardware_interface::SystemInterface is implemented correctly and used as intended you do not need to override this function !!
 
             hardware_interface::return_type read(const rclcpp::Time& time, const rclcpp::Duration& period) final;
             hardware_interface::return_type write(const rclcpp::Time& time, const rclcpp::Duration& period) final;
 
             bool eki_read_state(std::vector<bool>& io_states, std::vector<int>& io_pins);
             bool eki_write_command(const std::vector<int>& io_pins, const std::vector<bool>& target_ios);
-
-            virtual std::vector<hardware_interface::StateInterface::ConstSharedPtr> on_export_state_interfaces() final;
-            virtual std::vector<hardware_interface::CommandInterface::SharedPtr> on_export_command_interfaces() final;
     
             KukaEkiIoInterface(const std::string& eki_server_address, const std::string& eki_server_port, int n_io);
         private:
-            int numberOfIos_ = __defaultNumberOfIos_;
+            int numberOfIos_;
 
             // Store the command for the simulated robot
             std::vector<bool> ioStates_;
@@ -65,10 +78,10 @@ namespace kuka_eki_io_interface
 
             // EKI socket read/write
             int eki_read_state_timeout_ = 100;  // [s]; settable by parameter (default = 5)
-            boost::asio::io_service ios_;
-            std::unique_ptr<boost::asio::deadline_timer> deadline_;
-            boost::asio::ip::udp::endpoint eki_server_endpoint_;
-            std::unique_ptr<boost::asio::ip::udp::socket> eki_server_socket_;
+            IoService ios_;
+            DeadlineTimerPtr deadline_;
+            Endpoint eki_server_endpoint_;
+            SocketPtr eki_server_socket_;
 
             void eki_check_read_state_deadline();
             static void eki_handle_receive(const boost::system::error_code& ec, size_t length, boost::system::error_code*  out_ec, size_t*  out_length);
