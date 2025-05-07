@@ -92,11 +92,11 @@ namespace kuka_eki_io_interface
             return hardware_interface::CallbackReturn::ERROR;
         }
 
-        deadline_.reset(new boost::asio::deadline_timer(ios_));
-        eki_server_socket_.reset(new boost::asio::ip::udp::socket(ios_, boost::asio::ip::udp::endpoint(boost::asio::ip::udp::v4(), 0)));
+        deadline_.reset(new DeadlineTimer(ios_));
+        eki_server_socket_.reset(new Socket(ios_, Endpoint(Udp::v4(), 0)));
 
-        boost::asio::ip::udp::resolver resolver(ios_);
-        eki_server_endpoint_ = *resolver.resolve({boost::asio::ip::udp::v4(), eki_server_address_, eki_server_port_});
+        Udp::resolver resolver(ios_);
+        eki_server_endpoint_ = *resolver.resolve({Udp::v4(), eki_server_address_, eki_server_port_});
 
         boost::array<char, 1> ini_buf = {0};
         eki_server_socket_->send_to(boost::asio::buffer(ini_buf), eki_server_endpoint_);  // initiate contact to start server
@@ -141,7 +141,7 @@ namespace kuka_eki_io_interface
         deadline_->async_wait(boost::bind(&KukaEkiIoInterface::eki_check_read_state_deadline, this));
     }
 
-    void KukaEkiIoInterface::eki_handle_receive(const boost::system::error_code& systemErrorCode, size_t length, boost::system::error_code* out_ec, size_t* out_length)
+    void KukaEkiIoInterface::eki_handle_receive(const SystemErrorCode& systemErrorCode, size_t length, SystemErrorCode* out_ec, size_t* out_length)
     {
         *out_ec = systemErrorCode;
         *out_length = length;
@@ -157,8 +157,8 @@ namespace kuka_eki_io_interface
         static boost::array<char, 2048> inBuffer;
 
         // Read socket buffer (with timeout) // Based off of Boost documentation example: doc/html/boost_asio/example/timeouts/blocking_udp_client.cpp
-        deadline_->expires_from_now(boost::posix_time::seconds(eki_read_state_timeout_));
-        boost::system::error_code systemErrorCode = boost::asio::error::would_block;
+        deadline_->expires_from_now(Seconds(eki_read_state_timeout_));
+        SystemErrorCode systemErrorCode = boost::asio::error::would_block;
         size_t len = 0;
 
         eki_server_socket_->async_receive(boost::asio::buffer(inBuffer), boost::bind(&KukaEkiIoInterface::eki_handle_receive, _1, _2, &systemErrorCode, &len));
