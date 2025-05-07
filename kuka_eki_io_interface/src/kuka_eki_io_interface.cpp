@@ -73,23 +73,22 @@ namespace kuka_eki_io_interface
     hardware_interface::CallbackReturn KukaEkiIoInterface::on_activate(const rclcpp_lifecycle::State& previous_state)
     {
         auto logger = rclcpp::get_logger(LOGGER_NAME);
-        RCLCPP_INFO(logger, "Starting ... please wait...");
+        RCLCPP_INFO(logger, "on_activate() called");
 
         eki_server_address_ = info_.hardware_parameters["robot_ip"];
         eki_server_port_ = info_.hardware_parameters["eki_robot_port"];
         numberOfIos_ = info_.gpios.size();
 
-        for (const auto& io : info_.gpios)
-        {
-            
-        }
-
-        RCLCPP_INFO(logger, "using IP: %s", eki_server_address_.c_str());
-        RCLCPP_INFO(logger, "using port: %s", eki_server_port_.c_str());
-
+        std::string completeAddress = eki_server_address_ + ":" + eki_server_port_;
+        RCLCPP_INFO(logger, "using IP and port: %s", completeAddress.c_str());
         if (eki_server_address_.empty() || eki_server_port_.empty())
         {
             RCLCPP_FATAL(logger, "robot_ip or eki_robot_port cannot be empty");
+            return hardware_interface::CallbackReturn::ERROR;
+        }
+        if (!isValidIPv4(completeAddress))
+        {
+            RCLCPP_FATAL(logger, "Invalid IP address: %s", completeAddress.c_str());
             return hardware_interface::CallbackReturn::ERROR;
         }
 
