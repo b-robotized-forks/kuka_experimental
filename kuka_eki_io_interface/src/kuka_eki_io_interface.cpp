@@ -230,7 +230,7 @@ namespace kuka_eki_io_interface
     {
         std::vector<hardware_interface::StateInterface::ConstSharedPtr> stateInterfaces;
         for (int i = 0; i < numberOfIos_; i++)
-            stateInterfaces.push_back(std::make_shared<hardware_interface::StateInterface>(ioNames[i], "eki_io_state", &ioStates_[i]));
+            stateInterfaces.push_back(std::make_shared<hardware_interface::StateInterface>(ioNames[i], "eki_io", &ioStates_[i]));
         return stateInterfaces;
     }
 
@@ -238,7 +238,7 @@ namespace kuka_eki_io_interface
     {
         std::vector<hardware_interface::CommandInterface::SharedPtr> commandInterfaces;
         for (int i = 0; i < numberOfIos_; i++)
-            commandInterfaces.push_back(std::make_shared<hardware_interface::CommandInterface>(ioNames[i], "eki_io_command", &ioCommands_[i]));
+            commandInterfaces.push_back(std::make_shared<hardware_interface::CommandInterface>(ioNames[i], "eki_io", &ioCommands_[i]));
         return commandInterfaces;
     }
 
