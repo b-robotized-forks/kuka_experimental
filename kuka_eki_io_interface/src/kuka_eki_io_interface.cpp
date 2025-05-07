@@ -119,16 +119,6 @@ namespace kuka_eki_io_interface
         return hardware_interface::CallbackReturn::SUCCESS;
     }
 
-    hardware_interface::CallbackReturn KukaEkiIoInterface::on_init(const hardware_interface::HardwareInfo& info)
-    {
-        if (hardware_interface::SystemInterface::on_init(info) != hardware_interface::CallbackReturn::SUCCESS)
-            return hardware_interface::CallbackReturn::ERROR;
-
-        info_ = info; // pk // Where does this come from? Probably inherited from SystemInterface.
-        
-        return hardware_interface::CallbackReturn::SUCCESS;
-    }
-
     void KukaEkiIoInterface::eki_check_read_state_deadline()
     {
         // Check if deadline has already passed
