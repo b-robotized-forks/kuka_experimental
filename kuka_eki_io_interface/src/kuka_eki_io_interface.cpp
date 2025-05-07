@@ -284,6 +284,9 @@ namespace kuka_eki_io_interface
             throw std::runtime_error(msg);
         }
 
+        for (int i = 0; i < numberOfIos_; i++)
+            set_state(ioNames[i], ioStates[i]);
+
         ioStates_ = ioStates;
         ioPins_ = ioPins;
     }
@@ -291,12 +294,27 @@ namespace kuka_eki_io_interface
     hardware_interface::return_type KukaEkiIoInterface::write(const rclcpp::Time& time, const rclcpp::Duration& period)
     {
         auto logger = rclcpp::get_logger(LOGGER_NAME);
-        if (!eki_write_command(ioPins_, ioCommands_))
-        {
-            std::string msg = "Failed to write to robot EKI server within alloted time of " + std::to_string(eki_read_state_timeout_) + " seconds. Make sure eki_hw_interface is running on the robot controller and all configurations are correct.";
-            RCLCPP_ERROR(logger, msg.c_str());
-            throw std::runtime_error(msg);
-        }
+
+        #ifdef USE_EXPORT_OVERRIDES
+            if (!eki_write_command(ioPins_, ioCommands_))
+            {
+                std::string msg = "Failed to write to robot EKI server within alloted time of " + std::to_string(eki_read_state_timeout_) + " seconds. Make sure eki_hw_interface is running on the robot controller and all configurations are correct.";
+                RCLCPP_ERROR(logger, msg.c_str());
+                throw std::runtime_error(msg);
+            }
+        #else
+            auto ioCommands = std::vector<bool>(numberOfIos_);
+            for (int i = 0; i < numberOfIos_; i++)
+                ioCommands[i] = get_command(ioNames[i]);
+
+            if (!eki_write_command(ioPins_, ioCommands_))
+            {
+                std::string msg = "Failed to write to robot EKI server within alloted time of " + std::to_string(eki_read_state_timeout_) + " seconds. Make sure eki_hw_interface is running on the robot controller and all configurations are correct.";
+                RCLCPP_ERROR(logger, msg.c_str());
+                throw std::runtime_error(msg);
+            }
+        #endif
+        
         return hardware_interface::return_type::OK;
     }
 
