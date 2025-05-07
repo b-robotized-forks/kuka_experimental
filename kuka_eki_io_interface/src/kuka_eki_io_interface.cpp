@@ -18,6 +18,57 @@ namespace kuka_eki_io_interface
         on_deactivate(rclcpp_lifecycle::State());
     }
 
+    hardware_interface::CallbackReturn KukaEkiIoInterface::on_init(const hardware_interface::HardwareInfo& info)
+    {
+        auto logger = rclcpp::get_logger(LOGGER_NAME);
+        RCLCPP_INFO(logger, "on_init() called");
+
+        if (hardware_interface::SystemInterface::on_init(info) != hardware_interface::CallbackReturn::SUCCESS)
+            return hardware_interface::CallbackReturn::ERROR;
+
+        info_ = info; // pk // Is this even necessary?
+
+        if (__maxIoNumber < info_.gpios.size())
+        {
+            RCLCPP_FATAL(logger, "KUKA EKI IO interface only supports a maximum of %d GPIOs.", __maxIoNumber);
+            return hardware_interface::CallbackReturn::ERROR;
+        }
+        
+        // Check if the number of command interfaces and state interfaces is correct
+        for (const hardware_interface::ComponentInfo& gpio : info_.gpios)
+        {
+            if (gpio.command_interfaces.size() != 1)
+            {
+                RCLCPP_FATAL(logger, "KUKA EKI IO interface only supports one command interface per GPIO.");
+                return hardware_interface::CallbackReturn::ERROR;
+            }
+            if (gpio.state_interfaces.size() != 1)
+            {
+                RCLCPP_FATAL(logger, "KUKA EKI IO interface only supports one state interface per GPIO.");
+                return hardware_interface::CallbackReturn::ERROR;
+            }
+
+            if (gpio.parameters.find("pin") == gpio.parameters.end())
+            {
+                RCLCPP_FATAL(logger, "KUKA EKI IO interface requires a pin parameter for each GPIO.");
+                return hardware_interface::CallbackReturn::ERROR;
+            }
+            else 
+            {
+                if (!isInteger(gpio.parameters.at("pin")))
+                {
+                    RCLCPP_FATAL(logger, "KUKA EKI IO interface pin parameter must be an integer.");
+                    return hardware_interface::CallbackReturn::ERROR;
+                }
+
+                int pin = std::stoi(gpio.parameters.at("pin"));
+                ioPins_.push_back(pin);     // pk // This looks kinda hacky but may not be required if hardware_interface::SystemInterface is implemented correctly. 
+            }
+        }
+
+        return hardware_interface::CallbackReturn::SUCCESS;
+    }
+
     hardware_interface::CallbackReturn KukaEkiIoInterface::on_activate(const rclcpp_lifecycle::State& previous_state)
     {
         auto logger = rclcpp::get_logger(LOGGER_NAME);
