@@ -284,9 +284,11 @@ namespace kuka_eki_io_interface
             throw std::runtime_error(msg);
         }
 
+        // pk // This is the way it is supposed to be done (I think)
         for (int i = 0; i < numberOfIos_; i++)
             set_state(ioNames[i], ioStates[i]);
-
+        
+        // pk // Custom hack
         ioStates_ = ioStates;
         ioPins_ = ioPins;
     }
@@ -296,6 +298,7 @@ namespace kuka_eki_io_interface
         auto logger = rclcpp::get_logger(LOGGER_NAME);
 
         #ifdef USE_EXPORT_OVERRIDES
+            // pk // Custom hack
             if (!eki_write_command(ioPins_, ioCommands_))
             {
                 std::string msg = "Failed to write to robot EKI server within alloted time of " + std::to_string(eki_read_state_timeout_) + " seconds. Make sure eki_hw_interface is running on the robot controller and all configurations are correct.";
@@ -303,6 +306,7 @@ namespace kuka_eki_io_interface
                 throw std::runtime_error(msg);
             }
         #else
+            // pk // This is the way it is supposed to be done (I think)
             auto ioCommands = std::vector<bool>(numberOfIos_);
             for (int i = 0; i < numberOfIos_; i++)
                 ioCommands[i] = get_command(ioNames[i]);
