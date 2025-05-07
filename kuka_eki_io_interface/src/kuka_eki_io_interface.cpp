@@ -2,6 +2,7 @@
 #include <boost/bind.hpp>
 #include <boost/date_time/posix_time/posix_time_types.hpp>
 #include <tinyxml2.h>
+#include <regex>
 
 #include <kuka_eki_io_interface/kuka_eki_io_interface.h>
 
@@ -325,6 +326,32 @@ namespace kuka_eki_io_interface
         }
         return hardware_interface::return_type::OK;
     }
+
+    bool isValidIPv4(const std::string& ipString) {
+        // IPv4 pattern with optional port
+        // Matches: 192.168.1.1, 192.168.1.1:8080, 0.0.0.0, 255.255.255.255:65535
+        static const std::regex ipv4Regex(
+            "^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\."
+            "(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\."
+            "(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\."
+            "(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)"
+            "(:(6553[0-5]|655[0-2][0-9]|65[0-4][0-9]{2}|6[0-4][0-9]{3}|[1-5][0-9]{4}|[1-9][0-9]{0,3}))?$"
+        );
+        
+        return std::regex_match(ipString, ipv4Regex);
+    }
+
+    bool isInteger(const std::string& s) {
+        try {
+            std::stoi(s);
+            return true;
+        } catch (const std::invalid_argument& e) {
+            return false;
+        } catch (const std::out_of_range& e) {
+            return true; // It's a number, but too large for int
+        }
+    }
+
 }  // namespace kuka_eki_io_interface
 
 #include "pluginlib/class_list_macros.hpp"
