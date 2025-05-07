@@ -210,15 +210,15 @@ namespace kuka_eki_io_interface
                 return false;
             }
             
-            int ioState = myCustomTemporaryDefaultValue;
-            int ioPin = myCustomTemporaryDefaultValue;
-            int ioMode = myCustomTemporaryDefaultValue;
+            int ioState = __myCustomTemporaryDefaultValue;
+            int ioPin = __myCustomTemporaryDefaultValue;
+            int ioMode = __myCustomTemporaryDefaultValue;
 
             state->QueryIntAttribute("State", &ioState);
             state->QueryIntAttribute("Pin", &ioPin);
             state->QueryIntAttribute("Mode", &ioMode);
 
-            if (ioState == myCustomTemporaryDefaultValue || ioPin == myCustomTemporaryDefaultValue || ioMode != __ekiModeRead_)
+            if (ioState == __myCustomTemporaryDefaultValue || ioPin == __myCustomTemporaryDefaultValue || ioMode != __ekiModeRead)
             {
                 RCLCPP_ERROR(logger, " invalid %s-element found in XML.", ioNames[i].c_str());
                 return false;
@@ -254,7 +254,7 @@ namespace kuka_eki_io_interface
             // io_element->LinkEndChild(empty_text);
 
             ioElement->SetAttribute("Pin", ioPins[i]);
-            ioElement->SetAttribute("Mode", __ekiModeWrite_);
+            ioElement->SetAttribute("Mode", __ekiModeWrite);
             ioElement->SetAttribute("Value", (int)targetIos[i]);
         }
         xmlCommand.InsertEndChild(ioCommand);
