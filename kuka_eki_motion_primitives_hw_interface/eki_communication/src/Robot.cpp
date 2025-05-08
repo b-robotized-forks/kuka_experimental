@@ -31,15 +31,15 @@ bool rbt::Robot::connect(const std::string &host, int port, int meta_port)
     std::cout << "[Robot] Trying to connect to the host: [" << host << "], port: [" << port << "], meta_port: [" << meta_port << "]" << std::endl;
     interface_used_ = port > 0;
     meta_interface_used_ = meta_port > 0;
+    
+    if (meta_interface_used_)
+    {
+        connect_to(meta_interface_, host, meta_port);
+    }
 
     if (interface_used_)
     {
         connect_to(interface_, host, port);
-    }
-
-    if (meta_interface_used_)
-    {
-        connect_to(meta_interface_, host, meta_port);
     }
     std::cout << "[Robot] is_connected: " << is_connected() << std::endl;
     return is_connected();
