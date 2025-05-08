@@ -20,7 +20,7 @@ def aip_meta_eki()
    ; Communication process
    loop
       if get_meta(current_meta) then
-         msgnotify("Recived new meta data", "Meta EKI")
+         ; msgnotify("Recived new meta data", "Meta EKI")
          update_meta(current_meta)
       endif
    endloop
@@ -162,14 +162,14 @@ endfct
 def update_meta(meta :in)
    decl meta_type meta
    ; Update velocity_override
-   msgnotify("Handeling for velocity_override not implemented. Recived velocity_override: %1 ",,meta.velocity_override)
+   ; msgnotify("Handeling for velocity_override not implemented. Recived velocity_override: %1 ",,meta.velocity_override)
    
    ; Update abort_commands_flag
    if meta.abort_commands == 1 then
       $FLAG[3] = TRUE
       msgnotify("Set abort_commands flag ($FLAG[3]) to TRUE", "Meta EKI")
-   ;else
-      ;$FLAG[3] = FALSE
-      ;msgnotify("Set abort_commands flag ($FLAG[3]) to FALSE", "Meta EKI")
+   else
+      $FLAG[3] = FALSE
+      msgnotify("Set abort_commands flag ($FLAG[3]) to FALSE", "Meta EKI")
    endif   
 end

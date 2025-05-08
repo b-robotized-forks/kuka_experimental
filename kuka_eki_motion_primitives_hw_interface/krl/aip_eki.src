@@ -31,29 +31,35 @@ def aip_eki()
    ControlWord = 0
    ;WAIT FOR $IN[1112] == FALSE ;mathias31415 commented to not wait for input
    
+   interrupt decl 14 when $flag[3] == true do abort_movement()  ;local interrupt to use RESUME
+   interrupt on 14
+   
    ; Communication process
    loop
       if get_command(current_command) then
-         ;msgnotify("Recived new motion data", "Motion EKI")
-         ;if $FLAG[3] then
-            ;msgnotify("abort_commands flag ($FLAG[3]) is TRUE", "Motion EKI")
-         ;else
-            ;msgnotify("abort_commands flag ($FLAG[3]) is FALSE", "Motion EKI")
-         ;endif  
-         
+         ;msgnotify("New motion data available", "Motion EKI")    
          CURRENT_COMMAND_ID = current_command.id
-         switch current_command.type
-            case 1
-               check_error(do_grip(current_command.grip_data))
-               check_error(do_move(current_command.step, current_command.move_data))
-            case 2
-               check_error(do_move(current_command.step, current_command.move_data))
-            case 3
-               check_error(do_grip(current_command.grip_data))
-         endswitch
+         if not $FLAG[3] then
+            ;msgnotify("abort_commands flag is FALSE, executing command", "Motion EKI")
+            switch current_command.type
+               case 1
+                  check_error(do_grip(current_command.grip_data))
+                  check_error(do_move(current_command.step, current_command.move_data))
+               case 2
+                  check_error(do_move(current_command.step, current_command.move_data))
+               case 3
+                  check_error(do_grip(current_command.grip_data))
+            endswitch
+         ;else
+            ;msgnotify("abort_commands flag is TRUE, dont execute command", "Motion EKI")
+         endif
+         
       else
          CURRENT_COMMAND_ID = 0
+         ;msgnotify("No new motion data available", "Motion EKI") 
       endif
+         
+       
    endloop 
 end
 
@@ -92,10 +98,7 @@ def init_interface()
    decl eki_status status
    
    msgnotify("Init motion interface", "Motion EKI")
-   
-   global interrupt decl 14 when $flag[3] == true do abort_movement()
-   interrupt on 14
-   
+
    global interrupt decl 15 when $flag[1] == false do close_interface() ;mathias31415 change back to reset_interface()after testing
    interrupt on 15
    
@@ -344,19 +347,30 @@ deffct int do_move(step :in, move_data :in)
  
    switch (move_data.mode)
       case 1
-         ptp move_data.joint c_ptp
+         if not $FLAG[3] then
+            ptp move_data.joint c_ptp
+         endif
       case 2
-         ptp move_data.cartesian c_ptp
+         if not $FLAG[3] then
+            ptp move_data.cartesian c_ptp
+         endif
       case 3
-         lin move_data.cartesian
+         if not $FLAG[3] then
+            lin move_data.cartesian
+         endif
       case 4
-         ptp teached_points[move_data.teached] c_ptp
+         if not $FLAG[3] then
+            ptp teached_points[move_data.teached] c_ptp
+         endif
       ;case 5
       ;   lin teached_points[move_data.teached]
       case 6   ; mathias31415 added circ
-         circ move_data.cartesian_aux, move_data.cartesian
+         if not $FLAG[3] then
+            circ move_data.cartesian_aux, move_data.cartesian
+         endif
    endswitch
    
+   WAIT SEC 0  ; to prevent advancepointer (vorlaufzeiger) (not allowed for RESUME in interuppt to stop the motion)
    return error_code
 endfct
 
@@ -431,24 +445,20 @@ deffct int do_grip(grip_data :in)
 endfct
 
 
-;def abort_movement()
-   ;msgnotify("Called abort_movement() in interrupt because abort_commands flag ($FLAG[3]) turned TRUE", "Motion EKI")
-   ;msgnotify("Execute BREAK", "Motion EKI")
-   ;BRAKE
-   ;msgnotify("Reset abort_movement flag", "Motion EKI")
-   ;$flag[3] = FALSE
-;end
-
 def abort_movement()
    decl eki_status status
+   
+   ; Disable interrupt to avoid recursive triggers
+   INTERRUPT OFF 14
+   
    msgnotify("Called abort_movement() in interrupt because abort_commands flag turned TRUE", "Motion EKI")
    
    ; Immediately stop the robot
    BRAKE
-   ;msgnotify("After BREAK", "Motion EKI")
    
-   ;LIN $POS_INT   ; return to point where interrupt occured
-   
+   ; wait one cycle
+   WAIT sec 0.012
+
    ; Clear the command buffer to prevent further motion
    status = eki_clearbuffer("AIP_EKI", "RobotCommand")
    if status.buff > 0 then
@@ -457,12 +467,16 @@ def abort_movement()
       msgnotify("Successfully cleared command buffer", "Motion EKI")
    endif
    
+   ; Reset current command to ensure a clean restart
    current_command = null_command()
    
-   ; Reset the abort flag
-   msgnotify("Reset abort_movement flag", "Motion EKI")
-   $flag[3] = FALSE
+   ; Move to current position
+   ;msgnotify("PTP to current position", "Motion EKI")
+   ;ptp $axis_act_meas
    
-   ;RESUME   ; dont go back to where the interrupt occured
+   ; Re-enable the interrupt for future triggers
+   INTERRUPT ON 14
+   
+   RESUME   ; dont go back to where the interrupt occured
 end
 
