@@ -36,6 +36,9 @@ msg_start_sequence.type = MotionPrimitive.MOTION_SEQUENCE_START
 msg_end_sequence = MotionPrimitive()
 msg_end_sequence.type = MotionPrimitive.MOTION_SEQUENCE_END
 
+msg_stop = MotionPrimitive()
+msg_stop.type = MotionPrimitive.STOP_MOTION
+
 msg_PTP_1 = MotionPrimitive()
 msg_PTP_1.type = MotionPrimitive.LINEAR_JOINT
 msg_PTP_1.joint_positions = [0.0, -1.57, 1.57, 0.0, 1.57, 0.0]
@@ -132,41 +135,75 @@ msg_moveC_1.poses = [pose_C1_goal, pose_C1_via]
 #         rclpy.shutdown()
 
 
+# send all motion primitives directly one after the other with an delay
+# class MotionPublisher(Node):
+#     def __init__(self):
+#         super().__init__('motion_publisher')
+
+#         self.publisher_ = self.create_publisher(MotionPrimitive, '/motion_primitive_controller/reference', 10)
+
+#         # self.messages = [msg_PTP_1, msg_PTP_2, msg_PTP_3, msg_PTP_2, msg_LIN_1, msg_LIN_2]
+#         # self.sequence = [msg_start_sequence, msg_PTP_1, msg_PTP_2, msg_PTP_3, msg_LIN_1, msg_LIN_2, msg_end_sequence]
+#         # self.messages = self.sequence * 2  # Repeat the sequence twice
+#         # self.messages = [msg_PTP_1, msg_moveC_1]
+#         # self.messages = [msg_start_sequence, msg_PTP_1, msg_PTP_2, msg_PTP_3, msg_LIN_1, msg_LIN_2, msg_PTP_1, msg_moveC_1, msg_end_sequence, msg_PTP_1, msg_moveC_1]
+#         self.messages = [msg_start_sequence, msg_PTP_1, msg_PTP_2, msg_PTP_3, msg_LIN_1, msg_LIN_2, msg_end_sequence]
+#         # self.messages = [msg_PTP_1, msg_PTP_2, msg_PTP_3, msg_LIN_1, msg_LIN_2, msg_PTP_1, msg_moveC_1, msg_PTP_1, msg_moveC_1]
+#         # self.messages = [msg_stop]
+
+#         self.current_index = 0
+
+#         self.get_logger().info(f"Number of messages: {len(self.messages)}")
+
+#         self.timer = self.create_timer(0.5, self.send_next_message)
+
+#     def send_next_message(self):
+#         if self.current_index < len(self.messages):
+#             msg = self.messages[self.current_index]
+#             self.publisher_.publish(msg)
+#             self.get_logger().info(f"Published message {self.current_index + 1}: {msg}")
+
+#             self.current_index += 1
+#         else:
+#             self.get_logger().info("All messages sent, shutting down node.")
+#             rclpy.shutdown()
+# def main(args=None):
+#     rclpy.init(args=args)
+#     node = MotionPublisher()
+#     rclpy.spin(node)
+
 # send all motion primitives directly one after the other
 class MotionPublisher(Node):
     def __init__(self):
         super().__init__('motion_publisher')
 
         self.publisher_ = self.create_publisher(MotionPrimitive, '/motion_primitive_controller/reference', 10)
-
-        # self.messages = [msg_PTP_1, msg_PTP_2, msg_PTP_3, msg_PTP_2, msg_LIN_1, msg_LIN_2]
-        # self.sequence = [msg_start_sequence, msg_PTP_1, msg_PTP_2, msg_PTP_3, msg_LIN_1, msg_LIN_2, msg_end_sequence]
-        # self.messages = self.sequence * 2  # Repeat the sequence twice
-        # self.messages = [msg_PTP_2, msg_moveC_1]
-        # self.messages = [msg_PTP_2, msg_LIN_test1, msg_LIN_test2]
-        self.messages = [msg_PTP_1, msg_moveC_1]
-
-        self.current_index = 0
-
+        self.messages = [msg_start_sequence, msg_PTP_1, msg_PTP_2, msg_PTP_3, msg_LIN_1, msg_LIN_2, msg_end_sequence]
         self.get_logger().info(f"Number of messages: {len(self.messages)}")
 
-        self.timer = self.create_timer(0.5, self.send_next_message)
+        # Initial delay before the first message
+        self.initial_delay = 2.0  # in seconds
+        time.sleep(self.initial_delay)
+        self.send_all_messages()
 
-    def send_next_message(self):
-        if self.current_index < len(self.messages):
-            msg = self.messages[self.current_index]
+    def send_all_messages(self):
+        for index, msg in enumerate(self.messages):
             self.publisher_.publish(msg)
-            self.get_logger().info(f"Published message {self.current_index + 1}: {msg}")
+            self.get_logger().info(f"Published message {index + 1}: {msg}")
+        self.get_logger().info("All messages sent, shutdown with Ctrl+C")
 
-            self.current_index += 1
-        else:
-            self.get_logger().info("All messages sent, shutting down node.")
-            rclpy.shutdown()
 
 def main(args=None):
     rclpy.init(args=args)
     node = MotionPublisher()
-    rclpy.spin(node)
+
+    try:
+        rclpy.spin(node)  # Keeps the node running
+    except KeyboardInterrupt:
+        pass  # Allows clean shutdown with Ctrl+C
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
 
 
 if __name__ == '__main__':
