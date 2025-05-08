@@ -6,88 +6,40 @@ Driver package to control kuka robot using motion primitives like PTP, LIN and C
 ![Licence](https://img.shields.io/badge/License-BSD-3-Clause-blue.svg)
 
 # Usage notes:
-## 1 Standard kuka_experimental
-**Launch kr5 with mock hw**
-```
-ros2 launch kuka_ros2_control_support bringup.launch.py description_package:=kuka_kr5_support description_macro_file:=kr5_arc_macro.xacro use_mock_hardware:=true
-```
-**Start test node for joint trajectory controller:**
-```
-ros2 launch kuka_ros2_control_support test_joint_trajectory_controller.launch.py
-```
-
-
-
-## 2 Normal kuka_experimental with EKI Communication
-**Start EKI simulator with UDP**
-```
-ros2 run kuka_eki_simulator kuka_eki_simulator 
-```
-**Launch kr5 with eki communication**
-```
-ros2 launch kuka_ros2_control_support bringup.launch.py description_package:=kuka_kr5_support description_macro_file:=kr5_arc_macro.xacro use_eki_communication:=true
-```
-
-## 3 H-KA EKI implementation
-**Start EKI simulator with TCP**
+## With "simulation"
+**1. Start simulation**
 ```
 ros2 run kuka_eki_simulator kuka_eki_simulator_tcp
 ```
-**Start Server for EKI communication**
-```
-ros2 launch robot_interface_eki robot_interface.launch.py
-```
-**Start Client to send commands**
-```
-ros2 run robot_interface_eki client.py
-```
+> [!NOTE]  
+> **This is not a proper simulation, but it can be helpful for debugging.**
+> - **Motion Channel:** Currently, only the motion primitive channel is implemented. The meta channel for interrupting movements is not implemented.
+> - **Single PTP Commands:** If the simulator receives an XML message containing only a single PTP (point-to-point) command, the robot's joint positions are set directly to those specified in the command.
+> - **Cartesian Commands:** Since no inverse kinematics (IK) is implemented, all joint positions are simply set to zero when a Cartesian command is received.
+> - **Multi-Primitive XML:** The simulator cannot correctly process XML messages containing multiple motion primitives. However, the received XML is printed, which is usually sufficient for debugging purposes.
 
 
-
-## 4 EKI Communication with motion primitive driver
-### 4.1 motion_primitive_kuka_driver branch using kuka_experimental eki implementation
-**Start EKI simulator with UDP**
-```
-ros2 run kuka_eki_simulator kuka_eki_simulator 
-```
-**Launch kr5 with motion primitive driver**
-```
-ros2 launch kuka_ros2_control_support motion_primitives_bringup.launch.py description_package:=kuka_kr5_support description_macro_file:=kr5_arc_macro.xacro
-```
-**Launch kr3 with motion primitive driver**
+**2. Launch KR3 with motion primitive driver**
 ```
 ros2 launch kuka_ros2_control_support motion_primitives_bringup.launch.py description_package:=kuka_kr3_support description_macro_file:=kr3r540_macro.xacro
 ```
-```
-ros2 launch kuka_ros2_control_support motion_primitives_bringup.launch.py description_package:=kuka_kr3_support description_macro_file:=kr3r540_macro.xacro eki_robot_ip:=10.181.116.51
-```
-**Publish dummy commands**
-```
-ros2 run kuka_eki_motion_primitives_hw_interface send_dummy_motion_primitives.py
-```
-
-### 4.2 hka_motion_primitive_kuka_driver branch using robot_interface_eki implementation from Moritz
-#### With Simulation
-```
-ros2 run kuka_eki_simulator kuka_eki_simulator_tcp
-```
-**Launch kr3 with motion primitive driver**
-```
-ros2 launch kuka_ros2_control_support motion_primitives_bringup.launch.py description_package:=kuka_kr3_support description_macro_file:=kr3r540_macro.xacro
-```
-#### With r2e cell 2
+## With ready2educate H-KA cell 2 (adjust robot_ip for other cells)
 **Launch kr3 with motion primitive driver**
 ```
 ros2 launch kuka_ros2_control_support motion_primitives_bringup.launch.py description_package:=kuka_kr3_support description_macro_file:=kr3r540_macro.xacro eki_robot_ip:=10.181.116.51
 ```
-#### Publish dummy commands
-**Commands from script**
+## Publish dummy commands
+**Commands from python script**
 ```
 ros2 run kuka_eki_motion_primitives_hw_interface send_dummy_motion_primitives.py
 ```
 **Stop command in terminal**
 ```
 ros2 topic pub /motion_primitive_controller/reference industrial_robot_motion_interfaces/msg/MotionPrimitive "{type: 66, blend_radius: 0.0, additional_arguments: [], poses: [], joint_positions: []}" --once
+```
+**Reset stop command in terminal**
+```
+ros2 topic pub /motion_primitive_controller/reference industrial_robot_motion_interfaces/msg/MotionPrimitive "{type: 67, blend_radius: 0.0, additional_arguments: [], poses: [], joint_positions: []}" --once
 ```
 
 

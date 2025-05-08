@@ -210,19 +210,25 @@ hardware_interface::return_type MotionPrimitivesKukaDriver::write(
 {
   // Check if we have a new command
   if (!std::isnan(hw_mo_prim_commands_[0])) {
-    RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Command of type: %f recived", hw_mo_prim_commands_[0]);
+    // RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Command of type: %f recived", hw_mo_prim_commands_[0]);
     ready_for_new_primitive_ = false; // set to false to indicate that the driver is busy handeling a command
     double motion_type = hw_mo_prim_commands_[0];
     // TODO(mathias31415): Handle new commands --> extra thread needed?
     switch (static_cast<uint8_t>(motion_type)) 
     {
       case MotionType::STOP_MOTION: {
-        RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "STOP_MOTION command received (handeling not implemented yet)");
-        // TODO(mathias31415): Handle STOP_MOTION command
-
-        current_execution_status_ = ExecutionState::IDLE;
+        RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "STOP_MOTION command received");
+        current_execution_status_ = ExecutionState::STOPPED;
+        robot_.abort_commands();
         reset_command_interfaces();
-        ready_for_new_primitive_ = true; // TODO(mathias31415): Only for testing --> adjust later
+        break;
+      }
+      case MotionType::RESET_STOP: {
+        RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "RESET_STOP command received");
+        current_execution_status_ = ExecutionState::IDLE;
+        robot_.reset_abort_commands();
+        reset_command_interfaces();
+        ready_for_new_primitive_ = true;
         break;
       }
       case MotionType::MOTION_SEQUENCE_START: {

@@ -14,7 +14,7 @@
 //
 // Authors: Students of the Insitute for Robotics and Autonomous Systems (IRAS) 
 //          - (Supervisor: Prof. Dr.-Ing. Christian Wurll), 
-//          Moritz Weisenböhler
+//          Moritz Weisenböhler, Mathias Fuhrer
 
 #pragma once
 
@@ -87,6 +87,7 @@ namespace rbt
         void pause_commands();
         void continue_commands();
         void abort_commands();
+        void reset_abort_commands();
         void set_velocity(float value);
 
         bool run();

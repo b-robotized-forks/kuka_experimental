@@ -127,6 +127,11 @@ void rbt::Robot::abort_commands()
     send_meta(true);
 }
 
+void rbt::Robot::reset_abort_commands()
+{
+    send_meta(false);
+}
+
 void rbt::Robot::set_velocity(float value)
 {
     if (velocity_override_ != value)
