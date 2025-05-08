@@ -8,10 +8,11 @@ def aip_meta_eki()
    
    ; Initialization
    ;bas(#initmov, 0)
-   init_interface()
+   init_meta_interface()
    current_meta = null_meta()
 
    index = 0
+   $FLAG[3] = FALSE  ; reset abort_commands flag
    
    ; Move to current position
    ;ptp $axis_act_meas
@@ -19,6 +20,7 @@ def aip_meta_eki()
    ; Communication process
    loop
       if get_meta(current_meta) then
+         msgnotify("Recived new meta data", "Meta EKI")
          update_meta(current_meta)
       endif
    endloop
@@ -32,14 +34,15 @@ deffct meta_type null_meta()
    return meta
 endfct
 
-def init_interface()
+def init_meta_interface()
    decl eki_status status
+   msgnotify("Init meta interface", "Meta EKI")
    
-   global interrupt decl 15 when $flag[2] == false do reset_interface()
-   interrupt on 15
+   global interrupt decl 17 when $flag[2] == false do close_meta_interface() ;mathias31415 change back to reset_meta_interface()after testing
+   interrupt on 17
    
-   global interrupt decl 16 when $timer_flag[2] == true do send_status()
-   interrupt on 16
+   global interrupt decl 18 when $timer_flag[2] == true do send_meta_status()
+   interrupt on 18
    
    wait sec 0.012          ; Wait for next interpolation cycle
    $timer[2] = -200        ; Time in [ms] before first interrupt call
@@ -50,29 +53,37 @@ def init_interface()
 end
 
 
-def reset_interface()
+def reset_meta_interface()
    decl eki_status status
+   msgnotify("Reset meta interface", "Meta EKI")
 
    status = eki_clear("AIP_META_EKI")
    status = eki_init("AIP_META_EKI")
    status = eki_open("AIP_META_EKI")
 end
 
+def close_meta_interface()
+   decl eki_status status
+   msgnotify("Close meta interface", "Meta EKI")
+   status = eki_close("AIP_META_EKI")
+end
 
-deffct bool has_connection()
+
+deffct bool has_meta_connection()
    return $flag[2]
 endfct
 
 
-def send_status()
+def send_meta_status()
    decl eki_status status
    
-   if has_connection() then
+   if has_meta_connection() then
+      ;("Send meta status", "Meta EKI")
       ; Command id
       status = eki_setreal("AIP_META_EKI", "MetaState/@VelocityOverride", current_meta.velocity_override)
       status = eki_setint("AIP_META_EKI", "MetaState/@CommandEmpty", 0)
       
-      if has_connection() then
+      if has_meta_connection() then
          status = eki_send("AIP_META_EKI", "MetaState")
       endif
    endif
@@ -112,7 +123,7 @@ def send_error(error_code :in, error_message[] :in)
    
    decl eki_status status
    
-   if has_connection() then
+   if has_meta_connection() then
       status = eki_setint("AIP_META_EKI", "MetaState/Error/@Code", error_code)
       status = eki_setstring("AIP_META_EKI", "MetaState/Error/@Message", error_message[])
    endif
@@ -122,7 +133,7 @@ end
 deffct bool has_meta()
    decl eki_status status
    
-   if not has_connection() then
+   if not has_meta_connection() then
       return false
    endif
 
@@ -150,7 +161,15 @@ endfct
 
 def update_meta(meta :in)
    decl meta_type meta
-
    ; Update velocity_override
+   msgnotify("Handeling for velocity_override not implemented. Recived velocity_override: %1 ",,meta.velocity_override)
+   
    ; Update abort_commands_flag
+   if meta.abort_commands == 1 then
+      $FLAG[3] = TRUE
+      msgnotify("Set abort_commands flag ($FLAG[3]) to TRUE", "Meta EKI")
+   ;else
+      ;$FLAG[3] = FALSE
+      ;msgnotify("Set abort_commands flag ($FLAG[3]) to FALSE", "Meta EKI")
+   endif   
 end

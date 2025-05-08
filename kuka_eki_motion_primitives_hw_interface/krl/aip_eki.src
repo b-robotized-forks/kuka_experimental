@@ -9,6 +9,7 @@ def aip_eki()
    
    ; Initialization
    bas(#initmov, 0)
+   
    init_interface()
    current_command = null_command()
    CURRENT_COMMAND_ID = 0
@@ -33,6 +34,13 @@ def aip_eki()
    ; Communication process
    loop
       if get_command(current_command) then
+         ;msgnotify("Recived new motion data", "Motion EKI")
+         ;if $FLAG[3] then
+            ;msgnotify("abort_commands flag ($FLAG[3]) is TRUE", "Motion EKI")
+         ;else
+            ;msgnotify("abort_commands flag ($FLAG[3]) is FALSE", "Motion EKI")
+         ;endif  
+         
          CURRENT_COMMAND_ID = current_command.id
          switch current_command.type
             case 1
@@ -46,7 +54,7 @@ def aip_eki()
       else
          CURRENT_COMMAND_ID = 0
       endif
-   endloop
+   endloop 
 end
 
 deffct command_type null_command()
@@ -83,7 +91,12 @@ endfct
 def init_interface()
    decl eki_status status
    
-   global interrupt decl 15 when $flag[1] == false do reset_interface()
+   msgnotify("Init motion interface", "Motion EKI")
+   
+   global interrupt decl 14 when $flag[3] == true do abort_movement()
+   interrupt on 14
+   
+   global interrupt decl 15 when $flag[1] == false do close_interface() ;mathias31415 change back to reset_interface()after testing
    interrupt on 15
    
    global interrupt decl 16 when $timer_flag[1] == true do send_status()
@@ -100,10 +113,17 @@ end
 
 def reset_interface()
    decl eki_status status
+   msgnotify("Reset motion interface", "Motion EKI")
 
    status = eki_clear("AIP_EKI")
    status = eki_init("AIP_EKI")
    status = eki_open("AIP_EKI")
+end
+
+def close_interface()
+   decl eki_status status
+   msgnotify("Close motion interface", "Motion EKI")
+   status = eki_close("AIP_EKI")
 end
 
 
@@ -116,6 +136,7 @@ def send_status()
    decl eki_status status
    
    if has_connection() then
+      ;msgnotify("Send status", "Motion EKI")
       ; Command id
       status = eki_setint("AIP_EKI", "RobotState/Command/@Id", CURRENT_COMMAND_ID)
       ; Joint position
@@ -408,3 +429,40 @@ deffct int do_grip(grip_data :in)
    
    return error_code
 endfct
+
+
+;def abort_movement()
+   ;msgnotify("Called abort_movement() in interrupt because abort_commands flag ($FLAG[3]) turned TRUE", "Motion EKI")
+   ;msgnotify("Execute BREAK", "Motion EKI")
+   ;BRAKE
+   ;msgnotify("Reset abort_movement flag", "Motion EKI")
+   ;$flag[3] = FALSE
+;end
+
+def abort_movement()
+   decl eki_status status
+   msgnotify("Called abort_movement() in interrupt because abort_commands flag turned TRUE", "Motion EKI")
+   
+   ; Immediately stop the robot
+   BRAKE
+   ;msgnotify("After BREAK", "Motion EKI")
+   
+   ;LIN $POS_INT   ; return to point where interrupt occured
+   
+   ; Clear the command buffer to prevent further motion
+   status = eki_clearbuffer("AIP_EKI", "RobotCommand")
+   if status.buff > 0 then
+      msgnotify("Failed to clear command buffer", "Motion EKI")
+   else
+      msgnotify("Successfully cleared command buffer", "Motion EKI")
+   endif
+   
+   current_command = null_command()
+   
+   ; Reset the abort flag
+   msgnotify("Reset abort_movement flag", "Motion EKI")
+   $flag[3] = FALSE
+   
+   ;RESUME   ; dont go back to where the interrupt occured
+end
+
