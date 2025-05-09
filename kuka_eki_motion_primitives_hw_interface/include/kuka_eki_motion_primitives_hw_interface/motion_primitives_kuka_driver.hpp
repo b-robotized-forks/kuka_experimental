@@ -38,6 +38,8 @@ namespace kuka_eki_motion_primitives_hw_interface
 class MotionPrimitivesKukaDriver : public hardware_interface::SystemInterface
 {
 public:
+  virtual ~MotionPrimitivesKukaDriver();
+
   hardware_interface::CallbackReturn on_init(
     const hardware_interface::HardwareInfo & info) override;
 
@@ -73,6 +75,13 @@ private:
   int eki_robot_meta_port_;
 
   rbt::Robot robot_;
+
+  // Async thread handling
+  std::unique_ptr<std::thread> async_execute_motion_thread_;
+  std::atomic_bool async_thread_shutdown_{ false };
+  std::mutex execution_mutex_;
+  std::atomic_bool new_execution_available_{ false };
+  void asyncExecuteMotionThread();
 
   std::atomic_bool build_motion_sequence_{false};   // flag to put all following primitives into a motion sequence instead of sending single primitives
   bool add_linear_joint_cmd();

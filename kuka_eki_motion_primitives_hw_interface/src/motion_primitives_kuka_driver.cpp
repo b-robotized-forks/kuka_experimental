@@ -25,6 +25,14 @@
 
 namespace kuka_eki_motion_primitives_hw_interface
 {
+MotionPrimitivesKukaDriver::~MotionPrimitivesKukaDriver()
+{
+  if (async_execute_motion_thread_ && async_execute_motion_thread_->joinable()) 
+  {
+    async_execute_motion_thread_->join();
+    async_execute_motion_thread_.reset();
+  }
+}
 hardware_interface::CallbackReturn MotionPrimitivesKukaDriver::on_init(
   const hardware_interface::HardwareInfo & info)
 {
@@ -36,6 +44,8 @@ hardware_interface::CallbackReturn MotionPrimitivesKukaDriver::on_init(
   }
 
   info_ = info;
+
+  async_thread_shutdown_ = false;
 
   // Joint states for RViz, ...
   hw_joint_states_.resize(info_.joints.size(), std::numeric_limits<double>::quiet_NaN());
@@ -51,6 +61,8 @@ hardware_interface::CallbackReturn MotionPrimitivesKukaDriver::on_configure(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
   RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Configuring Hardware Interface");
+
+  async_execute_motion_thread_ = std::make_unique<std::thread>(&MotionPrimitivesKukaDriver::asyncExecuteMotionThread, this);
 
   // TODO(anyone): prepare the robot to be ready for read calls and write calls of some interfaces
 
@@ -150,7 +162,11 @@ hardware_interface::CallbackReturn MotionPrimitivesKukaDriver::on_activate(
       return CallbackReturn::ERROR;
   }
 
+  RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Connecting to the robot ...");
   robot_.connect_async(robot_ip_, eki_robot_port_, eki_robot_meta_port_);
+  robot_.await_connection(); // TODO(mathias31415): Seems to not work with async connect? --> always returns true?
+  RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Connected to the robot.");
+  
 
   // TODO(mathias31415): Check this code block
   // robot_.listener = [this](rbt::RobotEvent event, rbt::Robot *robot) -> void {
@@ -166,7 +182,6 @@ hardware_interface::CallbackReturn MotionPrimitivesKukaDriver::on_activate(
   //       break;
   //   }
   // };
-
 
 
   RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "System Successfully activated!");
@@ -213,7 +228,6 @@ hardware_interface::return_type MotionPrimitivesKukaDriver::write(
     // RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Command of type: %f recived", hw_mo_prim_commands_[0]);
     ready_for_new_primitive_ = false; // set to false to indicate that the driver is busy handeling a command
     double motion_type = hw_mo_prim_commands_[0];
-    // TODO(mathias31415): Handle new commands --> extra thread needed?
     switch (static_cast<uint8_t>(motion_type)) 
     {
       case MotionType::STOP_MOTION: {
@@ -226,8 +240,8 @@ hardware_interface::return_type MotionPrimitivesKukaDriver::write(
       case MotionType::RESET_STOP: {
         RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "RESET_STOP command received");
         current_execution_status_ = ExecutionState::IDLE;
-        robot_.reset_abort_commands();
         reset_command_interfaces();
+        robot_.reset_abort_commands();
         ready_for_new_primitive_ = true;
         break;
       }
@@ -241,13 +255,11 @@ hardware_interface::return_type MotionPrimitivesKukaDriver::write(
       case MotionType::MOTION_SEQUENCE_END: {
         RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Received MOTION_SEQUENCE_END: executing motion sequence ...");
         build_motion_sequence_ = false;
-        bool success = robot_.run();
-        // current_execution_status_ = success ? ExecutionState::EXECUTING : ExecutionState::ERROR;  // TODO(mathias31415): Its not the execution status, but the send status?
-        RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "%s motion sequence to robot.", success? "Sent" : "Failed to send");
-        reset_command_interfaces();
-        if(success){
-          ready_for_new_primitive_ = true; // set to true to allow sending new commands
+        std::lock_guard<std::mutex> guard(execution_mutex_);
+        if (!new_execution_available_) {
+          new_execution_available_ = true;  // set flag for async thread to send command to robot
         }
+        reset_command_interfaces();
         break;
       }
       case MotionType::LINEAR_JOINT: { // MoveJ/ PTP
@@ -259,11 +271,9 @@ hardware_interface::return_type MotionPrimitivesKukaDriver::write(
         }
         reset_command_interfaces();
         if(!build_motion_sequence_) { // send single command imimediately
-          bool success = robot_.run();
-          // current_execution_status_ = success ? ExecutionState::EXECUTING : ExecutionState::ERROR;  // TODO(mathias31415): Its not the execution status, but the send status?
-          RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "%s LINEAR_JOINT command to robot.", success? "Sent" : "Failed to send");
-          if(success){
-            ready_for_new_primitive_ = true; // set to true to allow sending new commands
+          std::lock_guard<std::mutex> guard(execution_mutex_);
+          if (!new_execution_available_) {
+            new_execution_available_ = true;  // set flag for async thread to send command to robot
           }
         } else {
           ready_for_new_primitive_ = true; // set to true to allow sending new commands
@@ -279,11 +289,9 @@ hardware_interface::return_type MotionPrimitivesKukaDriver::write(
         }
         reset_command_interfaces();
         if(!build_motion_sequence_) { // send single command imimediately
-          bool success = robot_.run();
-          // current_execution_status_ = success ? ExecutionState::EXECUTING : ExecutionState::ERROR;  // TODO(mathias31415): Its not the execution status, but the send status?
-          RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "%s LINEAR_CARTESIAN command to robot.", success? "Sent" : "Failed to send");
-          if(success){
-            ready_for_new_primitive_ = true; // set to true to allow sending new commands
+          std::lock_guard<std::mutex> guard(execution_mutex_);
+          if (!new_execution_available_) {
+            new_execution_available_ = true;  // set flag for async thread to send command to robot
           }
         } else {
           ready_for_new_primitive_ = true; // set to true to allow sending new commands
@@ -299,11 +307,9 @@ hardware_interface::return_type MotionPrimitivesKukaDriver::write(
         }
         reset_command_interfaces();
         if(!build_motion_sequence_) { // send single command imimediately
-          bool success = robot_.run();
-          // current_execution_status_ = success ? ExecutionState::EXECUTING : ExecutionState::ERROR;  // TODO(mathias31415): Its not the execution status, but the send status?
-          RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "%s CIRCULAR_CARTESIAN command to robot.", success? "Sent" : "Failed to send");
-          if(success){
-            ready_for_new_primitive_ = true; // set to true to allow sending new commands
+          std::lock_guard<std::mutex> guard(execution_mutex_);
+          if (!new_execution_available_) {
+            new_execution_available_ = true;  // set flag for async thread to send command to robot
           }
         } else {
           ready_for_new_primitive_ = true; // set to true to allow sending new commands
@@ -422,6 +428,25 @@ bool MotionPrimitivesKukaDriver::add_circular_cartesian_cmd()
 void MotionPrimitivesKukaDriver::reset_command_interfaces()
 {
   std::fill(hw_mo_prim_commands_.begin(), hw_mo_prim_commands_.end(), std::numeric_limits<double>::quiet_NaN());
+}
+
+void MotionPrimitivesKukaDriver::asyncExecuteMotionThread()
+{
+  while (!async_thread_shutdown_) 
+  {
+    if (new_execution_available_) 
+    {
+      std::lock_guard<std::mutex> guard(execution_mutex_);
+      new_execution_available_ = false;
+      RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Sending command to robot ...");
+      while(!robot_.run()){}
+      RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Sending command to robot ... done");
+      ready_for_new_primitive_ = true;
+    }
+    // Small sleep to prevent busy waiting
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
+  RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "[asyncExecuteMotionThread] Exiting");
 }
 
 // Convert quaternion to Euler angles (roll, pitch, yaw) 
