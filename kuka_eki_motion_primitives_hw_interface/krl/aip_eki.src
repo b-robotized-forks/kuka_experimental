@@ -31,8 +31,9 @@ def aip_eki()
    ControlWord = 0
    ;WAIT FOR $IN[1112] == FALSE ;mathias31415 commented to not wait for input
    
-   interrupt decl 14 when $flag[3] == true do abort_movement()  ;local interrupt to use RESUME
-   interrupt on 14
+   interrupt decl 19 when $flag[3] == true do abort_movement()  ;local interrupt to use RESUME
+   interrupt on 19
+   $ADVANCE = 0   ; now advance run permitted when using RESUME in interrupt (no blending possible
    
    ; Communication process
    loop
@@ -370,7 +371,7 @@ deffct int do_move(step :in, move_data :in)
          endif
    endswitch
    
-   WAIT SEC 0  ; to prevent advancepointer (vorlaufzeiger) (not allowed for RESUME in interuppt to stop the motion)
+   ;WAIT SEC 0  ; to prevent advancepointer (vorlaufzeiger) (not allowed for RESUME in interuppt to stop the motion)
    return error_code
 endfct
 
@@ -449,7 +450,7 @@ def abort_movement()
    decl eki_status status
    
    ; Disable interrupt to avoid recursive triggers
-   INTERRUPT OFF 14
+   ;INTERRUPT OFF 19
    
    msgnotify("Called abort_movement() in interrupt because abort_commands flag turned TRUE", "Motion EKI")
    
@@ -457,7 +458,7 @@ def abort_movement()
    BRAKE
    
    ; wait one cycle
-   WAIT sec 0.012
+   ;WAIT sec 0.012
 
    ; Clear the command buffer to prevent further motion
    status = eki_clearbuffer("AIP_EKI", "RobotCommand")
@@ -475,8 +476,8 @@ def abort_movement()
    ;ptp $axis_act_meas
    
    ; Re-enable the interrupt for future triggers
-   INTERRUPT ON 14
+   ;INTERRUPT ON 19
    
-   RESUME   ; dont go back to where the interrupt occured
+   RESUME   ; dont go back to where the interrupt occured ($ADVANCE must be 0)
 end
 
