@@ -8,6 +8,7 @@
 
 namespace kuka_eki_io_interface
 {
+    // pk // Deconstructor most likely not required anymore since this class is not run as a separate node anymore.
     KukaEkiIoInterface::~KukaEkiIoInterface() 
     {
         RCLCPP_INFO(rclcpp::get_logger(LOGGER_NAME), "Destructor called. Cleaning up ...");
@@ -342,23 +343,25 @@ namespace kuka_eki_io_interface
         return hardware_interface::return_type::OK;
     }
 
-    // pk // !! If hardware_interface::SystemInterface is implemented correctly and used as intended you do not need to override this function !!
-    std::vector<hardware_interface::StateInterface::ConstSharedPtr> KukaEkiIoInterface::on_export_state_interfaces()
-    {
-        std::vector<hardware_interface::StateInterface::ConstSharedPtr> stateInterfaces;
-        for (int i = 0; i < numberOfIos_; i++)
-            stateInterfaces.push_back(std::make_shared<hardware_interface::StateInterface>(ioNames[i], "eki_io", &ioStates_[i]));
-        return stateInterfaces;
-    }
+    // #ifndef USE_EXPORT_OVERRIDES
+    //     // pk // !! If hardware_interface::SystemInterface is implemented correctly and used as intended you do not need to override this function !!
+    //     std::vector<hardware_interface::StateInterface::ConstSharedPtr> KukaEkiIoInterface::on_export_state_interfaces()
+    //     {
+    //         std::vector<hardware_interface::StateInterface::ConstSharedPtr> stateInterfaces;
+    //         for (int i = 0; i < numberOfIos_; i++)
+    //             stateInterfaces.push_back(std::make_shared<hardware_interface::StateInterface>(ioNames[i], "eki_io", &ioStates_[i]));
+    //         return stateInterfaces;
+    //     }
 
-    // pk // !! If hardware_interface::SystemInterface is implemented correctly and used as intended you do not need to override this function !!
-    std::vector<hardware_interface::CommandInterface::SharedPtr> KukaEkiIoInterface::on_export_command_interfaces()
-    {
-        std::vector<hardware_interface::CommandInterface::SharedPtr> commandInterfaces;
-        for (int i = 0; i < numberOfIos_; i++)
-            commandInterfaces.push_back(std::make_shared<hardware_interface::CommandInterface>(ioNames[i], "eki_io", &ioCommands_[i]));
-        return commandInterfaces;
-    }
+    //     // pk // !! If hardware_interface::SystemInterface is implemented correctly and used as intended you do not need to override this function !!
+    //     std::vector<hardware_interface::CommandInterface::SharedPtr> KukaEkiIoInterface::on_export_command_interfaces()
+    //     {
+    //         std::vector<hardware_interface::CommandInterface::SharedPtr> commandInterfaces;
+    //         for (int i = 0; i < numberOfIos_; i++)
+    //             commandInterfaces.push_back(std::make_shared<hardware_interface::CommandInterface>(ioNames[i], "eki_io", &ioCommands_[i]));
+    //         return commandInterfaces;
+    //     }
+    // #endif
 
 
 

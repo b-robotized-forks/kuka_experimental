@@ -21,7 +21,7 @@
 
 namespace kuka_eki_io_interface
 {
-    #define USE_EXPORT_OVERRIDES
+    //#define USE_EXPORT_OVERRIDES
 
     using Socket = boost::asio::ip::udp::socket;
     using SocketPtr = std::unique_ptr<boost::asio::ip::udp::socket>;
