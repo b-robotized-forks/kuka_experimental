@@ -35,6 +35,8 @@ namespace kuka_eki_io_interface
             RCLCPP_FATAL(logger, "KUKA EKI IO interface only supports a maximum of %d GPIOs.", __maxIoNumber);
             return hardware_interface::CallbackReturn::ERROR;
         }
+
+        RCLCPP_DEBUG(logger, "KUKA EKI IO interface initialized with %d GPIOs.", info_.gpios.size());
         
         // Check if the number of command interfaces and state interfaces is correct
         for (const hardware_interface::ComponentInfo& gpio : info_.gpios)
@@ -64,7 +66,6 @@ namespace kuka_eki_io_interface
             }
 
             int pin = std::stoi(gpio.parameters.at("pin"));
-
             gpioInfo_[pin] = {
                 gpio.name, 
                 pin, 
@@ -73,6 +74,11 @@ namespace kuka_eki_io_interface
                 std::make_shared<hardware_interface::CommandInterface>(gpio.command_interfaces[0]),
                 std::make_shared<hardware_interface::StateInterface>(gpio.state_interfaces[0])
             };
+
+            RCLCPP_DEBUG(logger, "GPIO %d: %s", pin, gpio.name.c_str());
+            RCLCPP_DEBUG(logger, "Command interface: %s", gpio.command_interfaces[0].name.c_str());
+            RCLCPP_DEBUG(logger, "State interface: %s", gpio.state_interfaces[0].name.c_str());
+            RCLCPP_DEBUG(logger, "Pin: %d", pin);
         }
 
         return hardware_interface::CallbackReturn::SUCCESS;
@@ -128,9 +134,11 @@ namespace kuka_eki_io_interface
             set_state(gpioInfo.StateInterfaceName, ioStates[pin]);
         }
 
+        RCLCPP_INFO(logger, "KUKA EKI IO interface activated.");
         return hardware_interface::CallbackReturn::SUCCESS;
     }
 
+    // pk // No idea what this function does.
     void KukaEkiIoInterface::eki_check_read_state_deadline()
     {
         // Check if deadline has already passed
@@ -172,14 +180,14 @@ namespace kuka_eki_io_interface
         // KUKAEKIIO_00001 // KUKAEKIIO_00002 // Log warning when errorcode is set and do not continue processing.
         if (systemErrorCode)
         {
-            RCLCPP_WARN(logger, " communication error code: %s", systemErrorCode.message().c_str());
+            RCLCPP_WARN(logger, "communication error code: %s", systemErrorCode.message().c_str());
             return false;
         }
 
         // KUKAEKIIO_00003 // KUKAEKIIO_00004 // Log warning when packages with zero lenght are received and do not continue processing.
         if (len == 0)
         {
-            RCLCPP_WARN(logger, " packet of len 0 received.");
+            RCLCPP_WARN(logger, "packet of len 0 received.");
             return false;
         }
 
@@ -202,14 +210,14 @@ namespace kuka_eki_io_interface
         // KUKAEKIIO_00007 // KUKAEKIIO_00008 // Log warning when no "IOState" is child-element contained and do not continue processing. 
         if (!robotState)
         {
-            RCLCPP_ERROR(logger, " no IOState-element found in XML.");
+            RCLCPP_ERROR(logger, "no IOState-element found in XML.");
             return false;
         }
         
         // KUKAEKIIO_00009 // Log debug the XML DOM.
         tinyxml2::XMLPrinter printer;
         xmlDocument.Print(&printer);
-        RCLCPP_DEBUG(logger, " received XML: %s", printer.CStr());
+        RCLCPP_DEBUG(logger, "received XML: %s", printer.CStr());
         
         // Transform data from XML DOM into an c-typed structure.
         // 
@@ -218,7 +226,7 @@ namespace kuka_eki_io_interface
             tinyxml2::XMLElement* state = robotState->FirstChildElement(ioNames[i].c_str());
             if (!state)
             {
-                RCLCPP_ERROR(logger, " no %s-element found in XML.", ioNames[i].c_str());
+                RCLCPP_ERROR(logger, "no %s-element found in XML.", ioNames[i].c_str());
                 return false;
             }
             
@@ -232,13 +240,18 @@ namespace kuka_eki_io_interface
 
             if (ioState == __myCustomTemporaryDefaultValue || ioPin == __myCustomTemporaryDefaultValue || ioMode != __ekiModeRead)
             {
-                RCLCPP_ERROR(logger, " invalid %s-element found in XML.", ioNames[i].c_str());
+                RCLCPP_ERROR(logger, "invalid %s-element found in XML.", ioNames[i].c_str());
                 return false;
             }
 
             ioStates[i] = ioState;
             ioPins[i] = ioPin;
         }
+
+        RCLCPP_DEBUG(logger, "read %d IOs from robot EKI server.", numberOfIos_);
+        for (int i = 0; i < numberOfIos_; i++)
+            RCLCPP_DEBUG(logger, " %s: %d", ioNames[i].c_str(), ioStates[i]);
+
         return true;
     }
 
@@ -255,7 +268,7 @@ namespace kuka_eki_io_interface
         }
 
         tinyxml2::XMLDocument xmlCommand;
-        tinyxml2::XMLElement* ioCommand = xmlCommand.NewElement("IOCommand");
+        auto ioCommand = xmlCommand.NewElement("IOCommand");
         for (int i = 0; i < numberOfIos_; i++)
         {
             tinyxml2::XMLElement* ioElement = xmlCommand.NewElement(ioNames[i].c_str());
@@ -273,9 +286,10 @@ namespace kuka_eki_io_interface
 
         tinyxml2::XMLPrinter printer;
         xmlCommand.Print(&printer);
-        RCLCPP_DEBUG(logger, " sending XML: %s", printer.CStr());
-
+        
         eki_server_socket_->send_to(boost::asio::buffer(printer.CStr(), printer.CStrSize()), eki_server_endpoint_);
+        
+        RCLCPP_DEBUG(logger, " sending XML: %s", printer.CStr());
         return true;
     }
 
@@ -309,10 +323,10 @@ namespace kuka_eki_io_interface
 
         auto ioCommands = std::vector<bool>(numberOfIos_);
         auto ioPins = std::vector<int>(numberOfIos_);
-        for (const auto& [first, second] : gpioInfo_)
+        for (const auto& [pinNumber, info] : gpioInfo_)
         {
-            ioCommands.push_back(second.CommandInterface->get_value());
-            ioPins.push_back(second.PinNumber);
+            ioCommands.push_back(info.CommandInterface->get_value());
+            ioPins.push_back(info.PinNumber);
         }
 
         if (!eki_write_command(ioPins, ioCommands))

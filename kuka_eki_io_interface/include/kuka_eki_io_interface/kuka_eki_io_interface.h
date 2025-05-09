@@ -41,6 +41,9 @@ namespace kuka_eki_io_interface
     const int __ekiModeWrite = 2;
     const int __ekiModeRead = 1;
 
+    bool isValidIPv4(const std::string& ipString);
+    bool isInteger(const std::string& s);
+
     struct GpioPinInfo
     {
         std::string Name; // e.g., "cmd_gripper_open"
