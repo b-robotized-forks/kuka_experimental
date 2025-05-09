@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <string>
+#include <map>
 
 #include <boost/asio.hpp>
 
@@ -42,6 +43,16 @@ namespace kuka_eki_io_interface
     const int __ekiModeWrite = 2;
     const int __ekiModeRead = 1;
 
+    struct GpioPinInfo
+    {
+        std::string name; // e.g., "cmd_gripper_open"
+        int pin_number;
+        std::string command_interface_name; // e.g., "cmd_gripper_open/set_value"
+        std::string state_interface_name;   // e.g., "state_gripper_opened/get_value" or "cmd_gripper_open/commanded_value"
+        hardware_interface::CommandInterface::SharedPtr command_interface;
+        hardware_interface::StateInterface::SharedPtr state_interface;
+    };
+
     class KukaEkiIoInterface : public hardware_interface::SystemInterface
     {
         public:
@@ -68,9 +79,11 @@ namespace kuka_eki_io_interface
             int numberOfIos_;
 
             // Store the command for the simulated robot
-            std::vector<bool> ioStates_;
-            std::vector<bool> ioCommands_;
-            std::vector<int> ioPins_;
+            //std::vector<bool> ioStates_;
+            //std::vector<bool> ioCommands_;
+            //std::vector<int> ioPins_;
+
+            std::unordered_map<int, GpioPinInfo> gpioInfo_;
             
             std::string eki_server_address_;
             std::string eki_server_port_;
