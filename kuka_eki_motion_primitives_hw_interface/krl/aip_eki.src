@@ -31,17 +31,34 @@ def aip_eki()
    ControlWord = 0
    ;WAIT FOR $IN[1112] == FALSE ;mathias31415 commented to not wait for input
    
-   interrupt decl 19 when $flag[3] == true do abort_movement()  ;local interrupt to use RESUME
-   interrupt on 19
-   $ADVANCE = 0   ; now advance run permitted when using RESUME in interrupt (no blending possible
+   ; FOLD STOP_WITH_BREAK
+   ; uncomment this section to use stop with BREAK (stopps the current movement immediately)
+   ; Therefore $ADVANCE=0 is needed --> no blending possible
+   
+   msgnotify("Program is using stop_movement() when meta stop command recived", "Motion EKI")
+   interrupt decl 19 when $flag[3] == true do stop_movement()  ;local interrupt to use RESUME
+   ;interrupt on 19
+   $ADVANCE = 0   ; now advance run permitted when using RESUME in interrupt (no blending possible)
+   
+   ; ENDFOLD (FOLD STOP_WITH_BREAK)
+   
+   ; FOLD STOP_SOFT
+   ; uncomment this section to use stop after the current movement is done
+   ; To stop after the current movement and not after n movements
+   ; $ADVANCE=0 is needed --> no blending possible
+   
+   ;msgnotify("Program is using abort_following_cmds() when meta stop command recived", "Motion EKI")
+   ;interrupt decl 19 when $flag[3] == true do abort_following_cmds()
+   ;;interrupt on 19
+   ;$ADVANCE=0 ; if >0, robot doesn't stop after current movement
+   
+   ; ENDFOLD (FOLD STOP_SOFT)
    
    ; Communication process
    loop
-      if get_command(current_command) then
-         ;msgnotify("New motion data available", "Motion EKI")    
+      if get_command(current_command) then   
          CURRENT_COMMAND_ID = current_command.id
          if not $FLAG[3] then
-            ;msgnotify("abort_commands flag is FALSE, executing command", "Motion EKI")
             switch current_command.type
                case 1
                   check_error(do_grip(current_command.grip_data))
@@ -51,16 +68,10 @@ def aip_eki()
                case 3
                   check_error(do_grip(current_command.grip_data))
             endswitch
-         ;else
-            ;msgnotify("abort_commands flag is TRUE, dont execute command", "Motion EKI")
-         endif
-         
+          endif
       else
          CURRENT_COMMAND_ID = 0
-         ;msgnotify("No new motion data available", "Motion EKI") 
       endif
-         
-       
    endloop 
 end
 
@@ -332,20 +343,7 @@ deffct int do_move(step :in, move_data :in)
       $tool = $nullframe
    endif
    
-   ;04.07.2019
-   ;$out[1] = step == 13
-   
-   ;if step == 15 then
-   ;   if $in[100] then
-   ;      move_data.cartesian.a = move_data.cartesian.a + 90
-   ;      move_data.cartesian.c = move_data.cartesian.c - 45
-   ;   endif
-   ;   if $in[101] then
-   ;      move_data.cartesian.a = move_data.cartesian.a - 90
-   ;      move_data.cartesian.c = move_data.cartesian.c + 45
-   ;   endif
-   ;endif
- 
+   INTERRUPT ON 19   ; enable interrupt to stop movement
    switch (move_data.mode)
       case 1
          if not $FLAG[3] then
@@ -370,8 +368,8 @@ deffct int do_move(step :in, move_data :in)
             circ move_data.cartesian_aux, move_data.cartesian
          endif
    endswitch
+   INTERRUPT OFF 19   ; disable interrupt to stop movement
    
-   ;WAIT SEC 0  ; to prevent advancepointer (vorlaufzeiger) (not allowed for RESUME in interuppt to stop the motion)
    return error_code
 endfct
 
@@ -446,19 +444,19 @@ deffct int do_grip(grip_data :in)
 endfct
 
 
-def abort_movement()
+def stop_movement()
    decl eki_status status
    
    ; Disable interrupt to avoid recursive triggers
    ;INTERRUPT OFF 19
    
-   msgnotify("Called abort_movement() in interrupt because abort_commands flag turned TRUE", "Motion EKI")
+   msgnotify("Stopping Robot immediately with BREAK", "Motion EKI")
    
    ; Immediately stop the robot
    BRAKE
    
    ; wait one cycle
-   ;WAIT sec 0.012
+   WAIT sec 0.012
 
    ; Clear the command buffer to prevent further motion
    status = eki_clearbuffer("AIP_EKI", "RobotCommand")
@@ -469,15 +467,27 @@ def abort_movement()
    endif
    
    ; Reset current command to ensure a clean restart
-   current_command = null_command()
-   
-   ; Move to current position
-   ;msgnotify("PTP to current position", "Motion EKI")
-   ;ptp $axis_act_meas
-   
+    current_command = null_command()
+    
    ; Re-enable the interrupt for future triggers
    ;INTERRUPT ON 19
    
    RESUME   ; dont go back to where the interrupt occured ($ADVANCE must be 0)
+end
+
+def abort_following_cmds()
+   decl eki_status status
+   msgnotify("Stopping Robot after current movement is done", "Motion EKI")
+
+   ; Clear the command buffer to prevent further motion
+   status = eki_clearbuffer("AIP_EKI", "RobotCommand")
+   if status.buff > 0 then
+      msgnotify("Failed to clear command buffer", "Motion EKI")
+   else
+      msgnotify("Successfully cleared command buffer", "Motion EKI")
+   endif
+   
+   ; Reset current command to ensure a clean restart
+    current_command = null_command()
 end
 
