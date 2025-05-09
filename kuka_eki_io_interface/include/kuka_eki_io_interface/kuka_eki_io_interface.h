@@ -21,8 +21,6 @@
 
 namespace kuka_eki_io_interface
 {
-    //#define USE_EXPORT_OVERRIDES
-
     using Socket = boost::asio::ip::udp::socket;
     using SocketPtr = std::unique_ptr<boost::asio::ip::udp::socket>;
     using Endpoint = boost::asio::ip::udp::endpoint;
@@ -77,11 +75,6 @@ namespace kuka_eki_io_interface
             KukaEkiIoInterface(const std::string& eki_server_address, const std::string& eki_server_port, int n_io);
         private:
             int numberOfIos_;
-
-            // Store the command for the simulated robot
-            //std::vector<bool> ioStates_;
-            //std::vector<bool> ioCommands_;
-            //std::vector<int> ioPins_;
 
             std::unordered_map<int, GpioPinInfo> gpioInfo_;
             

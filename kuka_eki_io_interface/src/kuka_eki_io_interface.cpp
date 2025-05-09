@@ -8,7 +8,7 @@
 
 namespace kuka_eki_io_interface
 {
-    // pk // Deconstructor most likely not required anymore since this class is not run as a separate node anymore.
+    // pk // Deconstructor most likely not required anymore since this class is not run as a separate node anymore and will be handled by the resource manager.
     KukaEkiIoInterface::~KukaEkiIoInterface() 
     {
         RCLCPP_INFO(rclcpp::get_logger(LOGGER_NAME), "Destructor called. Cleaning up ...");
@@ -65,8 +65,7 @@ namespace kuka_eki_io_interface
 
             int pin = std::stoi(gpio.parameters.at("pin"));
 
-            //%ioPins_.push_back(pin);     // pk // This looks kinda hacky but may not be required if hardware_interface::SystemInterface is implemented correctly. 
-            gpioInfo_[pin] = {          // pk // This is probably better.
+            gpioInfo_[pin] = {
                 gpio.name, 
                 pin, 
                 gpio.command_interfaces[0].name, 
@@ -123,11 +122,6 @@ namespace kuka_eki_io_interface
             throw std::runtime_error(errorMessage);
         }
 
-        // pk // This is a hacky way.
-        //%ioStates_ = ioStates;
-        //%ioCommands_ = ioStates;
-
-        // pk // This is a better way.
         for (int pin : ioPins)
         {
             auto gpioInfo = gpioInfo_.find(pin)->second;
@@ -302,7 +296,6 @@ namespace kuka_eki_io_interface
             throw std::runtime_error(msg);
         }
 
-        // pk // This is a better way.
         for (int pin : ioPins)
         {
             auto gpioInfo = gpioInfo_.find(pin)->second;
@@ -314,56 +307,25 @@ namespace kuka_eki_io_interface
     {
         auto logger = rclcpp::get_logger(LOGGER_NAME);
 
-        #ifdef USE_EXPORT_OVERRIDES
-            // pk // Custom hack
-            if (!eki_write_command(ioPins_, ioCommands_))
-            {
-                std::string msg = "Failed to write to robot EKI server within alloted time of " + std::to_string(eki_read_state_timeout_) + " seconds. Make sure eki_hw_interface is running on the robot controller and all configurations are correct.";
-                RCLCPP_ERROR(logger, msg.c_str());
-                throw std::runtime_error(msg);
-            }
-        #else
-            // pk // This is the way it is supposed to be done (I think)
-            auto ioCommands = std::vector<bool>(numberOfIos_);
-            auto ioPins = std::vector<int>(numberOfIos_);
-            for (const auto& [first, second] : gpioInfo_)
-            {
-                ioCommands.push_back(second.command_interface->get_value());
-                ioPins.push_back(second.pin_number);
-            }
+        auto ioCommands = std::vector<bool>(numberOfIos_);
+        auto ioPins = std::vector<int>(numberOfIos_);
+        for (const auto& [first, second] : gpioInfo_)
+        {
+            ioCommands.push_back(second.command_interface->get_value());
+            ioPins.push_back(second.pin_number);
+        }
 
-            if (!eki_write_command(ioPins, ioCommands))
-            {
-                std::string msg = "Failed to write to robot EKI server within alloted time of " + std::to_string(eki_read_state_timeout_) + " seconds. Make sure eki_hw_interface is running on the robot controller and all configurations are correct.";
-                RCLCPP_ERROR(logger, msg.c_str());
-                throw std::runtime_error(msg);
-            }
-        #endif
+        if (!eki_write_command(ioPins, ioCommands))
+        {
+            std::string msg = "Failed to write to robot EKI server within alloted time of " + std::to_string(eki_read_state_timeout_) + " seconds. Make sure eki_hw_interface is running on the robot controller and all configurations are correct.";
+            RCLCPP_ERROR(logger, msg.c_str());
+            throw std::runtime_error(msg);
+        }
         
         return hardware_interface::return_type::OK;
     }
 
-    // #ifndef USE_EXPORT_OVERRIDES
-    //     // pk // !! If hardware_interface::SystemInterface is implemented correctly and used as intended you do not need to override this function !!
-    //     std::vector<hardware_interface::StateInterface::ConstSharedPtr> KukaEkiIoInterface::on_export_state_interfaces()
-    //     {
-    //         std::vector<hardware_interface::StateInterface::ConstSharedPtr> stateInterfaces;
-    //         for (int i = 0; i < numberOfIos_; i++)
-    //             stateInterfaces.push_back(std::make_shared<hardware_interface::StateInterface>(ioNames[i], "eki_io", &ioStates_[i]));
-    //         return stateInterfaces;
-    //     }
-
-    //     // pk // !! If hardware_interface::SystemInterface is implemented correctly and used as intended you do not need to override this function !!
-    //     std::vector<hardware_interface::CommandInterface::SharedPtr> KukaEkiIoInterface::on_export_command_interfaces()
-    //     {
-    //         std::vector<hardware_interface::CommandInterface::SharedPtr> commandInterfaces;
-    //         for (int i = 0; i < numberOfIos_; i++)
-    //             commandInterfaces.push_back(std::make_shared<hardware_interface::CommandInterface>(ioNames[i], "eki_io", &ioCommands_[i]));
-    //         return commandInterfaces;
-    //     }
-    // #endif
-
-
+    
 
     bool isValidIPv4(const std::string& ipString) {
         // IPv4 pattern with optional port
