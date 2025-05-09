@@ -125,7 +125,7 @@ namespace kuka_eki_io_interface
         for (int pin : ioPins)
         {
             auto gpioInfo = gpioInfo_.find(pin)->second;
-            set_state(gpioInfo.state_interface_name, ioStates[pin]);
+            set_state(gpioInfo.StateInterfaceName, ioStates[pin]);
         }
 
         return hardware_interface::CallbackReturn::SUCCESS;
@@ -299,7 +299,7 @@ namespace kuka_eki_io_interface
         for (int pin : ioPins)
         {
             auto gpioInfo = gpioInfo_.find(pin)->second;
-            set_state(gpioInfo.state_interface_name, ioStates[pin]);
+            set_state(gpioInfo.StateInterfaceName, ioStates[pin]);
         }
     }
 
@@ -311,8 +311,8 @@ namespace kuka_eki_io_interface
         auto ioPins = std::vector<int>(numberOfIos_);
         for (const auto& [first, second] : gpioInfo_)
         {
-            ioCommands.push_back(second.command_interface->get_value());
-            ioPins.push_back(second.pin_number);
+            ioCommands.push_back(second.CommandInterface->get_value());
+            ioPins.push_back(second.PinNumber);
         }
 
         if (!eki_write_command(ioPins, ioCommands))
@@ -325,7 +325,7 @@ namespace kuka_eki_io_interface
         return hardware_interface::return_type::OK;
     }
 
-    
+
 
     bool isValidIPv4(const std::string& ipString) {
         // IPv4 pattern with optional port

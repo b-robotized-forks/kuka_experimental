@@ -43,12 +43,12 @@ namespace kuka_eki_io_interface
 
     struct GpioPinInfo
     {
-        std::string name; // e.g., "cmd_gripper_open"
-        int pin_number;
-        std::string command_interface_name; // e.g., "cmd_gripper_open/set_value"
-        std::string state_interface_name;   // e.g., "state_gripper_opened/get_value" or "cmd_gripper_open/commanded_value"
-        hardware_interface::CommandInterface::SharedPtr command_interface;
-        hardware_interface::StateInterface::SharedPtr state_interface;
+        std::string Name; // e.g., "cmd_gripper_open"
+        int PinNumber;
+        std::string CommandInterfaceName; // e.g., "cmd_gripper_open/set_value"
+        std::string StateInterfaceName;   // e.g., "state_gripper_opened/get_value" or "cmd_gripper_open/commanded_value"
+        hardware_interface::CommandInterface::SharedPtr CommandInterface;
+        hardware_interface::StateInterface::SharedPtr StateInterface;
     };
 
     class KukaEkiIoInterface : public hardware_interface::SystemInterface
