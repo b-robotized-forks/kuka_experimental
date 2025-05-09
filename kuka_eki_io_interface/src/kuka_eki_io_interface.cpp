@@ -43,6 +43,7 @@ namespace kuka_eki_io_interface
                 RCLCPP_FATAL(logger, "KUKA EKI IO interface only supports one command interface per GPIO.");
                 return hardware_interface::CallbackReturn::ERROR;
             }
+            
             if (gpio.state_interfaces.size() != 1)
             {
                 RCLCPP_FATAL(logger, "KUKA EKI IO interface only supports one state interface per GPIO.");
@@ -54,17 +55,24 @@ namespace kuka_eki_io_interface
                 RCLCPP_FATAL(logger, "KUKA EKI IO interface requires a pin parameter for each GPIO.");
                 return hardware_interface::CallbackReturn::ERROR;
             }
-            else 
-            {
-                if (!isInteger(gpio.parameters.at("pin")))
-                {
-                    RCLCPP_FATAL(logger, "KUKA EKI IO interface pin parameter must be an integer.");
-                    return hardware_interface::CallbackReturn::ERROR;
-                }
 
-                int pin = std::stoi(gpio.parameters.at("pin"));
-                ioPins_.push_back(pin);     // pk // This looks kinda hacky but may not be required if hardware_interface::SystemInterface is implemented correctly. 
+            if (!isInteger(gpio.parameters.at("pin")))
+            {
+                RCLCPP_FATAL(logger, "KUKA EKI IO interface pin parameter must be an integer.");
+                return hardware_interface::CallbackReturn::ERROR;
             }
+
+            int pin = std::stoi(gpio.parameters.at("pin"));
+
+            //%ioPins_.push_back(pin);     // pk // This looks kinda hacky but may not be required if hardware_interface::SystemInterface is implemented correctly. 
+            gpioInfo_[pin] = {          // pk // This is probably better.
+                gpio.name, 
+                pin, 
+                gpio.command_interfaces[0].name, 
+                gpio.state_interfaces[0].name,
+                std::make_shared<hardware_interface::CommandInterface>(gpio.command_interfaces[0]),
+                std::make_shared<hardware_interface::StateInterface>(gpio.state_interfaces[0])
+            };
         }
 
         return hardware_interface::CallbackReturn::SUCCESS;
@@ -114,8 +122,17 @@ namespace kuka_eki_io_interface
             throw std::runtime_error(errorMessage);
         }
 
-        ioStates_ = ioStates;
-        ioCommands_ = ioStates;
+        // pk // This is a hacky way.
+        //%ioStates_ = ioStates;
+        //%ioCommands_ = ioStates;
+
+        // pk // This is a better way.
+        for (int pin : ioPins)
+        {
+            auto gpioInfo = gpioInfo_.find(pin)->second;
+            set_state(gpioInfo.state_interface_name, ioStates[pin]);
+        }
+
         return hardware_interface::CallbackReturn::SUCCESS;
     }
 
@@ -284,13 +301,12 @@ namespace kuka_eki_io_interface
             throw std::runtime_error(msg);
         }
 
-        // pk // This is the way it is supposed to be done (I think)
-        for (int i = 0; i < numberOfIos_; i++)
-            set_state(ioNames[i], ioStates[i]);
-        
-        // pk // Custom hack
-        ioStates_ = ioStates;
-        ioPins_ = ioPins;
+        // pk // This is a better way.
+        for (int pin : ioPins)
+        {
+            auto gpioInfo = gpioInfo_.find(pin)->second;
+            set_state(gpioInfo.state_interface_name, ioStates[pin]);
+        }
     }
 
     hardware_interface::return_type KukaEkiIoInterface::write(const rclcpp::Time& time, const rclcpp::Duration& period)
@@ -308,10 +324,14 @@ namespace kuka_eki_io_interface
         #else
             // pk // This is the way it is supposed to be done (I think)
             auto ioCommands = std::vector<bool>(numberOfIos_);
-            for (int i = 0; i < numberOfIos_; i++)
-                ioCommands[i] = get_command(ioNames[i]);
+            auto ioPins = std::vector<int>(numberOfIos_);
+            for (const auto& [first, second] : gpioInfo_)
+            {
+                ioCommands.push_back(second.command_interface->get_value());
+                ioPins.push_back(second.pin_number);
+            }
 
-            if (!eki_write_command(ioPins_, ioCommands_))
+            if (!eki_write_command(ioPins, ioCommands))
             {
                 std::string msg = "Failed to write to robot EKI server within alloted time of " + std::to_string(eki_read_state_timeout_) + " seconds. Make sure eki_hw_interface is running on the robot controller and all configurations are correct.";
                 RCLCPP_ERROR(logger, msg.c_str());
