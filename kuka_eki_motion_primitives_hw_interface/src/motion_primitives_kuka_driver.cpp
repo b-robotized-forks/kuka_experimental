@@ -432,6 +432,7 @@ void MotionPrimitivesKukaDriver::reset_command_interfaces()
 
 void MotionPrimitivesKukaDriver::asyncExecuteMotionThread()
 {
+  const auto TIMEOUT_DURATION = std::chrono::seconds(5);
   while (!async_thread_shutdown_) 
   {
     if (new_execution_available_) 
@@ -439,15 +440,29 @@ void MotionPrimitivesKukaDriver::asyncExecuteMotionThread()
       std::lock_guard<std::mutex> guard(execution_mutex_);
       new_execution_available_ = false;
       RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Sending command to robot ...");
-      while(!robot_.run()){}
-      RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Sending command to robot ... done");
+      auto start_time = std::chrono::steady_clock::now();
+      while (!robot_.run()) 
+      {
+        // Check if the timeout has been reached
+        if (std::chrono::steady_clock::now() - start_time > TIMEOUT_DURATION) 
+        {
+          RCLCPP_ERROR(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Timeout reached: Failed to send command to robot.");
+          return;
+        }
+        // Small sleep to prevent busy waiting
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+      }
+      RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Sent command to robot successfully.");
       ready_for_new_primitive_ = true;
     }
+
     // Small sleep to prevent busy waiting
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
   }
+
   RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "[asyncExecuteMotionThread] Exiting");
 }
+
 
 // Convert quaternion to Euler angles (roll, pitch, yaw) 
 // https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles
