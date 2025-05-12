@@ -278,10 +278,8 @@ void rbt::Robot::update_state(std::string &xml_message, bool is_meta)
             else
             {
                 state_.from_xml(reader);
-
                 active_sequence_.update(state_);
-
-                check_time();
+                // check_time();
             }
 
             call_listener(RobotEvent::STATE);
