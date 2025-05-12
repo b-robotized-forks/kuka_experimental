@@ -4,7 +4,7 @@ def meta_eki()
    ; Software License Agreement (BSD License)
    ;
    ; Copyright (c) 2018, 3M
-   ; Modifications copyright (c) 2021 Gergely S�ti
+   ; Modifications copyright (c) 2021 Gergely Sóti
    ; All rights reserved.
    ;
    ; Redistribution and use in source and binary forms, with or without
@@ -32,6 +32,7 @@ def meta_eki()
    ; POSSIBILITY OF SUCH DAMAGE.
 
    ; This software is derived work of Brett Hemes (3M) <brhemes@mmm.com>
+   ; Adaptation by Gergely Sóti, H-KA iRAS Prof. Hein, 2021; gergely.soti@h-ka.de
    ;
    ; Modifications: Moritz Weisenboehler (H-KA) <moritz.weisenboehler@h-ka.de>
    ; Modifications: Mathias Fuhrer <mathias.fuhrer@b-robotized.de>

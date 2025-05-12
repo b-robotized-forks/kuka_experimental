@@ -4,7 +4,7 @@ def motion_eki()
    ; Software License Agreement (BSD License)
    ;
    ; Copyright (c) 2018, 3M
-   ; Modifications copyright (c) 2021 Gergely S�ti
+   ; Modifications copyright (c) 2021 Gergely Sóti
    ; All rights reserved.
    ;
    ; Redistribution and use in source and binary forms, with or without
@@ -32,6 +32,7 @@ def motion_eki()
    ; POSSIBILITY OF SUCH DAMAGE.
 
    ; This software is derived work of Brett Hemes (3M) <brhemes@mmm.com>
+   ; Adaptation by Gergely Sóti, H-KA iRAS Prof. Hein, 2021; gergely.soti@h-ka.de
    ;
    ; Modifications: Moritz Weisenboehler (H-KA) <moritz.weisenboehler@h-ka.de>
    ; Modifications: Mathias Fuhrer <mathias.fuhrer@b-robotized.de>
@@ -67,7 +68,7 @@ def motion_eki()
    
    msgnotify("Program is using stop_movement() when meta stop command recived", "Motion EKI")
    interrupt decl 19 when $flag[3] == true do stop_movement()  ;local interrupt to use RESUME
-   $ADVANCE = 0   ; now advance run permitted when using RESUME in interrupt (no blending possible)
+   ;$ADVANCE = 0   ; now advance run permitted when using RESUME in interrupt (no blending possible)
    
    ; ENDFOLD (FOLD STOP_WITH_BREAK)
    
@@ -86,7 +87,7 @@ def motion_eki()
    loop
       if get_command(current_command) then   
          CURRENT_COMMAND_ID = current_command.id
-         if not $FLAG[3] then
+         ;if not $FLAG[3] then
             switch current_command.type
                case 1
                   check_error(do_grip(current_command.grip_data))
@@ -96,7 +97,7 @@ def motion_eki()
                case 3
                   check_error(do_grip(current_command.grip_data))
             endswitch
-          endif
+          ;endif
       else
          CURRENT_COMMAND_ID = 0
       endif
@@ -198,12 +199,12 @@ def send_status()
       status = eki_setreal("MOTION_EKI", "RobotState/Position/Cartesian/@B", $pos_act.b)
       status = eki_setreal("MOTION_EKI", "RobotState/Position/Cartesian/@C", $pos_act.c)
       ; Velocity
-      ;status = eki_setreal("MOTION_EKI", "RobotState/Velocity/@A1", $vel_axis_act[1] * $vel_axis_ma[1] / 100.0)
-      ;status = eki_setreal("MOTION_EKI", "RobotState/Velocity/@A2", $vel_axis_act[2] * $vel_axis_ma[2] / 100.0)
-      ;status = eki_setreal("MOTION_EKI", "RobotState/Velocity/@A3", $vel_axis_act[3] * $vel_axis_ma[3] / 100.0)
-      ;status = eki_setreal("MOTION_EKI", "RobotState/Velocity/@A4", $vel_axis_act[4] * $vel_axis_ma[4] / 100.0)
-      ;status = eki_setreal("MOTION_EKI", "RobotState/Velocity/@A5", $vel_axis_act[5] * $vel_axis_ma[5] / 100.0)
-      ;status = eki_setreal("MOTION_EKI", "RobotState/Velocity/@A6", $vel_axis_act[6] * $vel_axis_ma[6] / 100.0)
+      status = eki_setreal("MOTION_EKI", "RobotState/Velocity/@A1", $vel_axis_act[1] * $vel_axis_ma[1] / 100.0)
+      status = eki_setreal("MOTION_EKI", "RobotState/Velocity/@A2", $vel_axis_act[2] * $vel_axis_ma[2] / 100.0)
+      status = eki_setreal("MOTION_EKI", "RobotState/Velocity/@A3", $vel_axis_act[3] * $vel_axis_ma[3] / 100.0)
+      status = eki_setreal("MOTION_EKI", "RobotState/Velocity/@A4", $vel_axis_act[4] * $vel_axis_ma[4] / 100.0)
+      status = eki_setreal("MOTION_EKI", "RobotState/Velocity/@A5", $vel_axis_act[5] * $vel_axis_ma[5] / 100.0)
+      status = eki_setreal("MOTION_EKI", "RobotState/Velocity/@A6", $vel_axis_act[6] * $vel_axis_ma[6] / 100.0)
       ; Torque
       ;status = eki_setreal("MOTION_EKI", "RobotState/Torque/@A1", $torque_axis_act[1])
       ;status = eki_setreal("MOTION_EKI", "RobotState/Torque/@A2", $torque_axis_act[2])
@@ -370,32 +371,30 @@ deffct int do_move(step :in, move_data :in)
       $tool = $nullframe
    endif
    
-   INTERRUPT ON 19   ; enable interrupt to stop movement
    switch (move_data.mode)
       case 1
-         if not $FLAG[3] then
-            ptp move_data.joint c_ptp
-         endif
+         INTERRUPT ON 19   ; enable interrupt to stop movement
+         ptp move_data.joint c_ptp C_DIS
+         INTERRUPT OFF 19
       case 2
-         if not $FLAG[3] then
-            ptp move_data.cartesian c_ptp
-         endif
+         INTERRUPT ON 19
+         ptp move_data.cartesian c_ptp C_DIS
+         INTERRUPT OFF 19
       case 3
-         if not $FLAG[3] then
-            lin move_data.cartesian
-         endif
+         INTERRUPT ON 19
+         lin move_data.cartesian C_DIS
+         INTERRUPT OFF 19
       case 4
-         if not $FLAG[3] then
-            ptp teached_points[move_data.teached] c_ptp
-         endif
+         INTERRUPT ON 19
+         ptp teached_points[move_data.teached] c_ptp C_DIS
+         INTERRUPT OFF 19
       ;case 5
       ;   lin teached_points[move_data.teached]
       case 6
-         if not $FLAG[3] then
-            circ move_data.cartesian_aux, move_data.cartesian
-         endif
+         INTERRUPT ON 19
+         circ move_data.cartesian_aux, move_data.cartesian C_DIS
+         INTERRUPT OFF 19
    endswitch
-   INTERRUPT OFF 19   ; disable interrupt to stop movement
    
    return error_code
 endfct
@@ -478,9 +477,6 @@ def stop_movement()
    ; Immediately stop the robot
    BRAKE
    
-   ; wait one cycle
-   WAIT sec 0.012
-
    ; Clear the command buffer to prevent further motion
    status = eki_clearbuffer("MOTION_EKI", "RobotCommand")
    if status.buff > 0 then
@@ -491,6 +487,9 @@ def stop_movement()
    
    ; Reset current command to ensure a clean restart
     current_command = null_command()
+    
+   ; wait one cycle
+   WAIT sec 0.012
    
    RESUME   ; dont go back to where the interrupt occured ($ADVANCE must be 0)
 end
@@ -510,4 +509,3 @@ def abort_following_cmds()
    ; Reset current command to ensure a clean restart
     current_command = null_command()
 end
-
