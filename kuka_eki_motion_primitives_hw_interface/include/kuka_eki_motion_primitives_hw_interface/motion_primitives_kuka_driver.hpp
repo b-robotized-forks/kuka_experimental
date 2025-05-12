@@ -75,6 +75,8 @@ private:
   int eki_robot_meta_port_;
 
   rbt::Robot robot_;
+  bool robot_stopped_{false};
+  bool robot_error_{false};
 
   // Async thread handling
   std::unique_ptr<std::thread> async_execute_motion_thread_;

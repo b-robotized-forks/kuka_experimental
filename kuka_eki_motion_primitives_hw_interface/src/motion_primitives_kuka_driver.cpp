@@ -211,10 +211,23 @@ hardware_interface::return_type MotionPrimitivesKukaDriver::read(
   hw_joint_states_[4] = joints.a5 * deg_to_rad;
   hw_joint_states_[5] = joints.a6 * deg_to_rad;
 
-  // Check execution status
-  bool is_executing = robot_.is_active();
-  current_execution_status_ = is_executing ? ExecutionState::EXECUTING : ExecutionState::IDLE;
-  hw_mo_prim_states_[0] = current_execution_status_;    // 0=idle, 1=executing, 2=success, 3=error
+  // Handle robot status
+  // TODO(mathias31415): How to check if movement was SUCCESS?
+  if (robot_error_) 
+  {
+    current_execution_status_ = ExecutionState::ERROR;
+  } else if(robot_stopped_) 
+  {
+    current_execution_status_ = ExecutionState::STOPPED;
+  } else if (robot_.robot_in_movement()) 
+  {
+    current_execution_status_ = ExecutionState::EXECUTING;
+  } else 
+  {
+    current_execution_status_ = ExecutionState::IDLE;
+  }
+
+  hw_mo_prim_states_[0] = current_execution_status_;
   hw_mo_prim_states_[1] = static_cast<double>(ready_for_new_primitive_);
 
   return hardware_interface::return_type::OK;
@@ -232,14 +245,14 @@ hardware_interface::return_type MotionPrimitivesKukaDriver::write(
     {
       case MotionType::STOP_MOTION: {
         RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "STOP_MOTION command received");
-        current_execution_status_ = ExecutionState::STOPPED;
+        robot_stopped_ = true;
         robot_.abort_commands();
         reset_command_interfaces();
         break;
       }
       case MotionType::RESET_STOP: {
         RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "RESET_STOP command received");
-        current_execution_status_ = ExecutionState::IDLE;
+        robot_stopped_ = false;
         reset_command_interfaces();
         robot_.reset_abort_commands();
         ready_for_new_primitive_ = true;
@@ -266,7 +279,7 @@ hardware_interface::return_type MotionPrimitivesKukaDriver::write(
         RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "LINEAR_JOINT command received");
         if(!add_linear_joint_cmd()) {
           RCLCPP_ERROR(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Failed to add LINEAR_JOINT command");
-          current_execution_status_ = ExecutionState::ERROR;
+          robot_error_ = true;
           return hardware_interface::return_type::ERROR;
         }
         reset_command_interfaces();
@@ -284,7 +297,7 @@ hardware_interface::return_type MotionPrimitivesKukaDriver::write(
         RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "LINEAR_CARTESIAN command received");
         if(!add_linear_cartesian_cmd()) {
           RCLCPP_ERROR(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Failed to add LINEAR_CARTESIAN command");
-          current_execution_status_ = ExecutionState::ERROR;
+          robot_error_ = true;
           return hardware_interface::return_type::ERROR;
         }
         reset_command_interfaces();
@@ -302,7 +315,7 @@ hardware_interface::return_type MotionPrimitivesKukaDriver::write(
         RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "CIRCULAR_CARTESIAN command received");
         if(!add_circular_cartesian_cmd()) {
           RCLCPP_ERROR(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Failed to add CIRCULAR_CARTESIAN command");
-          current_execution_status_ = ExecutionState::ERROR;
+          robot_error_ = true;
           return hardware_interface::return_type::ERROR;
         }
         reset_command_interfaces();
@@ -318,7 +331,7 @@ hardware_interface::return_type MotionPrimitivesKukaDriver::write(
       }
       default: {
         RCLCPP_ERROR(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Invalid motion command: motion type %f is not supported", motion_type);
-        current_execution_status_ = ExecutionState::ERROR;
+        robot_error_ = true;
         return hardware_interface::return_type::ERROR;  // TODO(mathias31415): OK or ERROR?
       }
     }

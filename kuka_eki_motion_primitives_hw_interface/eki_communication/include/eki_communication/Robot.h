@@ -92,6 +92,7 @@ namespace rbt
 
         bool run();
         bool is_active() { return !active_sequence_.is_finished(); }
+        bool robot_in_movement();
         RobotState get_state() { return state_; }
         RobotMetaState get_meta_state() { return meta_state_; }
         float get_velocity_override() { return velocity_override_; }
