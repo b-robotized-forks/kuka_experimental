@@ -64,3 +64,8 @@ This ensures the client (ROS2) can reconnect to the server. During testing/ impl
 Before transfering a new Version of the KUKA project to the Robot via WorkVisual, stop the ROS2 side and deselect the robot- and submit-interpreter (therefore you need to be in expert mode). If this is not done, the Robotersteuerung needs to get restarted.
 
 TODO(mathias31415) insert images/ screenshots to better explain the stuff
+
+# TODOs
+- Blending between two motionprimitives not working yet
+- execute eki_close("NAME") when programm is stopped to properly close the connection --> without eki_close() its not possible to init a new server when restarting the program. 
+- handle additional paramters like velocity and acceleration 

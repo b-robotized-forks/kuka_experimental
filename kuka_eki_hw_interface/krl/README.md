@@ -91,5 +91,3 @@ Choose **controller manager ns** and **controller** and you should be able to mo
 
 * Note that T1-mode limits the robot movement velocity and is intended for testing purposes.
 
-# TODOs
-- execute eki_close("NAME") when programm is stopped to properly close the connection --> without eki_close() its not possible to init a new server when restarting the program. 
