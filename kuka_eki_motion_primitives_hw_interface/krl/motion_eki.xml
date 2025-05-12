@@ -40,7 +40,7 @@
          <ELEMENT Tag="RobotCommand/Move/Cartesian/@A" Type="REAL"/>
          <ELEMENT Tag="RobotCommand/Move/Cartesian/@B" Type="REAL"/>
          <ELEMENT Tag="RobotCommand/Move/Cartesian/@C" Type="REAL"/>
-         <!-- mathias31415 added cartesian_aux for circ command -->
+         <!-- Cartesian_aux for circ command -->
          <ELEMENT Tag="RobotCommand/Move/Cartesian_Aux/@X" Type="REAL"/>
          <ELEMENT Tag="RobotCommand/Move/Cartesian_Aux/@Y" Type="REAL"/>
          <ELEMENT Tag="RobotCommand/Move/Cartesian_Aux/@Z" Type="REAL"/>
