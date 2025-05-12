@@ -23,13 +23,7 @@ from geometry_msgs.msg import PoseStamped
 from industrial_robot_motion_interfaces.msg import MotionPrimitive, MotionArgument
 import time
 
-### testing commands for r2e cell (in degrees)    A7 needs to be set?
-# _client.move(joints=[0.0, -90.0, 90.0, 0.0, 90.0, 0.0, 0.0])  #position1
-# _client.move(joints=[30.0, -90.0, 90.0, 0.0, 90.0, 0.0, 0.0]) #position2
-# _client.move(cartesian=[280.0, 0.0, 550.0, -180.0, 0.0, 180.0], lin=False)    #position1
-# _client.move(cartesian=[240.0, -140.0, 550.0, -180.0, 0.0, 180.0], lin=False) #position2
-# _client.move(cartesian=[280.0, 0.0, 550.0, -180.0, 0.0, 180.0], lin=True) #position1
-# _client.move(cartesian=[240.0, -140.0, 550.0, -180.0, 0.0, 180.0], lin=True)  #position2
+### testing commands for r2e cell
 msg_start_sequence = MotionPrimitive()
 msg_start_sequence.type = MotionPrimitive.MOTION_SEQUENCE_START
 
@@ -43,9 +37,25 @@ msg_PTP_1 = MotionPrimitive()
 msg_PTP_1.type = MotionPrimitive.LINEAR_JOINT
 msg_PTP_1.joint_positions = [0.0, -1.57, 1.57, 0.0, 1.57, 0.0]
 
+msg_PTP_11 = MotionPrimitive()
+msg_PTP_11.type = MotionPrimitive.LINEAR_JOINT
+msg_PTP_11.joint_positions = [0.15, -1.57, 1.57, 0.0, 1.57, 0.0]
+
+msg_PTP_12 = MotionPrimitive()
+msg_PTP_12.type = MotionPrimitive.LINEAR_JOINT
+msg_PTP_12.joint_positions = [0.3, -1.57, 1.57, 0.0, 1.57, 0.0]
+
 msg_PTP_2 = MotionPrimitive()
 msg_PTP_2.type = MotionPrimitive.LINEAR_JOINT
 msg_PTP_2.joint_positions = [0.5, -1.57, 1.57, 0.0, 1.57, 0.0]
+
+msg_PTP_21 = MotionPrimitive()
+msg_PTP_21.type = MotionPrimitive.LINEAR_JOINT
+msg_PTP_21.joint_positions = [0.65, -1.57, 1.57, 0.0, 1.57, 0.0]
+
+msg_PTP_22 = MotionPrimitive()
+msg_PTP_22.type = MotionPrimitive.LINEAR_JOINT
+msg_PTP_22.joint_positions = [0.8, -1.57, 1.57, 0.0, 1.57, 0.0]
 
 msg_PTP_3 = MotionPrimitive()
 msg_PTP_3.type = MotionPrimitive.LINEAR_JOINT
@@ -97,88 +107,19 @@ msg_moveC_1.poses = [pose_C1_goal, pose_C1_via]
 
 
 
-# send alternating motion primitives every 2 seconds
-# class MotionPublisher(Node):
-#     def __init__(self):
-#         super().__init__('motion_publisher')
-#         self.publisher_ = self.create_publisher(MotionPrimitive, '/motion_primitive_controller/reference', 10)
-
-#         # List of motion messages to alternate between
-#         self.messages = [msg_PTP_1, msg_PTP_2]
-#         self.current_index = 0
-
-#         # Create a timer that triggers every 2 seconds
-#         timer_period = 2.0
-#         self.timer = self.create_timer(timer_period, self.send_alternating_message)
-#         self.get_logger().info(f"MotionPublisher started – alternating messages every {timer_period} seconds.")
-
-#     def send_alternating_message(self):
-#         # Publish the current message
-#         msg = self.messages[self.current_index]
-#         self.publisher_.publish(msg)
-#         self.get_logger().info(f"Published message {self.current_index + 1}")
-
-#         # Switch to the next message in the list
-#         self.current_index = (self.current_index + 1) % len(self.messages)
-
-
-# def main(args=None):
-#     rclpy.init(args=args)
-#     node = MotionPublisher()
-
-#     try:
-#         rclpy.spin(node)  # Keeps the node running
-#     except KeyboardInterrupt:
-#         pass  # Allows clean shutdown with Ctrl+C
-#     finally:
-#         node.destroy_node()
-#         rclpy.shutdown()
-
-
-# send all motion primitives directly one after the other with an delay
-# class MotionPublisher(Node):
-#     def __init__(self):
-#         super().__init__('motion_publisher')
-
-#         self.publisher_ = self.create_publisher(MotionPrimitive, '/motion_primitive_controller/reference', 10)
-
-#         # self.messages = [msg_PTP_1, msg_PTP_2, msg_PTP_3, msg_PTP_2, msg_LIN_1, msg_LIN_2]
-#         # self.sequence = [msg_start_sequence, msg_PTP_1, msg_PTP_2, msg_PTP_3, msg_LIN_1, msg_LIN_2, msg_end_sequence]
-#         # self.messages = self.sequence * 2  # Repeat the sequence twice
-#         # self.messages = [msg_PTP_1, msg_moveC_1]
-#         # self.messages = [msg_start_sequence, msg_PTP_1, msg_PTP_2, msg_PTP_3, msg_LIN_1, msg_LIN_2, msg_PTP_1, msg_moveC_1, msg_end_sequence, msg_PTP_1, msg_moveC_1]
-#         self.messages = [msg_start_sequence, msg_PTP_1, msg_PTP_2, msg_PTP_3, msg_LIN_1, msg_LIN_2, msg_end_sequence]
-#         # self.messages = [msg_PTP_1, msg_PTP_2, msg_PTP_3, msg_LIN_1, msg_LIN_2, msg_PTP_1, msg_moveC_1, msg_PTP_1, msg_moveC_1]
-#         # self.messages = [msg_stop]
-
-#         self.current_index = 0
-
-#         self.get_logger().info(f"Number of messages: {len(self.messages)}")
-
-#         self.timer = self.create_timer(0.5, self.send_next_message)
-
-#     def send_next_message(self):
-#         if self.current_index < len(self.messages):
-#             msg = self.messages[self.current_index]
-#             self.publisher_.publish(msg)
-#             self.get_logger().info(f"Published message {self.current_index + 1}: {msg}")
-
-#             self.current_index += 1
-#         else:
-#             self.get_logger().info("All messages sent, shutting down node.")
-#             rclpy.shutdown()
-# def main(args=None):
-#     rclpy.init(args=args)
-#     node = MotionPublisher()
-#     rclpy.spin(node)
-
 # send all motion primitives directly one after the other
 class MotionPublisher(Node):
     def __init__(self):
         super().__init__('motion_publisher')
 
         self.publisher_ = self.create_publisher(MotionPrimitive, '/motion_primitive_controller/reference', 10)
-        self.messages = [msg_start_sequence, msg_PTP_1, msg_PTP_2, msg_PTP_3, msg_LIN_1, msg_LIN_2, msg_end_sequence]
+        # self.messages = [msg_start_sequence, msg_PTP_1, msg_PTP_2, msg_PTP_3, msg_LIN_1, msg_LIN_2, msg_end_sequence]
+        # self.messages = [msg_PTP_1, msg_PTP_2, msg_PTP_3, msg_PTP_2, msg_LIN_1, msg_LIN_2]
+        # self.messages = [msg_PTP_2]
+        self.messages = [msg_PTP_1, msg_PTP_2, msg_PTP_3, msg_PTP_2, msg_LIN_1, msg_LIN_2, msg_start_sequence, msg_PTP_1, msg_PTP_2, msg_PTP_3, msg_LIN_1, msg_LIN_2, msg_moveC_1, msg_end_sequence, msg_PTP_1, msg_PTP_2]
+        # self.messages = [msg_PTP_1, msg_PTP_2, msg_PTP_3, msg_LIN_1, msg_LIN_2, msg_moveC_1]
+        # self.messages = [msg_start_sequence, msg_PTP_1, msg_PTP_2, msg_PTP_3, msg_LIN_1, msg_LIN_2, msg_moveC_1, msg_end_sequence]
+        # self.messages = [msg_PTP_1, msg_PTP_11, msg_PTP_12, msg_PTP_2, msg_PTP_21, msg_PTP_21, msg_PTP_22, msg_PTP_3, msg_start_sequence, msg_PTP_1, msg_PTP_11, msg_PTP_12, msg_PTP_2, msg_PTP_21, msg_PTP_21, msg_PTP_22, msg_PTP_3, msg_end_sequence]
         self.get_logger().info(f"Number of messages: {len(self.messages)}")
 
         # Initial delay before the first message
