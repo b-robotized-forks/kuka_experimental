@@ -42,7 +42,7 @@ namespace kuka_eki_io_interface
 
         info_ = info; // pk // Is this even necessary?
 
-        if (__maxIoNumber < info_.gpios.size())
+        if (info_.gpios.size() > __maxIoNumber)
         {
             RCLCPP_FATAL(logger, "KUKA EKI IO interface only supports a maximum of %d GPIOs.", __maxIoNumber);
             return hardware_interface::CallbackReturn::ERROR;
@@ -78,7 +78,12 @@ namespace kuka_eki_io_interface
             }
 
             int pinNumber = std::stoi(gpio.parameters.at("pin"));
-            gpioInfos_[pinNumber] = gpio.name;
+            gpioInfos_[pinNumber] = {
+                gpio.name,
+                gpio.command_interfaces[0].name,
+                gpio.state_interfaces[0].name,
+                pinNumber
+            };
 
             RCLCPP_DEBUG(logger, "GPIO %d: %s", pinNumber, gpio.name.c_str());
             RCLCPP_DEBUG(logger, "Command interface: %s", gpio.command_interfaces[0].name.c_str());
@@ -132,22 +137,7 @@ namespace kuka_eki_io_interface
             RCLCPP_FATAL(logger, errorMessage.c_str());
             throw std::runtime_error(errorMessage);
         }
-        
-        int i = 0;
-        for (int pinNumber : ioPins)
-        {
-            auto gpioInfo = gpioInfos_.find(pinNumber);
-            if (gpioInfo == gpioInfos_.end())
-            {
-                RCLCPP_ERROR(logger, "Invalid pin number %d", pinNumber);
-                return hardware_interface::CallbackReturn::ERROR;
-            }
-            auto gpio = gpioInfo->second;
-            const std::string interfaceName = gpio.InterfaceName + "/" + gpio.StateInterfaceName;
-            set_state<bool>(interfaceName, ioStates[i]);
-            RCLCPP_DEBUG(logger, "Set state of %s[pin=%d] to %d", interfaceName.c_str(), pinNumber, ioStates[i]);
-            i++;
-        }
+        setInternalStates(ioPins, ioStates);
 
         RCLCPP_INFO(logger, "KUKA EKI IO interface activated.");
         return hardware_interface::CallbackReturn::SUCCESS;
@@ -166,11 +156,11 @@ namespace kuka_eki_io_interface
         deadline_->async_wait(boost::bind(&KukaEkiIoInterface::eki_check_read_state_deadline, this));
     }
 
-    void KukaEkiIoInterface::eki_handle_receive(const SystemErrorCode& systemErrorCode, size_t length, SystemErrorCode* out_ec, size_t* out_length)
-    {
-        *out_ec = systemErrorCode;
-        *out_length = length;
-    }
+    // void KukaEkiIoInterface::eki_handle_receive(const SystemErrorCode& systemErrorCode, size_t length, SystemErrorCode* out_ec, size_t* out_length)
+    // {
+    //     *out_ec = systemErrorCode;
+    //     *out_length = length;
+    // }
 
     bool KukaEkiIoInterface::eki_read_state(std::vector<bool>& ioStates, std::vector<int>& ioPins)
     {
@@ -186,7 +176,14 @@ namespace kuka_eki_io_interface
         SystemErrorCode systemErrorCode = boost::asio::error::would_block;
         size_t len = 0;
 
-        eki_server_socket_->async_receive(boost::asio::buffer(inBuffer), boost::bind(&KukaEkiIoInterface::eki_handle_receive, _1, _2, &systemErrorCode, &len));
+        //eki_server_socket_->async_receive(boost::asio::buffer(inBuffer), boost::bind(&KukaEkiIoInterface::eki_handle_receive, _1, _2, &systemErrorCode, &len));
+        eki_server_socket_->async_receive(
+            boost::asio::buffer(inBuffer),
+            [&systemErrorCode, &len](const boost::system::error_code& ec, std::size_t length) {
+                systemErrorCode = ec;
+                len = length;
+            }
+        );
 
         do
             ios_.run_one();
@@ -207,11 +204,12 @@ namespace kuka_eki_io_interface
         }
 
         // KUKAEKIIO_00005 // Ensure null-terminated data buffer for parsing it as c-string.
-        inBuffer[len] = '\0';
+        // pk // Don't need to manually null-terminate the buffer, since tinyxml2::XMLDocument::Parse() does that for us. (len parameter)
+        //inBuffer[len] = '\0';
 
         // KUKAEKIIO_00006 // Materialize incoming c-string as XML DOM. 
         tinyxml2::XMLDocument xmlDocument;
-        tinyxml2::XMLError xmlDocumentParseError = xmlDocument.Parse(inBuffer.data());
+        tinyxml2::XMLError xmlDocumentParseError = xmlDocument.Parse(inBuffer.data(), len);
 
         // TODO // HAndle parse error.
         if (xmlDocumentParseError != tinyxml2::XML_SUCCESS)
@@ -238,10 +236,10 @@ namespace kuka_eki_io_interface
         // 
         for (int i = 0; i < numberOfIos_; i++)
         {
-            tinyxml2::XMLElement* state = robotState->FirstChildElement(ioNames[i].c_str());
+            tinyxml2::XMLElement* state = robotState->FirstChildElement(getIoTagName(i).c_str());
             if (!state)
             {
-                RCLCPP_ERROR(logger, "no %s-element found in XML.", ioNames[i].c_str());
+                RCLCPP_ERROR(logger, "no %s-element found in XML.", getIoTagName(i).c_str());
                 return false;
             }
             
@@ -249,13 +247,24 @@ namespace kuka_eki_io_interface
             int ioPin = __myCustomTemporaryDefaultValue;
             int ioMode = __myCustomTemporaryDefaultValue;
 
-            state->QueryIntAttribute("State", &ioState);
-            state->QueryIntAttribute("Pin", &ioPin);
-            state->QueryIntAttribute("Mode", &ioMode);
-
+            if (state->QueryIntAttribute("State", &ioState) != tinyxml2::XML_SUCCESS)
+            {
+                RCLCPP_ERROR(logger, "Failed to query 'State' attribute or attribute is not an int for %s.", getIoTagName(i).c_str());
+                return false;
+            }
+            if (state->QueryIntAttribute("Pin", &ioPin) != tinyxml2::XML_SUCCESS)
+            {
+                RCLCPP_ERROR(logger, "Failed to query 'Pin' attribute or attribute is not an int for %s.", getIoTagName(i).c_str());
+                return false;
+            }
+            if (state->QueryIntAttribute("Mode", &ioMode) != tinyxml2::XML_SUCCESS)
+            {
+                RCLCPP_ERROR(logger, "Failed to query 'Mode' attribute or attribute is not an int for %s.", getIoTagName(i).c_str());
+                return false;
+            }
             if (ioState == __myCustomTemporaryDefaultValue || ioPin == __myCustomTemporaryDefaultValue || ioMode != __ekiModeRead)
             {
-                RCLCPP_ERROR(logger, "invalid %s-element found in XML.", ioNames[i].c_str());
+                RCLCPP_ERROR(logger, "invalid %s-element found in XML.", getIoTagName(i).c_str());
                 return false;
             }
 
@@ -265,7 +274,7 @@ namespace kuka_eki_io_interface
 
         RCLCPP_DEBUG(logger, "read %d IOs from robot EKI server.", numberOfIos_);
         for (int i = 0; i < numberOfIos_; i++)
-            RCLCPP_DEBUG(logger, " %s: %d", ioNames[i].c_str(), ioStates[i]);
+            RCLCPP_DEBUG(logger, " %s: %d", getIoTagName(i).c_str(), ioStates[i]);
 
         return true;
     }
@@ -286,7 +295,7 @@ namespace kuka_eki_io_interface
         auto ioCommand = xmlCommand.NewElement("IOCommand");
         for (int i = 0; i < numberOfIos_; i++)
         {
-            tinyxml2::XMLElement* ioElement = xmlCommand.NewElement(ioNames[i].c_str());
+            tinyxml2::XMLElement* ioElement = xmlCommand.NewElement(getIoTagName(i).c_str());
             ioCommand->InsertEndChild(ioElement);
 
             // pk // What was the purpose of this??
@@ -322,10 +331,42 @@ namespace kuka_eki_io_interface
         {
             std::string msg = "Failed to read from robot EKI server within alloted time of " + std::to_string(eki_read_state_timeout_) + " seconds. Make sure eki_hw_interface is running on the robot controller and all configurations are correct.";
             RCLCPP_ERROR(logger, msg.c_str());
-            throw std::runtime_error(msg);
+            return hardware_interface::return_type::ERROR;
+        }
+        if (!setInternalStates(ioPins, ioStates))
+        {
+            std::string msg = "Failed to set state values from robot EKI server.";
+            RCLCPP_ERROR(logger, msg.c_str());
+            return hardware_interface::return_type::ERROR;
         }
 
-        setInternalStates(ioPins, ioStates);
+        RCLCPP_DEBUG(logger, "read %d IOs from robot EKI server.", numberOfIos_);
+        for (int i = 0; i < numberOfIos_; i++)
+            RCLCPP_DEBUG(logger, " %s: %d", ioPins[i], ioStates[i]);
+
+        return hardware_interface::return_type::OK;
+    }
+
+    hardware_interface::return_type KukaEkiIoInterface::write(const rclcpp::Time& time, const rclcpp::Duration& period)
+    {
+        auto logger = rclcpp::get_logger(LOGGER_NAME);
+
+        auto ioCommands = std::vector<bool>();
+        auto ioPins = std::vector<int>();
+        if (!getInternalCommands(ioPins, ioCommands))
+        {
+            std::string msg = "Failed to get command values from robot EKI server.";
+            RCLCPP_ERROR(logger, msg.c_str());
+            return hardware_interface::return_type::ERROR;
+        }
+
+        if (!eki_write_command(ioPins, ioCommands))
+        {
+            std::string msg = "Failed to write to robot EKI server within alloted time of " + std::to_string(eki_read_state_timeout_) + " seconds. Make sure eki_hw_interface is running on the robot controller and all configurations are correct.";
+            RCLCPP_ERROR(logger, msg.c_str());
+            return hardware_interface::return_type::ERROR;
+        }
+        
         return hardware_interface::return_type::OK;
     }
 
@@ -334,19 +375,27 @@ namespace kuka_eki_io_interface
         auto logger = rclcpp::get_logger(LOGGER_NAME);
 
         int i = 0;
-        for (int pinNumber : ioPins)
+        try
         {
-            auto gpioInfo = gpioInfos_.find(pinNumber);
-            if (gpioInfo == gpioInfos_.end())
+            for (int pinNumber : ioPins)
             {
-                RCLCPP_ERROR(logger, "Invalid pin number %d", pinNumber);
-                return false;
+                auto gpioInfo = gpioInfos_.find(pinNumber);
+                if (gpioInfo == gpioInfos_.end())
+                {
+                    RCLCPP_ERROR(logger, "Invalid pin number %d", pinNumber);
+                    return false;
+                }
+                auto gpio = gpioInfo->second;
+                const std::string interfaceName = gpio.GetStateInterfaceName();
+                set_state<bool>(interfaceName, targetIos[i]);
+                RCLCPP_DEBUG(logger, "Set state of %s[pin=%d] to %d", interfaceName.c_str(), pinNumber, targetIos[i]);
+                i++;
             }
-            auto gpio = gpioInfo->second;
-            const std::string interfaceName = gpio.InterfaceName + "/" + gpio.StateInterfaceName;
-            set_state<bool>(interfaceName, targetIos[i]);
-            RCLCPP_DEBUG(logger, "Set state of %s[pin=%d] to %d", interfaceName.c_str(), pinNumber, targetIos[i]);
-            i++;
+        }
+        catch (const std::runtime_error& e)
+        {
+            RCLCPP_ERROR(logger, "Failed to set state value: %s", e.what());
+            return false;
         }
 
         return true;
@@ -359,36 +408,36 @@ namespace kuka_eki_io_interface
         ioPins.reserve(numberOfIos_);
         ioStates.reserve(numberOfIos_);
 
-        for (const auto& [pinNumber, gpio] : gpioInfos_)
+        try
         {
-            const std::string interfaceName = gpio.InterfaceName + "/" + gpio.CommandInterfaceName;
-            ioPins.push_back(pinNumber);
-            ioStates.push_back(get_command<bool>(interfaceName));
+            for (const auto& [pinNumber, gpio] : gpioInfos_)
+            {
+                const std::string interfaceName = gpio.GetCommandInterfaceName();
+                ioPins.push_back(pinNumber);
+                ioStates.push_back(get_command<bool>(interfaceName));
+            }
+        }
+        catch (const std::runtime_error& e)
+        {
+            RCLCPP_ERROR(logger, "Failed to get command value: %s", e.what());
+            return false;
         }
 
         return true;
     }
 
-    hardware_interface::return_type KukaEkiIoInterface::write(const rclcpp::Time& time, const rclcpp::Duration& period)
+    std::string GpioPinInfo::GetCommandInterfaceName() const
     {
-        auto logger = rclcpp::get_logger(LOGGER_NAME);
+        return InterfaceName + "/" + CommandInterfaceName;
+    }
 
-        auto ioCommands = std::vector<bool>();
-        auto ioPins = std::vector<int>();
-        getInternalCommands(ioPins, ioCommands);
-
-        if (!eki_write_command(ioPins, ioCommands))
-        {
-            std::string msg = "Failed to write to robot EKI server within alloted time of " + std::to_string(eki_read_state_timeout_) + " seconds. Make sure eki_hw_interface is running on the robot controller and all configurations are correct.";
-            RCLCPP_ERROR(logger, msg.c_str());
-            throw std::runtime_error(msg);
-        }
-        
-        return hardware_interface::return_type::OK;
+    std::string GpioPinInfo::GetStateInterfaceName() const
+    {
+        return InterfaceName + "/" + StateInterfaceName;
     }
 
 
-
+    
     bool isValidIPv4(const std::string& ipString) {
         // IPv4 pattern with optional port
         // Matches: 192.168.1.1, 192.168.1.1:8080, 0.0.0.0, 255.255.255.255:65535
@@ -412,6 +461,12 @@ namespace kuka_eki_io_interface
         } catch (const std::out_of_range& e) {
             return true; // It's a number, but too large for int
         }
+    }
+
+    const std::string& getIoTagName(int i)
+    {
+        static const std::string __defaultIoName = "IO";
+        return __defaultIoName + std::to_string(i);
     }
 
 }  // namespace kuka_eki_io_interface

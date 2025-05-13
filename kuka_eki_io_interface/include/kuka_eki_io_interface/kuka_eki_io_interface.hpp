@@ -21,6 +21,22 @@
 
 namespace kuka_eki_io_interface
 {
+    // pk // This struct is used to store the information of the GPIOs defined in the URDF and KUKA EKI configuration
+    // pk // It contains the interface name, command interface name, state interface name and the pin number
+    // pk // The pin number is the actual pin number defined in the URDF and KUKA EKI configuration
+    // pk // The idea is to use this helper struct to map the actual pin number to the name of the gpio interface
+    // pk // This implementation doesn't allow for multiple command and state interfaces per GPIO and needs to be refactored if that is an issue.
+    struct GpioPinInfo
+    {
+        std::string InterfaceName;
+        std::string CommandInterfaceName;
+        std::string StateInterfaceName;
+        int PinNumber;
+
+        std::string GetCommandInterfaceName() const;
+        std::string GetStateInterfaceName() const;
+    };
+
     using Socket = boost::asio::ip::udp::socket;
     using SocketPtr = std::unique_ptr<boost::asio::ip::udp::socket>;
     using Endpoint = boost::asio::ip::udp::endpoint;
@@ -33,24 +49,15 @@ namespace kuka_eki_io_interface
     using Seconds = boost::posix_time::seconds;
 
     const std::string LOGGER_NAME = "KukaEkiIoInterface";
-    const std::string ioNames[] = {"IO1", "IO2", "IO3", "IO4", "IO5", "IO6", "IO7", "IO8"};
+    const std::string ioNames[] = {"IO1", "IO2", "IO3", "IO4", "IO5", "IO6", "IO7", "IO8"}; // pk // Needs refactoring
     const int __maxIoNumber = 8;
     const int __myCustomTemporaryDefaultValue = -42069;
-    const int __pinNumberOffset = 500;
-    const int __defaultNumberOfIos = 8;
     const int __ekiModeWrite = 2;
     const int __ekiModeRead = 1;
 
     bool isValidIPv4(const std::string& ipString);
     bool isInteger(const std::string& s);
-
-    struct GpioPinInfo
-    {
-        std::string InterfaceName;
-        std::string CommandInterfaceName;
-        std::string StateInterfaceName;
-        int PinNumber;
-    };
+    const std::string& getIoTagName(int i);
 
     class KukaEkiIoInterface : public hardware_interface::SystemInterface
     {
@@ -92,7 +99,7 @@ namespace kuka_eki_io_interface
             SocketPtr eki_server_socket_;
 
             void eki_check_read_state_deadline();
-            static void eki_handle_receive(const boost::system::error_code& ec, size_t length, boost::system::error_code*  out_ec, size_t*  out_length);
+            //static void eki_handle_receive(const boost::system::error_code& ec, size_t length, boost::system::error_code*  out_ec, size_t*  out_length);
             bool eki_read_state(std::vector<bool>& io_states, std::vector<int>& io_pins);
             bool eki_write_command(const std::vector<int>& io_pins, const std::vector<bool>& target_ios);
             static int ekiCommandBufferSize_;
