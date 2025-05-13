@@ -132,7 +132,7 @@ namespace kuka_eki_io_interface
             RCLCPP_FATAL(logger, errorMessage.c_str());
             throw std::runtime_error(errorMessage);
         }
-
+        
         int i = 0;
         for (int pinNumber : ioPins)
         {
@@ -142,9 +142,10 @@ namespace kuka_eki_io_interface
                 RCLCPP_ERROR(logger, "Invalid pin number %d", pinNumber);
                 return hardware_interface::CallbackReturn::ERROR;
             }
-            auto gpioName = gpioInfo->second;
-            set_state<bool>(gpioName, ioStates[i]);
-            RCLCPP_DEBUG(logger, "Set state of %s[pin=%d] to %d", gpioName.c_str(), pinNumber, ioStates[i]);
+            auto gpio = gpioInfo->second;
+            const std::string interfaceName = gpio.InterfaceName + "/" + gpio.StateInterfaceName;
+            set_state<bool>(interfaceName, ioStates[i]);
+            RCLCPP_DEBUG(logger, "Set state of %s[pin=%d] to %d", interfaceName.c_str(), pinNumber, ioStates[i]);
             i++;
         }
 
@@ -324,6 +325,14 @@ namespace kuka_eki_io_interface
             throw std::runtime_error(msg);
         }
 
+        setInternalStates(ioPins, ioStates);
+        return hardware_interface::return_type::OK;
+    }
+
+    bool KukaEkiIoInterface::setInternalStates(const std::vector<int>& ioPins, const std::vector<bool>& targetIos)
+    {
+        auto logger = rclcpp::get_logger(LOGGER_NAME);
+
         int i = 0;
         for (int pinNumber : ioPins)
         {
@@ -331,15 +340,33 @@ namespace kuka_eki_io_interface
             if (gpioInfo == gpioInfos_.end())
             {
                 RCLCPP_ERROR(logger, "Invalid pin number %d", pinNumber);
-                continue;
+                return false;
             }
-            auto gpioName = gpioInfo->second;
-            set_state<bool>(gpioName, ioStates[i]);
-            RCLCPP_DEBUG(logger, "Set state of %s[pin=%d] to %d", gpioName.c_str(), pinNumber, ioStates[i]);
+            auto gpio = gpioInfo->second;
+            const std::string interfaceName = gpio.InterfaceName + "/" + gpio.StateInterfaceName;
+            set_state<bool>(interfaceName, targetIos[i]);
+            RCLCPP_DEBUG(logger, "Set state of %s[pin=%d] to %d", interfaceName.c_str(), pinNumber, targetIos[i]);
             i++;
         }
 
-        return hardware_interface::return_type::OK;
+        return true;
+    }
+
+    bool KukaEkiIoInterface::getInternalCommands(std::vector<int>& ioPins, std::vector<bool>& ioStates)
+    {
+        auto logger = rclcpp::get_logger(LOGGER_NAME);
+
+        ioPins.reserve(numberOfIos_);
+        ioStates.reserve(numberOfIos_);
+
+        for (const auto& [pinNumber, gpio] : gpioInfos_)
+        {
+            const std::string interfaceName = gpio.InterfaceName + "/" + gpio.CommandInterfaceName;
+            ioPins.push_back(pinNumber);
+            ioStates.push_back(get_command<bool>(interfaceName));
+        }
+
+        return true;
     }
 
     hardware_interface::return_type KukaEkiIoInterface::write(const rclcpp::Time& time, const rclcpp::Duration& period)
@@ -348,11 +375,7 @@ namespace kuka_eki_io_interface
 
         auto ioCommands = std::vector<bool>();
         auto ioPins = std::vector<int>();
-        for (const auto& [pinNumber, name] : gpioInfos_)
-        {
-            ioCommands.push_back(get_command(name));
-            ioPins.push_back(pinNumber);
-        }
+        getInternalCommands(ioPins, ioCommands);
 
         if (!eki_write_command(ioPins, ioCommands))
         {

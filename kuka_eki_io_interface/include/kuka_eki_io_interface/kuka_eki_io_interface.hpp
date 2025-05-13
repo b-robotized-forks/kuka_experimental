@@ -46,12 +46,10 @@ namespace kuka_eki_io_interface
 
     struct GpioPinInfo
     {
-        std::string Name; // e.g., "cmd_gripper_open"
+        std::string InterfaceName;
+        std::string CommandInterfaceName;
+        std::string StateInterfaceName;
         int PinNumber;
-        // std::string CommandInterfaceName; // e.g., "cmd_gripper_open/set_value"
-        // std::string StateInterfaceName;   // e.g., "state_gripper_opened/get_value" or "cmd_gripper_open/commanded_value"
-        // hardware_interface::CommandInterface::SharedPtr CommandInterface;
-        // hardware_interface::StateInterface::SharedPtr StateInterface;
     };
 
     class KukaEkiIoInterface : public hardware_interface::SystemInterface
@@ -78,7 +76,7 @@ namespace kuka_eki_io_interface
         private:
             int numberOfIos_;
 
-            std::unordered_map<int, std::string> gpioInfos_;        // pk // This maps the actual pin number defined in the URDF and KUKA EKI configuration to the name of the gpio interface
+            std::unordered_map<int, GpioPinInfo> gpioInfos_;        // pk // This maps the actual pin number defined in the URDF and KUKA EKI configuration to the name of the gpio interface
             
             std::string eki_server_address_;
             std::string eki_server_port_;
@@ -98,6 +96,9 @@ namespace kuka_eki_io_interface
             bool eki_read_state(std::vector<bool>& io_states, std::vector<int>& io_pins);
             bool eki_write_command(const std::vector<int>& io_pins, const std::vector<bool>& target_ios);
             static int ekiCommandBufferSize_;
+
+            bool setInternalStates(const std::vector<int>& ioPins, const std::vector<bool>& targetIos);
+            bool getInternalCommands(std::vector<int>& ioPins, std::vector<bool>& ioStates);
 
     };
 } // namespace kuka_eki_io_interface
