@@ -5,6 +5,29 @@ Driver package to control kuka robot using motion primitives like PTP, LIN and C
 
 ![Licence](https://img.shields.io/badge/License-BSD-3-Clause-blue.svg)
 
+# Documentation
+## ROS2 Implementation
+TODO(mathias31415) explain how the ros2 implementation works
+![img](doc/ros2_control_motion_primitives_kuka.drawio.png)
+
+## KRL Implementation
+TODO(mathias31415) explain how the krl implementation works
+
+## KRL Files
+TODO(mathias31415) write instruction on how to place the KRL files in WorkVisual (Move the instruction to the krl folder)
+
+## EKI TCP connection
+To ensure the TCP connection is closed properly, the client needs to disconnect first [source](https://youtu.be/Ne13sBHPGv4?t=863), so the ROS2 side needs to be stopped first. When client disconnects, the `$flag[1]` and `$flag[2]` are set to false (defined in the xml files). This triggers the interrupt to call the reset_interface() and reset_meta_interface() functions. 
+```
+global interrupt decl 15 when $flag[1] == false do reset_interface()
+interrupt on 15
+```
+This ensures the client (ROS2) can reconnect to the server. During testing/ implementing of the KRL files its recommended to replace `reset_interface()` with `close_interface()` (in `eki.src` and `meta_eki.sub`) to close the connection propperly and dont reset it. This ensures that a new connection can be established after the program is stopped. (robot- and submit-interpreter needs to be restarted (deselect (abwählen) and then select (anwählen) again))
+
+Before transfering a new Version of the KUKA project to the Robot via WorkVisual, stop the ROS2 side and deselect the robot- and submit-interpreter (therefore you need to be in expert mode). If this is not done, the Robotersteuerung needs to get restarted.
+
+TODO(mathias31415) insert images/ screenshots to better explain the stuff
+
 # Usage notes:
 ## With "simulation"
 **1. Start simulation**
@@ -43,29 +66,9 @@ ros2 topic pub /motion_primitive_controller/reference industrial_robot_motion_in
 ```
 
 
-# Documentation
-## ROS2 Implementation
-TODO(mathias31415) explain how the ros2 implementation works
-
-## KRL Implementation
-TODO(mathias31415) explain how the krl implementation works
-
-## KRL Files
-TODO(mathias31415) write instruction on how to place the KRL files in WorkVisual (Move the instruction to the krl folder)
-
-## EKI TCP connection
-To ensure the TCP connection is closed properly, the client needs to disconnect first [source](https://youtu.be/Ne13sBHPGv4?t=863), so the ROS2 side needs to be stopped first. When client disconnects, the `$flag[1]` and `$flag[2]` are set to false (defined in the xml files). This triggers the interrupt to call the reset_interface() and reset_meta_interface() functions. 
-```
-global interrupt decl 15 when $flag[1] == false do reset_interface()
-interrupt on 15
-```
-This ensures the client (ROS2) can reconnect to the server. During testing/ implementing of the KRL files its recommended to replace `reset_interface()` with `close_interface()` (in `eki.src` and `meta_eki.sub`) to close the connection propperly and dont reset it. This ensures that a new connection can be established after the program is stopped. (robot- and submit-interpreter needs to be restarted (deselect (abwählen) and then select (anwählen) again))
-
-Before transfering a new Version of the KUKA project to the Robot via WorkVisual, stop the ROS2 side and deselect the robot- and submit-interpreter (therefore you need to be in expert mode). If this is not done, the Robotersteuerung needs to get restarted.
-
-TODO(mathias31415) insert images/ screenshots to better explain the stuff
 
 # TODOs
 - Blending between two motionprimitives not working yet
 - execute eki_close("NAME") when programm is stopped to properly close the connection --> without eki_close() its not possible to init a new server when restarting the program. 
-- handle additional paramters like velocity and acceleration 
+- handle additional paramters like velocity and acceleration
+- how to check if motion execution ends with success?
