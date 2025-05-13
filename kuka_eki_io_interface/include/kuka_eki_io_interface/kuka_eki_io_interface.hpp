@@ -1,5 +1,5 @@
-#ifndef ROS2_CONTROL_KUKA_EKI_IO_HPP_
-#define ROS2_CONTROL_KUKA_EKI_IO_HPP_
+#ifndef ROS2_CONTROL_KUKA_EKI_IO_HPP__
+#define ROS2_CONTROL_KUKA_EKI_IO_HPP__
 
 #include <vector>
 #include <string>
@@ -48,10 +48,10 @@ namespace kuka_eki_io_interface
     {
         std::string Name; // e.g., "cmd_gripper_open"
         int PinNumber;
-        std::string CommandInterfaceName; // e.g., "cmd_gripper_open/set_value"
-        std::string StateInterfaceName;   // e.g., "state_gripper_opened/get_value" or "cmd_gripper_open/commanded_value"
-        hardware_interface::CommandInterface::SharedPtr CommandInterface;
-        hardware_interface::StateInterface::SharedPtr StateInterface;
+        // std::string CommandInterfaceName; // e.g., "cmd_gripper_open/set_value"
+        // std::string StateInterfaceName;   // e.g., "state_gripper_opened/get_value" or "cmd_gripper_open/commanded_value"
+        // hardware_interface::CommandInterface::SharedPtr CommandInterface;
+        // hardware_interface::StateInterface::SharedPtr StateInterface;
     };
 
     class KukaEkiIoInterface : public hardware_interface::SystemInterface
@@ -66,20 +66,19 @@ namespace kuka_eki_io_interface
 
             // std::vector<hardware_interface::StateInterface> export_state_interfaces() final;                             // pk // DEPRECATED USE on_export_state_interfaces instead
             // std::vector<hardware_interface::CommandInterface> export_command_interfaces() final;                         // pk // DEPRECATED USE on_export_command_interfaces instead
-            virtual std::vector<hardware_interface::StateInterface::ConstSharedPtr> on_export_state_interfaces() final;     // pk // !! If hardware_interface::SystemInterface is implemented correctly and used as intended you do not need to override this function !!
-            virtual std::vector<hardware_interface::CommandInterface::SharedPtr> on_export_command_interfaces() final;      // pk // !! If hardware_interface::SystemInterface is implemented correctly and used as intended you do not need to override this function !!
+            // virtual std::vector<hardware_interface::StateInterface::ConstSharedPtr> on_export_state_interfaces() final;     // pk // !! If hardware_interface::SystemInterface is implemented correctly and used as intended you do not need to override this function !!
+            // virtual std::vector<hardware_interface::CommandInterface::SharedPtr> on_export_command_interfaces() final;      // pk // !! If hardware_interface::SystemInterface is implemented correctly and used as intended you do not need to override this function !!
 
             hardware_interface::return_type read(const rclcpp::Time& time, const rclcpp::Duration& period) final;
             hardware_interface::return_type write(const rclcpp::Time& time, const rclcpp::Duration& period) final;
 
-            bool eki_read_state(std::vector<bool>& io_states, std::vector<int>& io_pins);
-            bool eki_write_command(const std::vector<int>& io_pins, const std::vector<bool>& target_ios);
+            
     
-            KukaEkiIoInterface(const std::string& eki_server_address, const std::string& eki_server_port, int n_io);
+            //KukaEkiIoInterface(const std::string& eki_server_address, const std::string& eki_server_port, int n_io);
         private:
             int numberOfIos_;
 
-            std::unordered_map<int, GpioPinInfo> gpioInfo_;
+            std::unordered_map<int, std::string> gpioInfos_;        // pk // This maps the actual pin number defined in the URDF and KUKA EKI configuration to the name of the gpio interface
             
             std::string eki_server_address_;
             std::string eki_server_port_;
@@ -96,12 +95,11 @@ namespace kuka_eki_io_interface
 
             void eki_check_read_state_deadline();
             static void eki_handle_receive(const boost::system::error_code& ec, size_t length, boost::system::error_code*  out_ec, size_t*  out_length);
-            bool eki_read_state(std::vector<bool>& ioStates, std::vector<int>& ioPins);
-            bool eki_write_command(const std::vector<double>& joint_position);
-
+            bool eki_read_state(std::vector<bool>& io_states, std::vector<int>& io_pins);
+            bool eki_write_command(const std::vector<int>& io_pins, const std::vector<bool>& target_ios);
             static int ekiCommandBufferSize_;
 
     };
 } // namespace kuka_eki_io_interface
 
-#endif // ROS2_CONTROL_KUKA_EKI_IO_HPP_
+#endif // ROS2_CONTROL_KUKA_EKI_IO_HPP__

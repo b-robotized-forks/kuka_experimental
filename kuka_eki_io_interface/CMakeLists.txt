@@ -49,6 +49,7 @@ target_include_directories(
   ${PROJECT_NAME}
   PRIVATE
   include
+  
 )
 ament_target_dependencies(
   ${PROJECT_NAME}
@@ -84,14 +85,14 @@ install(
   DESTINATION include/
 )
 
-add_executable(eki_io_node src/kuka_eki_io_interface_node.cpp src/kuka_eki_io_interface.cpp)
+add_executable(eki_io src/kuka_eki_io_interface.cpp)
 target_include_directories(
-  eki_io_node
+  eki_io
   PRIVATE
   include)
-ament_target_dependencies(eki_io_node ${${PROJECT_NAME}_EXPORTED_TARGETS} rclcpp std_msgs rclcpp_lifecycle TinyXML)
+ament_target_dependencies(eki_io ${${PROJECT_NAME}_EXPORTED_TARGETS} rclcpp std_msgs rclcpp_lifecycle TinyXML hardware_interface)
 install(TARGETS
-  eki_io_node
+  eki_io
   DESTINATION lib/${PROJECT_NAME})
 
 

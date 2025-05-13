@@ -16,6 +16,9 @@
   <depend>rclcpp</depend>
   <depend>rclcpp_lifecycle</depend>
   <depend>rclcpp_components</depend>
+  <depend>pluginlib</depend>
+  <depend>boost</depend>
+  <depend>tinyxml2</depend>
   <depend>std_msgs</depend>
   <depend>tinyxml_vendor</depend>
   <depend>hardware_interface</depend>
