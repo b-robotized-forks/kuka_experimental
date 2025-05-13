@@ -76,7 +76,8 @@ namespace kuka_eki_io_interface
                 RCLCPP_FATAL(logger, "KUKA EKI IO interface pin parameter must be an integer.");
                 return hardware_interface::CallbackReturn::ERROR;
             }
-
+            
+            // pk // Map KUKA EKI GPIO pin number to the command and state interface names
             int pinNumber = std::stoi(gpio.parameters.at("pin"));
             gpioInfos_[pinNumber] = {
                 gpio.name,
