@@ -69,6 +69,7 @@ namespace kuka_eki_io_interface
             hardware_interface::CallbackReturn on_init(const hardware_interface::HardwareInfo& system_info) final;
             hardware_interface::CallbackReturn on_activate(const rclcpp_lifecycle::State& previous_state) final;
             hardware_interface::CallbackReturn on_deactivate(const rclcpp_lifecycle::State& previous_state) final;
+            // pk // on_configure and on_cleanup are currently not used, but could be used in the future to configure and cleanup the interface
 
             // std::vector<hardware_interface::StateInterface> export_state_interfaces() final;                                 // pk // DEPRECATED USE on_export_state_interfaces instead
             // std::vector<hardware_interface::CommandInterface> export_command_interfaces() final;                             // pk // DEPRECATED USE on_export_command_interfaces instead
