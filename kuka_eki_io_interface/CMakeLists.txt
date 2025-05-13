@@ -25,6 +25,7 @@ find_package(rclcpp REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
 find_package(std_msgs REQUIRED)
 
+
 # uncomment the following section in order to fill in
 # further dependencies manually.
 # find_package(<dependency> REQUIRED)
@@ -60,6 +61,23 @@ ament_target_dependencies(
 )
 pluginlib_export_plugin_description_file(hardware_interface ros2_control_kuka_eki_io.xml)
 
+
+
+
+### ros2 control hardware plugin
+install(
+  TARGETS ${PROJECT_NAME}
+  EXPORT export_iras_kuka_eki_io_interface
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
+install(
+  DIRECTORY include/
+  DESTINATION include/
+)
+
+ament_export_targets(export_iras_kuka_eki_io_interface HAS_LIBRARY_TARGET)
 ament_export_include_directories(
   include
 )
@@ -72,16 +90,4 @@ ament_export_dependencies(
   rclcpp
   rclcpp_lifecycle
 )
-
-
-### ros2 control hardware plugin
-install(
-  TARGETS ${PROJECT_NAME}
-  DESTINATION lib
-)
-install(
-  DIRECTORY include/
-  DESTINATION include/
-)
-
 ament_package()
