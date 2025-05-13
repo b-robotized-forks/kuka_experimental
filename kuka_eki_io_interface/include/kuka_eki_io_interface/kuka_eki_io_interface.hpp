@@ -49,7 +49,7 @@ namespace kuka_eki_io_interface
     using Seconds = boost::posix_time::seconds;
 
     const std::string LOGGER_NAME = "KukaEkiIoInterface";
-    const std::string ioNames[] = {"IO1", "IO2", "IO3", "IO4", "IO5", "IO6", "IO7", "IO8"}; // pk // Needs refactoring
+    //const std::string ioNames[] = {"IO1", "IO2", "IO3", "IO4", "IO5", "IO6", "IO7", "IO8"}; // pk // Needs refactoring
     const int __maxIoNumber = 8;
     const int __myCustomTemporaryDefaultValue = -42069;
     const int __ekiModeWrite = 2;
@@ -57,7 +57,7 @@ namespace kuka_eki_io_interface
 
     bool isValidIPv4(const std::string& ipString);
     bool isInteger(const std::string& s);
-    const std::string& getIoTagName(int i);
+    const std::string getIoTagName(int i);
 
     class KukaEkiIoInterface : public hardware_interface::SystemInterface
     {

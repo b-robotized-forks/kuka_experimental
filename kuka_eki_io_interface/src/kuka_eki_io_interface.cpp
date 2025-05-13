@@ -342,7 +342,7 @@ namespace kuka_eki_io_interface
 
         RCLCPP_DEBUG(logger, "read %d IOs from robot EKI server.", numberOfIos_);
         for (int i = 0; i < numberOfIos_; i++)
-            RCLCPP_DEBUG(logger, " %s: %d", ioPins[i], ioStates[i]);
+            RCLCPP_DEBUG(logger, "Pin[%s]: %d", ioPins[i], ioStates[i]);
 
         return hardware_interface::return_type::OK;
     }
@@ -437,10 +437,9 @@ namespace kuka_eki_io_interface
     }
 
 
-    
+    // IPv4 pattern with optional port
+    // Matches: 192.168.1.1, 192.168.1.1:8080, 0.0.0.0, 255.255.255.255:65535
     bool isValidIPv4(const std::string& ipString) {
-        // IPv4 pattern with optional port
-        // Matches: 192.168.1.1, 192.168.1.1:8080, 0.0.0.0, 255.255.255.255:65535
         static const std::regex ipv4Regex(
             "^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\."
             "(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\."
@@ -463,10 +462,10 @@ namespace kuka_eki_io_interface
         }
     }
 
-    const std::string& getIoTagName(int i)
+    const std::string getIoTagName(int i)
     {
-        static const std::string __defaultIoName = "IO";
-        return __defaultIoName + std::to_string(i);
+        static const std::string defaultIoName = "Io";
+        return defaultIoName + std::to_string(i);
     }
 
 }  // namespace kuka_eki_io_interface

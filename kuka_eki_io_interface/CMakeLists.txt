@@ -57,7 +57,6 @@ ament_target_dependencies(
   pluginlib
   rclcpp
   rclcpp_lifecycle
-  TinyXML
 )
 pluginlib_export_plugin_description_file(hardware_interface ros2_control_kuka_eki_io.xml)
 
@@ -83,22 +82,6 @@ install(
 install(
   DIRECTORY include/
   DESTINATION include/
-)
-
-add_executable(eki_io src/kuka_eki_io_interface.cpp)
-target_include_directories(
-  eki_io
-  PRIVATE
-  include)
-ament_target_dependencies(eki_io ${${PROJECT_NAME}_EXPORTED_TARGETS} rclcpp std_msgs rclcpp_lifecycle TinyXML hardware_interface)
-install(TARGETS
-  eki_io
-  DESTINATION lib/${PROJECT_NAME})
-
-
-install(
-  DIRECTORY launch
-  DESTINATION share/${PROJECT_NAME}/
 )
 
 ament_package()
