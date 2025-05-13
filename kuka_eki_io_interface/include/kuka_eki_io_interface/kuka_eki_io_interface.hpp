@@ -26,6 +26,8 @@ namespace kuka_eki_io_interface
     // pk // The pin number is the actual pin number defined in the URDF and KUKA EKI configuration
     // pk // The idea is to use this helper struct to map the actual pin number to the name of the gpio interface
     // pk // This implementation doesn't allow for multiple command and state interfaces per GPIO and needs to be refactored if that is an issue.
+    // pk // EXAMPLE URDF: /home/ws_infrastructure/src/maurob_gripper/maurob_gripper_description/urdf/maurob_steingreifer_v2.ros2_control.xacro
+    // pk // This example URDF is how I think the URDF could(!) look like for the KUKA EKI IO interface (probably needs to be refactored)
     struct GpioPinInfo
     {
         std::string InterfaceName;
@@ -49,7 +51,6 @@ namespace kuka_eki_io_interface
     using Seconds = boost::posix_time::seconds;
 
     const std::string LOGGER_NAME = "KukaEkiIoInterface";
-    //const std::string ioNames[] = {"IO1", "IO2", "IO3", "IO4", "IO5", "IO6", "IO7", "IO8"}; // pk // Needs refactoring
     const int __maxIoNumber = 8;
     const int __myCustomTemporaryDefaultValue = -42069;
     const int __ekiModeWrite = 2;
@@ -69,17 +70,13 @@ namespace kuka_eki_io_interface
             hardware_interface::CallbackReturn on_activate(const rclcpp_lifecycle::State& previous_state) final;
             hardware_interface::CallbackReturn on_deactivate(const rclcpp_lifecycle::State& previous_state) final;
 
-            // std::vector<hardware_interface::StateInterface> export_state_interfaces() final;                             // pk // DEPRECATED USE on_export_state_interfaces instead
-            // std::vector<hardware_interface::CommandInterface> export_command_interfaces() final;                         // pk // DEPRECATED USE on_export_command_interfaces instead
-            // virtual std::vector<hardware_interface::StateInterface::ConstSharedPtr> on_export_state_interfaces() final;     // pk // !! If hardware_interface::SystemInterface is implemented correctly and used as intended you do not need to override this function !!
-            // virtual std::vector<hardware_interface::CommandInterface::SharedPtr> on_export_command_interfaces() final;      // pk // !! If hardware_interface::SystemInterface is implemented correctly and used as intended you do not need to override this function !!
+            // std::vector<hardware_interface::StateInterface> export_state_interfaces() final;                                 // pk // DEPRECATED USE on_export_state_interfaces instead
+            // std::vector<hardware_interface::CommandInterface> export_command_interfaces() final;                             // pk // DEPRECATED USE on_export_command_interfaces instead
+            // virtual std::vector<hardware_interface::StateInterface::ConstSharedPtr> on_export_state_interfaces() final;      // pk // !! If hardware_interface::SystemInterface is implemented correctly and used as intended you do not need to override this function !!
+            // virtual std::vector<hardware_interface::CommandInterface::SharedPtr> on_export_command_interfaces() final;       // pk // !! If hardware_interface::SystemInterface is implemented correctly and used as intended you do not need to override this function !!
 
             hardware_interface::return_type read(const rclcpp::Time& time, const rclcpp::Duration& period) final;
             hardware_interface::return_type write(const rclcpp::Time& time, const rclcpp::Duration& period) final;
-
-            
-    
-            //KukaEkiIoInterface(const std::string& eki_server_address, const std::string& eki_server_port, int n_io);
         private:
             int numberOfIos_;
 
