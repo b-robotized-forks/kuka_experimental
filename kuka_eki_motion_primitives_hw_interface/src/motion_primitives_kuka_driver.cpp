@@ -48,7 +48,8 @@ hardware_interface::CallbackReturn MotionPrimitivesKukaDriver::on_init(
   async_thread_shutdown_ = false;
 
   // Joint states for RViz, ...
-  hw_joint_states_.resize(info_.joints.size(), std::numeric_limits<double>::quiet_NaN());
+  hw_joint_pos_states_.resize(info_.joints.size(), std::numeric_limits<double>::quiet_NaN());
+  hw_joint_vel_states_.resize(info_.joints.size(), std::numeric_limits<double>::quiet_NaN());
 
   // State interfaces for the motion_primitive_forward_controller
   hw_mo_prim_states_.resize(2, std::numeric_limits<double>::quiet_NaN());     // execution_status, ready_for_new_primitive
@@ -78,7 +79,10 @@ std::vector<hardware_interface::StateInterface> MotionPrimitivesKukaDriver::expo
   for (size_t i = 0; i < info_.joints.size(); ++i)
   {
     state_interfaces.emplace_back(hardware_interface::StateInterface(
-      info_.joints[i].name, hardware_interface::HW_IF_POSITION, &hw_joint_states_[i]));
+      info_.joints[i].name, hardware_interface::HW_IF_POSITION, &hw_joint_pos_states_[i]));
+
+    state_interfaces.emplace_back(hardware_interface::StateInterface(
+      info_.joints[i].name, hardware_interface::HW_IF_VELOCITY, &hw_joint_vel_states_[i]));
   }
 
   // State interfaces for the motion_primitive_forward_controller
@@ -189,12 +193,20 @@ hardware_interface::return_type MotionPrimitivesKukaDriver::read(
   rbt::RobotState robot_state = robot_.get_state();
   const rbt::PoseJoints& joints = robot_state.position_joints;
   constexpr double deg_to_rad = M_PI / 180.0;
-  hw_joint_states_[0] = joints.a1 * deg_to_rad;
-  hw_joint_states_[1] = joints.a2 * deg_to_rad;
-  hw_joint_states_[2] = joints.a3 * deg_to_rad;
-  hw_joint_states_[3] = joints.a4 * deg_to_rad;
-  hw_joint_states_[4] = joints.a5 * deg_to_rad;
-  hw_joint_states_[5] = joints.a6 * deg_to_rad;
+  hw_joint_pos_states_[0] = joints.a1 * deg_to_rad;
+  hw_joint_pos_states_[1] = joints.a2 * deg_to_rad;
+  hw_joint_pos_states_[2] = joints.a3 * deg_to_rad;
+  hw_joint_pos_states_[3] = joints.a4 * deg_to_rad;
+  hw_joint_pos_states_[4] = joints.a5 * deg_to_rad;
+  hw_joint_pos_states_[5] = joints.a6 * deg_to_rad;
+
+  const rbt::PoseJoints& velocity = robot_state.velocity;
+  hw_joint_vel_states_[0] = velocity.a1;
+  hw_joint_vel_states_[1] = velocity.a2;
+  hw_joint_vel_states_[2] = velocity.a3;
+  hw_joint_vel_states_[3] = velocity.a4;
+  hw_joint_vel_states_[4] = velocity.a5;
+  hw_joint_vel_states_[5] = velocity.a6;
 
   // Handle robot status
   // TODO(mathias31415): How to check if movement was SUCCESS?

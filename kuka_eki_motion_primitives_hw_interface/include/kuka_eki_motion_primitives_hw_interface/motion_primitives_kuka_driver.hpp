@@ -63,7 +63,8 @@ public:
     const rclcpp::Time & time, const rclcpp::Duration & period) override;
 
 private:
-  std::vector<double> hw_joint_states_;
+  std::vector<double> hw_joint_pos_states_;
+  std::vector<double> hw_joint_vel_states_;
   std::vector<double> hw_mo_prim_states_;
   std::vector<double> hw_mo_prim_commands_;
 
