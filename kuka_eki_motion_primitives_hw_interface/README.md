@@ -16,6 +16,8 @@ TODO(mathias31415) explain how the krl implementation works
 ## KRL Files
 TODO(mathias31415) write instruction on how to place the KRL files in WorkVisual (Move the instruction to the krl folder)
 
+If [Multi Submitinterpreter](https://www.kuka.com/en-us/services/downloads?terms=Language%3Aen%3A1&q=MultiSubmit) is installed the line `DECL PRO_IO_T $PRO_I_O_PROC_ID3={MODULE[] "/R1/AIP_META_EKI()",COLD_BOOT_RUN #ON}` in `$custom.dat` can be modified like this. The `sps.sub` and `meta_eki.sub` will run in parrallel. Otherwise replacing `"/R1/SPS()"` with `"/R1/AIP_META_EKI()"` in line `DECL PRO_IO_T $PRO_I_O_SYS={MODULE[] "/R1/AIP_META_EKI()",COLD_BOOT_RUN #ON}` works just fine.
+
 ## EKI TCP connection
 To ensure the TCP connection is closed properly, the client needs to disconnect first [source](https://youtu.be/Ne13sBHPGv4?t=863), so the ROS2 side needs to be stopped first. When client disconnects, the `$flag[1]` and `$flag[2]` are set to false (defined in the xml files). This triggers the interrupt to call the reset_interface() and reset_meta_interface() functions. 
 ```
