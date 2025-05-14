@@ -193,13 +193,7 @@ def update_meta(meta :in)
    decl int i
    
    ; Update velocity_override
-   if ((meta.velocity_override > 0.0) AND (meta.velocity_override <= 1.0)) then
-      if (meta.velocity_override <> axis_set_velocity) then
-         $FLAG[4] = TRUE
-         axis_set_velocity = meta.velocity_override
-         msgnotify("Set axis_set_velocity to: %1 ","Meta EKI",axis_set_velocity)
-      endif
-   endif
+   ; Velocity is handled in motion_eki.src
    
    ; Update abort_commands_flag
    if meta.abort_commands == 1 then

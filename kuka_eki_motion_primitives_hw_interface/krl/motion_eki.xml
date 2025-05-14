@@ -24,6 +24,7 @@
          <ELEMENT Tag="RobotCommand/Move/@BaseIndex" Type="INT"/>
          <ELEMENT Tag="RobotCommand/Move/@ToolIndex" Type="INT"/>
          <ELEMENT Tag="RobotCommand/Move/@Velocity" Type="REAL"/>
+         <ELEMENT Tag="RobotCommand/Move/@Acceleration" Type="REAL"/>
          <ELEMENT Tag="RobotCommand/Move/@WaitForGripper" Type="INT"/>
          <!-- Move joint positions -->
          <ELEMENT Tag="RobotCommand/Move/Joint/@A1" Type="REAL"/>

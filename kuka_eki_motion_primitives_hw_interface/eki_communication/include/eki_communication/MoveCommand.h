@@ -27,7 +27,6 @@ class MoveCommand
 {
 private:
 public:
-public:
     MoveCommand(const rbt::MoveCommand *base = nullptr);
     MoveCommand(PoseJoints target, const rbt::MoveCommand *base = nullptr);
     MoveCommand(PoseJoints target, const rbt::MoveCommand &base) : MoveCommand(target, &base) {}
@@ -45,6 +44,7 @@ public:
     int base_index = 0;
     int tool_index = 0;
     float velocity = 0.f;
+    float acceleration = 0.f;
     bool wait_for_gripper = false;
 
     PoseJoints target_joints;

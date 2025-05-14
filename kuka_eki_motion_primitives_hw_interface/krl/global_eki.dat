@@ -1,5 +1,0 @@
-&ACCESS RVP
-&REL 48
-defdat global_eki public
-   global real axis_set_velocity
-enddat

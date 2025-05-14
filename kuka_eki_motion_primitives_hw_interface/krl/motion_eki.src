@@ -45,6 +45,11 @@ def motion_eki()
    init_interface()
    current_command = null_command()
    CURRENT_COMMAND_ID = 0
+   
+   act_joint_vel = 1.0   ; 100%
+   act_joint_acc = 1.0   ; 100%
+   act_cart_vel = 0 ; modify default value if needed
+   act_cart_acc = 0 ; modify default value if needed
 
    index = 0
    
@@ -57,10 +62,7 @@ def motion_eki()
    
    ; Reference gripper
    ControlWord = 0
-   DeviceMode = 10
-   ControlWord = 1
-   ControlWord = 0
-   
+   DeviceMode = 10 
 
    interrupt decl 19 when $flag[3] == true do stop_movement()  ;local interrupt to use RESUME
  
@@ -93,7 +95,7 @@ deffct command_type null_command()
    decl grip_type grip_data
    decl command_type command
    
-   move_data = { mode 0, base_index 0, tool_index 0, wait_for_gripper 0, teached 0, velocity 0 }
+   move_data = { mode 0, base_index 0, tool_index 0, wait_for_gripper 0, teached 0, velocity 0, acceleration 0}
    joint = { a1 0, a2 0, a3 0, a4 0, a5 0, a6 0}
    move_data.joint = joint
    cartesian = { x 0, y 0, z 0, a 0, b 0, c 0 }
@@ -125,9 +127,6 @@ def init_interface()
    
    global interrupt decl 16 when $timer_flag[1] == true do send_status()
    interrupt on 16
-   
-   global interrupt decl 20 when $flag[4] == true do set_axis_velocity()
-   interrupt on 20
    
    wait sec 0.012          ; Wait for next interpolation cycle
    $timer[1] = -200        ; Time in [ms] before first interrupt call
@@ -290,6 +289,7 @@ deffct bool get_command(command :out)
    status = eki_getint("MOTION_EKI", "RobotCommand/Move/@BaseIndex", command.move_data.base_index)
    status = eki_getint("MOTION_EKI", "RobotCommand/Move/@ToolIndex", command.move_data.tool_index)
    status = eki_getreal("MOTION_EKI", "RobotCommand/Move/@Velocity", command.move_data.velocity)
+   status = eki_getreal("MOTION_EKI", "RobotCommand/Move/@Acceleration", command.move_data.acceleration)
    status = eki_getint("MOTION_EKI", "RobotCommand/Move/@WaitForGripper", command.move_data.wait_for_gripper)
    
    status = eki_getreal("MOTION_EKI", "RobotCommand/Move/Joint/@A1", command.move_data.joint.a1)
@@ -336,9 +336,7 @@ endfct
 deffct int do_move(step :in, move_data :in)
    decl int step
    decl move_type move_data
-   
    decl int error_code
-   
    error_code = 0
    
    if move_data.base_index > 0 then
@@ -352,27 +350,35 @@ deffct int do_move(step :in, move_data :in)
    else 
       $tool = $nullframe
    endif
-   
+  
    switch (move_data.mode)
       case 1
+         set_joint_vel(move_data.velocity)
+         set_joint_acc(move_data.acceleration)
          INTERRUPT ON 19   ; enable interrupt to stop movement
          ptp move_data.joint c_ptp C_DIS
          INTERRUPT OFF 19
       case 2
+         set_joint_vel(move_data.velocity)
+         set_joint_acc(move_data.acceleration)
          INTERRUPT ON 19
          ptp move_data.cartesian c_ptp C_DIS
          INTERRUPT OFF 19
       case 3
+         set_cart_vel(move_data.velocity)
+         set_cart_acc(move_data.acceleration)
          INTERRUPT ON 19
          lin move_data.cartesian C_DIS
          INTERRUPT OFF 19
-      case 4
-         INTERRUPT ON 19
-         ptp teached_points[move_data.teached] c_ptp C_DIS
-         INTERRUPT OFF 19
+      ;case 4
+      ;   INTERRUPT ON 19
+      ;   ptp teached_points[move_data.teached] c_ptp C_DIS
+      ;   INTERRUPT OFF 19
       ;case 5
       ;   lin teached_points[move_data.teached]
       case 6
+         set_cart_vel(move_data.velocity)
+         set_cart_acc(move_data.acceleration)
          INTERRUPT ON 19
          circ move_data.cartesian_aux, move_data.cartesian C_DIS
          INTERRUPT OFF 19
@@ -476,12 +482,46 @@ def stop_movement()
    RESUME   ; dont go back to where the interrupt occured ($ADVANCE must be 0)
 end
 
-def set_axis_velocity()
+def set_joint_vel(velocity :in)
+   decl real velocity   ; in % (0.0 ... 1.0)
    decl int i
-   
-   for i = 1 to 6
-     $VEL_AXIS[i] = axis_set_velocity * 100
-   endfor
-   msgnotify("Set $VEL_AXIS[] to: %1 ","Motion EKI",axis_set_velocity * 100)
-   $FLAG[4] = FALSE
+
+   if (velocity > 0.0) AND (velocity <= 1.0) AND (velocity <> act_joint_vel) then
+      for i = 1 to 6
+        $VEL_AXIS[i] = velocity * 100
+      endfor
+      act_joint_vel = velocity
+      msgnotify("Set joint velocity to: %1 %","Motion EKI",velocity * 100)
+   endif   
+end
+
+def set_joint_acc(acceleration :in)
+   decl real acceleration ; in % (0.0 ... 1.0)
+   decl int i
+      
+   if (acceleration > 0.0) AND (acceleration <= 1.0) AND (acceleration <> act_joint_acc) then
+      for i = 1 to 6
+        $ACC_AXIS[i] = acceleration * 100
+      endfor
+      act_joint_acc = acceleration
+      msgnotify("Set joint acceleration to: %1 %","Motion EKI",acceleration * 100)
+   endif
+end
+
+def set_cart_vel(velocity :in)
+   decl real velocity   ; in m/s
+   if (velocity > 0.0) AND (velocity <= $VEL_MA.CP) AND (velocity <> act_cart_vel) then
+      $VEL.CP = velocity
+      act_cart_vel = velocity
+      msgnotify("Set cartesian velocity to: %1 mm/s","Motion EKI",velocity * 1000)
+   endif
+end
+
+def set_cart_acc(acceleration :in)
+   decl real acceleration ; in m/s^2
+   if (acceleration > 0.0) AND (acceleration <= $ACC_MA.CP) AND (acceleration <> act_cart_acc) then
+      $ACC.CP = acceleration  
+      act_cart_acc = acceleration
+      msgnotify("Set cartesian acceleration to: %1 mm/s^2","Motion EKI",acceleration * 1000)
+   endif
 end

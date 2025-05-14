@@ -69,7 +69,7 @@ private:
 
   std::atomic<int8_t> current_execution_status_{ExecutionState::IDLE};
   std::atomic_bool ready_for_new_primitive_{false}; // Flag to indicate if the hw-interface is ready for a new motion primitive
-
+  
   std::string robot_ip_;
   int eki_robot_port_;
   int eki_robot_meta_port_;
@@ -89,7 +89,7 @@ private:
   bool add_linear_joint_cmd();
   bool add_linear_cartesian_cmd();
   bool add_circular_cartesian_cmd();
-
+  void add_vel_and_acc_to_command(rbt::MoveCommand &command);
   void reset_command_interfaces();
   void quaternionToEuler(double qx, double qy, double qz, double qw, double& rx, double& ry, double& rz);
 };

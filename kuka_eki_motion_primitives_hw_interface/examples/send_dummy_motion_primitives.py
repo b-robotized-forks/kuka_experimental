@@ -36,6 +36,17 @@ msg_stop.type = MotionPrimitive.STOP_MOTION
 msg_PTP_1 = MotionPrimitive()
 msg_PTP_1.type = MotionPrimitive.LINEAR_JOINT
 msg_PTP_1.joint_positions = [0.0, -1.57, 1.57, 0.0, 1.57, 0.0]
+msg_PTP_1.additional_arguments = [
+    MotionArgument(argument_name="velocity", argument_value=1.0),
+    MotionArgument(argument_name="acceleration", argument_value=1.0),
+]
+msg_PTP_1_slow = MotionPrimitive()
+msg_PTP_1_slow.type = MotionPrimitive.LINEAR_JOINT
+msg_PTP_1_slow.joint_positions = [0.0, -1.57, 1.57, 0.0, 1.57, 0.0]
+msg_PTP_1_slow.additional_arguments = [
+    MotionArgument(argument_name="velocity", argument_value=0.1),
+    MotionArgument(argument_name="acceleration", argument_value=0.1),
+]
 
 msg_PTP_11 = MotionPrimitive()
 msg_PTP_11.type = MotionPrimitive.LINEAR_JOINT
@@ -48,6 +59,17 @@ msg_PTP_12.joint_positions = [0.3, -1.57, 1.57, 0.0, 1.57, 0.0]
 msg_PTP_2 = MotionPrimitive()
 msg_PTP_2.type = MotionPrimitive.LINEAR_JOINT
 msg_PTP_2.joint_positions = [0.5, -1.57, 1.57, 0.0, 1.57, 0.0]
+msg_PTP_2.additional_arguments = [
+    MotionArgument(argument_name="velocity", argument_value=1.0),
+    MotionArgument(argument_name="acceleration", argument_value=1.0),
+]
+msg_PTP_2_slow = MotionPrimitive()
+msg_PTP_2_slow.type = MotionPrimitive.LINEAR_JOINT
+msg_PTP_2_slow.joint_positions = [0.5, -1.57, 1.57, 0.0, 1.57, 0.0]
+msg_PTP_2_slow.additional_arguments = [
+    MotionArgument(argument_name="velocity", argument_value=0.1),
+    MotionArgument(argument_name="acceleration", argument_value=0.1),
+]
 
 msg_PTP_21 = MotionPrimitive()
 msg_PTP_21.type = MotionPrimitive.LINEAR_JOINT
@@ -72,6 +94,18 @@ pose_L1.pose.orientation.y = 1.0
 pose_L1.pose.orientation.z = 0.0 
 pose_L1.pose.orientation.w = 0.0 
 msg_LIN_1.poses = [pose_L1]
+msg_LIN_1.additional_arguments = [
+    MotionArgument(argument_name="velocity", argument_value=2.0),
+    MotionArgument(argument_name="acceleration", argument_value=2.0),
+]
+
+msg_LIN_1_slow = MotionPrimitive()
+msg_LIN_1_slow.type = MotionPrimitive.LINEAR_CARTESIAN
+msg_LIN_1_slow.poses = [pose_L1]
+msg_LIN_1_slow.additional_arguments = [
+    MotionArgument(argument_name="velocity", argument_value=0.1),
+    MotionArgument(argument_name="acceleration", argument_value=0.1),
+]
 
 msg_LIN_2 = MotionPrimitive()
 msg_LIN_2.type = MotionPrimitive.LINEAR_CARTESIAN
@@ -84,6 +118,18 @@ pose_L2.pose.orientation.y = 1.0
 pose_L2.pose.orientation.z = 0.0 
 pose_L2.pose.orientation.w = 0.0 
 msg_LIN_2.poses = [pose_L2]
+msg_LIN_2.additional_arguments = [
+    MotionArgument(argument_name="velocity", argument_value=2.0),
+    MotionArgument(argument_name="acceleration", argument_value=2.0),
+]
+
+msg_LIN_2_slow = MotionPrimitive()
+msg_LIN_2_slow.type = MotionPrimitive.LINEAR_CARTESIAN
+msg_LIN_2_slow.poses = [pose_L2]
+msg_LIN_2_slow.additional_arguments = [
+    MotionArgument(argument_name="velocity", argument_value=0.1),
+    MotionArgument(argument_name="acceleration", argument_value=0.1),
+]
 
 msg_moveC_1 = MotionPrimitive()
 msg_moveC_1.type = MotionPrimitive.CIRCULAR_CARTESIAN
@@ -104,6 +150,18 @@ pose_C1_goal.pose.orientation.y = 1.0
 pose_C1_goal.pose.orientation.z = 0.0
 pose_C1_goal.pose.orientation.w = 0.05
 msg_moveC_1.poses = [pose_C1_goal, pose_C1_via] 
+msg_moveC_1.additional_arguments = [
+    MotionArgument(argument_name="velocity", argument_value=2.0),
+    MotionArgument(argument_name="acceleration", argument_value=2.0),
+]
+
+msg_moveC_1_slow = MotionPrimitive()
+msg_moveC_1_slow.type = MotionPrimitive.CIRCULAR_CARTESIAN
+msg_moveC_1_slow.poses = [pose_C1_goal, pose_C1_via] 
+msg_moveC_1_slow.additional_arguments = [
+    MotionArgument(argument_name="velocity", argument_value=0.1),
+    MotionArgument(argument_name="acceleration", argument_value=0.1),
+]
 
 
 
@@ -116,10 +174,13 @@ class MotionPublisher(Node):
         # self.messages = [msg_start_sequence, msg_PTP_1, msg_PTP_2, msg_PTP_3, msg_LIN_1, msg_LIN_2, msg_end_sequence]
         # self.messages = [msg_PTP_1, msg_PTP_2, msg_PTP_3, msg_PTP_2, msg_LIN_1, msg_LIN_2]
         # self.messages = [msg_PTP_2]
-        self.messages = [msg_PTP_1, msg_PTP_2, msg_PTP_3, msg_PTP_2, msg_LIN_1, msg_LIN_2, msg_start_sequence, msg_PTP_1, msg_PTP_2, msg_PTP_3, msg_LIN_1, msg_LIN_2, msg_moveC_1, msg_end_sequence, msg_PTP_1, msg_PTP_2]
+        # self.messages = [msg_PTP_1, msg_PTP_2, msg_PTP_3, msg_PTP_2, msg_LIN_1, msg_LIN_2, msg_start_sequence, msg_PTP_1, msg_PTP_2, msg_PTP_3, msg_LIN_1, msg_LIN_2, msg_moveC_1, msg_end_sequence, msg_PTP_1, msg_PTP_2]
         # self.messages = [msg_PTP_1, msg_PTP_2, msg_PTP_3, msg_LIN_1, msg_LIN_2, msg_moveC_1]
         # self.messages = [msg_start_sequence, msg_PTP_1, msg_PTP_2, msg_PTP_3, msg_LIN_1, msg_LIN_2, msg_moveC_1, msg_end_sequence]
         # self.messages = [msg_PTP_1, msg_PTP_11, msg_PTP_12, msg_PTP_2, msg_PTP_21, msg_PTP_21, msg_PTP_22, msg_PTP_3, msg_start_sequence, msg_PTP_1, msg_PTP_11, msg_PTP_12, msg_PTP_2, msg_PTP_21, msg_PTP_21, msg_PTP_22, msg_PTP_3, msg_end_sequence]
+        # self.messages = [msg_PTP_1, msg_PTP_2, msg_PTP_1_slow, msg_PTP_2_slow]
+        # self.messages = [msg_PTP_1, msg_LIN_1, msg_LIN_2, msg_LIN_1_slow, msg_LIN_2_slow]
+        self.messages = [msg_PTP_2, msg_moveC_1, msg_PTP_2_slow, msg_moveC_1_slow]
         self.get_logger().info(f"Number of messages: {len(self.messages)}")
 
         # Initial delay before the first message

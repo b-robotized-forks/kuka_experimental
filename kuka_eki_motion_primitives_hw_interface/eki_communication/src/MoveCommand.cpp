@@ -57,6 +57,7 @@ void rbt::MoveCommand::to_xml(XmlWriter &writer) const
                                  {"BaseIndex", std::to_string(base_index)},
                                  {"ToolIndex", std::to_string(tool_index)},
                                  {"Velocity", std::to_string(velocity)},
+                                 {"Acceleration", std::to_string(acceleration)},
                                  {"WaitForGripper", std::to_string(wait_for_gripper)}});
 
     writer.add_element("Joint", {{"A1", std::to_string(target_joints.a1)},

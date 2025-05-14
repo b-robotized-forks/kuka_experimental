@@ -166,25 +166,7 @@ hardware_interface::CallbackReturn MotionPrimitivesKukaDriver::on_activate(
   robot_.connect_async(robot_ip_, eki_robot_port_, eki_robot_meta_port_);
   robot_.await_connection(); // TODO(mathias31415): Seems to not work with async connect? --> always returns true?
   RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Connected to the robot.");
-  
-
-  // TODO(mathias31415): Check this code block
-  // robot_.listener = [this](rbt::RobotEvent event, rbt::Robot *robot) -> void {
-  //   switch (event)
-  //   {
-  //   case rbt::RobotEvent::CONNECT:
-  //       RCLCPP_INFO(get_logger(), "Robot connected"); 
-  //       break;
-  //   case rbt::RobotEvent::RUN:
-  //       RCLCPP_INFO(get_logger(), "Robot running"); 
-  //       break;
-  //   case rbt::RobotEvent::STATE:
-  //       break;
-  //   }
-  // };
-
-
-  RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "System Successfully activated!");
+    RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "System Successfully activated!");
 
   return CallbackReturn::SUCCESS;
 }
@@ -359,11 +341,14 @@ bool MotionPrimitivesKukaDriver::add_linear_joint_cmd()
       hw_mo_prim_commands_[4] * rad_to_deg,
       hw_mo_prim_commands_[5] * rad_to_deg,
       hw_mo_prim_commands_[6] * rad_to_deg};
-  RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), 
-        "Adding LINEAR_JOINT with joint positions: [%f, %f, %f, %f, %f, %f]", 
-        joints[0], joints[1], joints[2], joints[3], joints[4], joints[5]);
   rbt::MoveCommand command;
   command = rbt::MoveCommand(rbt::PoseJoints(joints[0], joints[1], joints[2], joints[3], joints[4], joints[5], 0.0));   // last 0.0 for not used A7
+  add_vel_and_acc_to_command(command);
+  RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), 
+        "Added LINEAR_JOINT with joint positions: [%f, %f, %f, %f, %f, %f]"
+        ", velocity: %f, acceleration: %f",
+        joints[0], joints[1], joints[2], joints[3], joints[4], joints[5],
+        command.velocity, command.acceleration);
   robot_.perform(command);
   return true;
 }
@@ -389,11 +374,14 @@ bool MotionPrimitivesKukaDriver::add_linear_cartesian_cmd()
     ry * rad_to_deg,
     rz * rad_to_deg};
 
-  RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), 
-        "Adding LINEAR_CARTESIAN with pose: [%f, %f, %f, %f, %f, %f]", 
-        pose[0], pose[1], pose[2], pose[3], pose[4], pose[5]);
   rbt::MoveCommand command;
   command = rbt::MoveCommand(rbt::PoseCartesian(pose[0], pose[1], pose[2], pose[3], pose[4], pose[5]), true);
+  add_vel_and_acc_to_command(command);
+  RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), 
+        "Adding LINEAR_CARTESIAN with pose: [%f, %f, %f, %f, %f, %f]"
+        ", velocity: %f, acceleration: %f",
+        pose[0], pose[1], pose[2], pose[3], pose[4], pose[5],
+        command.velocity, command.acceleration);
   robot_.perform(command);
   return true;
 }
@@ -429,16 +417,34 @@ bool MotionPrimitivesKukaDriver::add_circular_cartesian_cmd()
     via_ry * rad_to_deg,
     via_rz * rad_to_deg};
 
-  RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), 
-        "Adding CIRCULAR_CARTESIAN with goal_pose: [%f, %f, %f, %f, %f, %f] and via_pose: [%f, %f, %f, %f, %f, %f]", 
-        goal_pose[0], goal_pose[1], goal_pose[2], goal_pose[3], goal_pose[4], goal_pose[5],
-        via_pose[0], via_pose[1], via_pose[2], via_pose[3], via_pose[4], via_pose[5]);
   rbt::MoveCommand command;
   command = rbt::MoveCommand(rbt::PoseCartesian(via_pose[0], via_pose[1], via_pose[2], via_pose[3], via_pose[4], via_pose[5]),
                              rbt::PoseCartesian(goal_pose[0], goal_pose[1], goal_pose[2], goal_pose[3], goal_pose[4], goal_pose[5]));
+  add_vel_and_acc_to_command(command);
+  RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), 
+        "Adding CIRCULAR_CARTESIAN with goal_pose: [%f, %f, %f, %f, %f, %f] and via_pose: [%f, %f, %f, %f, %f, %f]"
+        ", velocity: %f, acceleration: %f",
+        goal_pose[0], goal_pose[1], goal_pose[2], goal_pose[3], goal_pose[4], goal_pose[5],
+        via_pose[0], via_pose[1], via_pose[2], via_pose[3], via_pose[4], via_pose[5],
+        command.velocity, command.acceleration);
   robot_.perform(command);
 
   return true;
+}
+
+void MotionPrimitivesKukaDriver::add_vel_and_acc_to_command(rbt::MoveCommand &command)
+{
+  if (std::isnan(hw_mo_prim_commands_[22])) {
+    command.velocity = 0.0;
+  } else {
+    command.velocity = hw_mo_prim_commands_[22];
+  }
+  
+  if (std::isnan(hw_mo_prim_commands_[23])) {
+    command.acceleration = 0.0;
+  } else {
+    command.acceleration = hw_mo_prim_commands_[23];
+  }
 }
 
 void MotionPrimitivesKukaDriver::reset_command_interfaces()
