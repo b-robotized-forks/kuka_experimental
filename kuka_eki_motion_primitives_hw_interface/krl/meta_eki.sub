@@ -32,7 +32,6 @@ def meta_eki()
    ; POSSIBILITY OF SUCH DAMAGE.
 
    ; This software is derived work of Brett Hemes (3M) <brhemes@mmm.com>
-   ; Adaptation by Gergely Sóti, H-KA iRAS Prof. Hein, 2021; gergely.soti@h-ka.de
    ;
    ; Modifications: Moritz Weisenboehler (H-KA) <moritz.weisenboehler@h-ka.de>
    ; Modifications: Mathias Fuhrer <mathias.fuhrer@b-robotized.de>
@@ -68,7 +67,7 @@ def init_meta_interface()
    msgnotify("Init meta interface", "Meta EKI")
    
    ; NOTE: for testing/ implementiong krl files its more convenient to use close_meta_interface() instead of reset_meta_interface()
-   global interrupt decl 17 when $flag[2] == false do reset_meta_interface()   
+   global interrupt decl 17 when $flag[2] == false do close_meta_interface()   
    interrupt on 17
    
    global interrupt decl 18 when $timer_flag[2] == true do send_meta_status()
@@ -191,15 +190,23 @@ endfct
 
 def update_meta(meta :in)
    decl meta_type meta
+   decl int i
+   
    ; Update velocity_override
-   ; msgnotify("Handeling for velocity_override not implemented. Recived velocity_override: %1 ",,meta.velocity_override)
+   if ((meta.velocity_override > 0.0) AND (meta.velocity_override <= 1.0)) then
+      if (meta.velocity_override <> axis_set_velocity) then
+         $FLAG[4] = TRUE
+         axis_set_velocity = meta.velocity_override
+         msgnotify("Set axis_set_velocity to: %1 ","Meta EKI",axis_set_velocity)
+      endif
+   endif
    
    ; Update abort_commands_flag
    if meta.abort_commands == 1 then
       $FLAG[3] = TRUE
-      msgnotify("Set abort_commands flag ($FLAG[3]) to TRUE", "Meta EKI")
+      msgnotify("Set abort_commands flag to TRUE", "Meta EKI")
    else
       $FLAG[3] = FALSE
-      msgnotify("Set abort_commands flag ($FLAG[3]) to FALSE", "Meta EKI")
+      msgnotify("Set abort_commands flag to FALSE", "Meta EKI")
    endif   
 end

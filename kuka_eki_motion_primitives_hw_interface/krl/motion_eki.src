@@ -32,7 +32,6 @@ def motion_eki()
    ; POSSIBILITY OF SUCH DAMAGE.
 
    ; This software is derived work of Brett Hemes (3M) <brhemes@mmm.com>
-   ; Adaptation by Gergely Sóti, H-KA iRAS Prof. Hein, 2021; gergely.soti@h-ka.de
    ;
    ; Modifications: Moritz Weisenboehler (H-KA) <moritz.weisenboehler@h-ka.de>
    ; Modifications: Mathias Fuhrer <mathias.fuhrer@b-robotized.de>
@@ -62,42 +61,22 @@ def motion_eki()
    ControlWord = 1
    ControlWord = 0
    
-   ; FOLD STOP_WITH_BREAK
-   ; uncomment this section to use stop with BREAK (stopps the current movement immediately)
-   ; Therefore $ADVANCE=0 is needed --> no blending possible
-   
-   msgnotify("Program is using stop_movement() when meta stop command recived", "Motion EKI")
+
    interrupt decl 19 when $flag[3] == true do stop_movement()  ;local interrupt to use RESUME
-   ;$ADVANCE = 0   ; now advance run permitted when using RESUME in interrupt (no blending possible)
-   
-   ; ENDFOLD (FOLD STOP_WITH_BREAK)
-   
-   ; FOLD STOP_SOFT
-   ; uncomment this section to use stop after the current movement is done
-   ; To stop after the current movement and not after n movements
-   ; $ADVANCE=0 is needed --> no blending possible
-   
-   ;msgnotify("Program is using abort_following_cmds() when meta stop command recived", "Motion EKI")
-   ;interrupt decl 19 when $flag[3] == true do abort_following_cmds()
-   ;$ADVANCE=0 ; if >0, robot doesn't stop after current movement
-   
-   ; ENDFOLD (FOLD STOP_SOFT)
-   
+ 
    ; Communication process
    loop
       if get_command(current_command) then   
          CURRENT_COMMAND_ID = current_command.id
-         ;if not $FLAG[3] then
-            switch current_command.type
-               case 1
-                  check_error(do_grip(current_command.grip_data))
-                  check_error(do_move(current_command.step, current_command.move_data))
-               case 2
-                  check_error(do_move(current_command.step, current_command.move_data))
-               case 3
-                  check_error(do_grip(current_command.grip_data))
-            endswitch
-          ;endif
+         switch current_command.type
+            case 1
+               check_error(do_grip(current_command.grip_data))
+               check_error(do_move(current_command.step, current_command.move_data))
+            case 2
+               check_error(do_move(current_command.step, current_command.move_data))
+            case 3
+               check_error(do_grip(current_command.grip_data))
+         endswitch
       else
          CURRENT_COMMAND_ID = 0
       endif
@@ -141,11 +120,14 @@ def init_interface()
    msgnotify("Init motion interface", "Motion EKI")
    
    ; NOTE: for testing/ implementiong krl files its more convenient to use close_interface() instead of reset_interface()
-   global interrupt decl 15 when $flag[1] == false do reset_interface()
+   global interrupt decl 15 when $flag[1] == false do close_interface()
    interrupt on 15
    
    global interrupt decl 16 when $timer_flag[1] == true do send_status()
    interrupt on 16
+   
+   global interrupt decl 20 when $flag[4] == true do set_axis_velocity()
+   interrupt on 20
    
    wait sec 0.012          ; Wait for next interpolation cycle
    $timer[1] = -200        ; Time in [ms] before first interrupt call
@@ -494,18 +476,12 @@ def stop_movement()
    RESUME   ; dont go back to where the interrupt occured ($ADVANCE must be 0)
 end
 
-def abort_following_cmds()
-   decl eki_status status
-   msgnotify("Stopping Robot after current movement is done", "Motion EKI")
-
-   ; Clear the command buffer to prevent further motion
-   status = eki_clearbuffer("MOTION_EKI", "RobotCommand")
-   if status.buff > 0 then
-      msgnotify("Failed to clear command buffer", "Motion EKI")
-   else
-      msgnotify("Successfully cleared command buffer", "Motion EKI")
-   endif
+def set_axis_velocity()
+   decl int i
    
-   ; Reset current command to ensure a clean restart
-    current_command = null_command()
+   for i = 1 to 6
+     $VEL_AXIS[i] = axis_set_velocity * 100
+   endfor
+   msgnotify("Set $VEL_AXIS[] to: %1 ","Motion EKI",axis_set_velocity * 100)
+   $FLAG[4] = FALSE
 end
