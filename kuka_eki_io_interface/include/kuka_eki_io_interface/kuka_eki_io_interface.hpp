@@ -49,6 +49,7 @@ namespace kuka_eki_io_interface
     using DeadlineTimerPtr = std::unique_ptr<boost::asio::deadline_timer>;
     using Udp = boost::asio::ip::udp;
     using Seconds = boost::posix_time::seconds;
+    using Milliseconds = boost::posix_time::milliseconds;
 
     const std::string LOGGER_NAME = "KukaEkiIoInterface";
     const int __maxIoNumber = 8;
@@ -58,7 +59,8 @@ namespace kuka_eki_io_interface
 
     bool isValidIPv4(const std::string& ipString);
     bool isInteger(const std::string& s);
-    const std::string getIoTagName(int i);
+    const std::string getInElementNameByIndex(int index);
+    const std::string getOutElementNameByIndex(int index);
 
     class KukaEkiIoInterface : public hardware_interface::SystemInterface
     {
@@ -90,7 +92,7 @@ namespace kuka_eki_io_interface
             int eki_max_cmd_buff_len_ = 5; // by default, limit command buffer to 5 (size of advance run in KRL)
 
             // EKI socket read/write
-            int eki_read_state_timeout_ = 100;  // [s]; settable by parameter (default = 5)
+            int eki_read_state_timeout_ = 5;  // [ms]; settable by parameter (default = 5)
             IoService ios_;
             DeadlineTimerPtr deadline_;
             Endpoint eki_server_endpoint_;
@@ -98,13 +100,14 @@ namespace kuka_eki_io_interface
 
             void eki_check_read_state_deadline();
             //static void eki_handle_receive(const boost::system::error_code& ec, size_t length, boost::system::error_code*  out_ec, size_t*  out_length);
-            bool eki_read_state(std::vector<bool>& io_states, std::vector<int>& io_pins);
+            bool eki_read_state(std::vector<int>& inKeys, std::vector<bool>& inValues, std::vector<int>& outKeys, std::vector<bool>& outValues);
             bool eki_write_command(const std::vector<int>& io_pins, const std::vector<bool>& target_ios);
             static int ekiCommandBufferSize_;
 
             bool setInternalStates(const std::vector<int>& ioPins, const std::vector<bool>& targetIos);
             bool getInternalCommands(std::vector<int>& ioPins, std::vector<bool>& ioStates);
 
+            bool parseKeyAndValue(tinyxml2::XMLElement* xmlIoState, const std::string& xmlChildElementName, int& key, bool& value);
     };
 } // namespace kuka_eki_io_interface
 
