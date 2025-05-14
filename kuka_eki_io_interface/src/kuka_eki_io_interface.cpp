@@ -11,11 +11,11 @@ using namespace boost::placeholders;
 namespace kuka_eki_io_interface
 {
     // pk // Deconstructor most likely not required anymore since this class is not run as a separate node anymore and will be handled by the resource manager.
-    KukaEkiIoInterface::~KukaEkiIoInterface() 
-    {
-        RCLCPP_INFO(rclcpp::get_logger(LOGGER_NAME), "Destructor called. Cleaning up ...");
-        on_deactivate(rclcpp_lifecycle::State());
-    }
+    // KukaEkiIoInterface::~KukaEkiIoInterface() 
+    // {
+    //     RCLCPP_INFO(rclcpp::get_logger(LOGGER_NAME), "Destructor called. Cleaning up ...");
+    //     on_deactivate(rclcpp_lifecycle::State());
+    // }
 
     hardware_interface::CallbackReturn KukaEkiIoInterface::on_deactivate(const rclcpp_lifecycle::State& previous_state)
     {

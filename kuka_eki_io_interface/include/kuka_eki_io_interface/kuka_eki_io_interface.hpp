@@ -63,8 +63,8 @@ namespace kuka_eki_io_interface
     class KukaEkiIoInterface : public hardware_interface::SystemInterface
     {
         public:
-            RCLCPP_SHARED_PTR_DEFINITIONS(KukaEkiIoInterface)
-            virtual ~KukaEkiIoInterface();
+            RCLCPP_SHARED_PTR_DEFINITIONS(kuka_eki_io_interface::KukaEkiIoInterface)
+            // virtual ~KukaEkiIoInterface();
 
             hardware_interface::CallbackReturn on_init(const hardware_interface::HardwareInfo& system_info) final;
             hardware_interface::CallbackReturn on_activate(const rclcpp_lifecycle::State& previous_state) final;
