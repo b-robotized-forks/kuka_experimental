@@ -192,7 +192,10 @@ hardware_interface::CallbackReturn MotionPrimitivesKukaDriver::on_activate(
 hardware_interface::CallbackReturn MotionPrimitivesKukaDriver::on_deactivate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
-  RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Deactivating Hardware Interface");
+  RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Deactivating Hardware Interface ...");
+  RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Abort all commands ...");
+  robot_.abort_commands();
+  RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Disconnecting from the robot ...");
   robot_.disconnect();
   RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "System Successfully deactivated!");
   return CallbackReturn::SUCCESS;
