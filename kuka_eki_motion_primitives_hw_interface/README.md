@@ -1,34 +1,112 @@
 kuka_eki_motion_primitives_hw_interface
 ==========================================
 
-Driver package to control kuka robot using motion primitives like PTP, LIN and CIRC
+Hardware interface for executing motion primitives on a KUKA robot using the ROS 2 control framework. It allows the controller to execute linear (LINEAR_CARTESIAN/ LIN/ MOVEL), circular (CIRCULAR_CARTESIAN/ CIRC/ MOVEC) and joint-based (LINEAR_JOINT/ PTP/ MOVEJ) motion commands.
 
-![Licence](https://img.shields.io/badge/License-BSD-3-Clause-blue.svg)
+[![Licence](https://img.shields.io/badge/License-Apache-2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-# Documentation
-## ROS2 Implementation
-TODO(mathias31415) explain how the ros2 implementation works
-![img](doc/ros2_control_motion_primitives_kuka.drawio.png)
+# Demo Video
+[![Play Video](TODO preview img)](TODO video link)
 
-## KRL Implementation
-TODO(mathias31415) explain how the krl implementation works
+# Related packages/ repos
+- [industrial_robot_motion_interfaces (with additional helper types for stop and motion sequence)](https://github.com/StoglRobotics-forks/industrial_robot_motion_interfaces/tree/helper-types)
+- [ros2_controllers with motion_primitives_forward_controller](https://github.com/StoglRobotics-forks/ros2_controllers/tree/motion_primitive_forward_controller/motion_primitives_forward_controller)
+- [kuka_experimental with motion_primitive_kuka_driver](https://github.com/StoglRobotics-forks/kuka_experimental/tree/hka_motion_primitive_kuka_driver)
 
-## KRL Files
-TODO(mathias31415) write instruction on how to place the KRL files in WorkVisual (Move the instruction to the krl folder)
 
-If [Multi Submitinterpreter](https://www.kuka.com/en-us/services/downloads?terms=Language%3Aen%3A1&q=MultiSubmit) is installed the line `DECL PRO_IO_T $PRO_I_O_PROC_ID3={MODULE[] "/R1/AIP_META_EKI()",COLD_BOOT_RUN #ON}` in `$custom.dat` can be modified like this. The `sps.sub` and `meta_eki.sub` will run in parrallel. Otherwise replacing `"/R1/SPS()"` with `"/R1/AIP_META_EKI()"` in line `DECL PRO_IO_T $PRO_I_O_SYS={MODULE[] "/R1/AIP_META_EKI()",COLD_BOOT_RUN #ON}` works just fine.
+# Architecture
 
-## EKI TCP connection
-To ensure the TCP connection is closed properly, the client needs to disconnect first [source](https://youtu.be/Ne13sBHPGv4?t=863), so the ROS2 side needs to be stopped first. When client disconnects, the `$flag[1]` and `$flag[2]` are set to false (defined in the xml files). This triggers the interrupt to call the reset_interface() and reset_meta_interface() functions. 
-```
-global interrupt decl 15 when $flag[1] == false do reset_interface()
-interrupt on 15
-```
-This ensures the client (ROS2) can reconnect to the server. During testing/ implementing of the KRL files its recommended to replace `reset_interface()` with `close_interface()` (in `eki.src` and `meta_eki.sub`) to close the connection propperly and dont reset it. This ensures that a new connection can be established after the program is stopped. (robot- and submit-interpreter needs to be restarted (deselect (abwählen) and then select (anwählen) again))
+![Architecture Overview](doc/ros2_control_motion_primitives_kuka.drawio.png)
 
-Before transfering a new Version of the KUKA project to the Robot via WorkVisual, stop the ROS2 side and deselect the robot- and submit-interpreter (therefore you need to be in expert mode). If this is not done, the Robotersteuerung needs to get restarted.
+# Command and State Interfaces
 
-TODO(mathias31415) insert images/ screenshots to better explain the stuff
+The `motion_primitives_kuka_driver` hardware interface defines a set of **command interfaces** and **state interfaces** used for communication between the controller and the robot hardware.
+
+## Command Interfaces
+
+These interfaces are used to send motion primitive data to the hardware interface:
+
+- `motion_type`: Type of motion primitive (e.g., LINEAR_JOINT, LINEAR_CARTESIAN, CIRCULAR_CARTESIAN, etc.)
+- `q1` – `q6`: Target joint positions for joint-based motion
+- `pos_x`, `pos_y`, `pos_z`: Target cartesian position
+- `pos_qx`, `pos_qy`, `pos_qz`, `pos_qw`: Orientation quaternion of the target pose
+- `pos_via_x`, `pos_via_y`, `pos_via_z`: Intermediate via-point position for circular motion
+- `pos_via_qx`, `pos_via_qy`, `pos_via_qz`, `pos_via_qw`: Orientation quaternion of via-point
+- `velocity`: Desired motion velocity. For joint-based motions (PTP), it is a scaling factor (0 to 1) of the maximum joint velocity, and for cartesian motions (LIN, CIRC), it specifies the end-effector velocity in m/s.
+- `acceleration`: Desired motion acceleration. For joint-based motions (PTP), it is a scaling factor (0 to 1) of the maximum joint acceleration, and for cartesian motions (LIN, CIRC), it specifies the end-effector acceleration in m/s².
+- `blend_radius`: Blending radius for smooth transitions (currently not used by the **motion_primitive_kuka_driver**, but [**motion_primitive_kuka_driver**](https://github.com/StoglRobotics-forks/Universal_Robots_ROS2_Driver_MotionPrimitive/blob/main/ur_robot_driver/src/motion_primitives_ur_driver.cpp) uses it)
+- `move_time`: Optional duration for time-based execution (currently not used by the **motion_primitive_kuka_driver**, but [**motion_primitive_kuka_driver**](https://github.com/StoglRobotics-forks/Universal_Robots_ROS2_Driver_MotionPrimitive/blob/main/ur_robot_driver/src/motion_primitives_ur_driver.cpp) uses it)
+
+## State Interfaces
+
+These interfaces are used to communicate the internal status of the hardware interface back to the controller:
+- `joint positions`: Used by the `joint_state_broadcaster` and allows tools like RViz to visualize the current robot state.
+- `joint velocitys`
+- `execution_status`: Indicates the current execution state of the primitive. Possible values are:
+  - `IDLE`: No motion in progress
+  - `EXECUTING`: Currently executing a primitive
+  - `ERROR`: An error occurred during execution
+  - `STOPPED`: The robot was stopped using the `STOP_MOTION` command and must be reset with the `RESET_STOP` command before executing new commands.
+- `ready_for_new_primitive`: Boolean flag indicating whether the interface is ready to receive a new motion primitive
+
+# Supported Motion Primitives
+
+- Support for basic motion primitives:
+  - `LINEAR_JOINT`
+  - `LINEAR_CARTESIAN`
+  - `CIRCULAR_CARTESIAN`
+- Additional helper types:
+  - `STOP_MOTION`: Immediately stops the current robot motion and clears all pending primitives in the controller's queue.
+  - `RESET_STOP`: After `RESET_STOP`, new commands can get handled.
+  - `MOTION_SEQUENCE_START` / `MOTION_SEQUENCE_END`: Define a motion sequence block. All primitives between these two markers will be sent to the robot in a single XML message, rather than as individual messages.
+
+![MotionPrimitiveExecutionWithHelperTypes](doc/MotionPrimitiveExecutionWithHelperTypes_KUKA.drawio.png)
+
+# Implementation
+
+In contrast to the "standard" hardware interface, this driver does not compute or execute trajectories on the ROS 2 side. Instead, it passes high-level motion primitives directly to the robot controller, which then computes and executes the trajectory internally.
+
+This approach offers two key advantages:
+
+- **Reduced real-time requirements** on the ROS 2 side, since trajectory planning and execution are offloaded to the robot.
+- **Improved motion quality**, as the robot controller has better knowledge of the robot's kinematics and dynamics, leading to more optimized and accurate motion execution.
+
+## Communication Between Hardware Interface and Robot
+
+The communication between the hardware interface and the robot is managed via two [Ethernet KRL Interfaces (EKI)](https://my.kuka.com/s/product/kukaethernet-krl-40/01t1i0000049YnEAAU?language=en_US&tab=Functions).  
+
+- **Motion EKI**: Transfers motion primitives and returns state information (e.g., joint positions, velocities, etc.).  
+- **Meta EKI**: Handles the transmission of `STOP_MOTION` and `RESET_STOP` commands.  
+
+Message exchange over EKI is conducted using XML messages.
+
+![Meta and motion eki](doc/ros2_control_motion_primitives_kuka_krl.drawio.png)
+
+## Sending Commands to the Robot
+
+The `write()` method checks whether a new motion primitive command has been received from the controller via the command interfaces. If a new command is present:
+
+1. **Meta Commands (`STOP_MOTION`, `RESET_STOP`)**  
+   - If the command is `STOP_MOTION`, it is sent directly to the robot controller via the Meta EKI connection. This sets a flag in the `meta_eki.sub` program on the robot.  
+   - This flag triggers an interrupt in the `motion_eki.src` program, which immediately stops the current motion execution and discards all further motion commands.  
+   - If a `RESET_STOP` command is received, the flag is reset, allowing new motion primitives to be received and executed.
+
+2. **Motion Commands (`LINEAR_JOINT`, `LINEAR_CARTESIAN`, `CIRCULAR_CARTESIAN`, `MOTION_SEQUENCE_START`, `MOTION_SEQUENCE_END`)**  
+   - For regular motion commands like `LINEAR_JOINT`, `LINEAR_CARTESIAN`, and `CIRCULAR_CARTESIAN`, a corresponding `MoveCommand` is created and sent to the robot via the Motion EKI connection.  
+   - If a `MOTION_SEQUENCE_START` command is received, all subsequent primitives are collected into a motion sequence.  
+   - When the `MOTION_SEQUENCE_END` command is received, the entire sequence is transmitted to the robot as a single XML message.  
+   - The actual sending of these commands to the robot is handled in a separate thread, ensuring the main program remains non-blocking.
+
+## Reading states of the robot and sending status informations to the controller
+
+The `read()` method:
+- Retrieves the joint positions and velocities of the robot and publishes them via the corresponding state interfaces. These can then be read by the joint_state_broadcaster, allowing tools like RViz to visualize the current robot state.
+- Publishes the `execution_status` over a state interface with possible values: `IDLE`, `EXECUTING`, `ERROR`, `STOPPED`.
+- Publishes `ready_for_new_primitive` over a state interface to signal whether the interface is ready to receive a new primitive.
+
+## KUKA KRL implementation
+Instructions for the KRL implementation and how to deploy it on the robot controller are documented in the [README in the KRL folder](krl/README.md).
+
 
 # Usage notes:
 ## With "simulation"
@@ -49,6 +127,9 @@ ros2 run kuka_eki_simulator kuka_eki_simulator_tcp
 ros2 launch kuka_ros2_control_support motion_primitives_bringup.launch.py description_package:=kuka_kr3_support description_macro_file:=kr3r540_macro.xacro
 ```
 ## With ready2educate H-KA cell 2 (adjust robot_ip for other cells)
+> [!NOTE]   
+> Make sure to follow the instructions in the [README file in the KRL folder](krl/README.md) to setup the robot before launching the hardware interface.
+
 **Launch kr3 with motion primitive driver**
 ```
 ros2 launch kuka_ros2_control_support motion_primitives_bringup.launch.py description_package:=kuka_kr3_support description_macro_file:=kr3r540_macro.xacro eki_robot_ip:=10.181.116.51
@@ -58,19 +139,17 @@ ros2 launch kuka_ros2_control_support motion_primitives_bringup.launch.py descri
 ```
 ros2 run kuka_eki_motion_primitives_hw_interface send_dummy_motion_primitives.py
 ```
-**Stop command in terminal**
+**`STOP_MOVEMENT` command in terminal**
 ```
 ros2 topic pub /motion_primitive_controller/reference industrial_robot_motion_interfaces/msg/MotionPrimitive "{type: 66, blend_radius: 0.0, additional_arguments: [], poses: [], joint_positions: []}" --once
 ```
-**Reset stop command in terminal**
+**`RESET_STOP` command in terminal**
 ```
 ros2 topic pub /motion_primitive_controller/reference industrial_robot_motion_interfaces/msg/MotionPrimitive "{type: 67, blend_radius: 0.0, additional_arguments: [], poses: [], joint_positions: []}" --once
 ```
 
 
-
 # TODOs
-- Blending between two motionprimitives not working yet
-- execute eki_close("NAME") when programm is stopped to properly close the connection --> without eki_close() its not possible to init a new server when restarting the program. 
-- handle additional paramters like velocity and acceleration
-- how to check if motion execution ends with success?
+- Blending between motion primitives not working yet
+- Check if motion execution ends with success
+- Execute eki_close() when programm is stopped/ deselected to properly close the connection --> without eki_close() its not possible to init a new server when restarting the program. 
