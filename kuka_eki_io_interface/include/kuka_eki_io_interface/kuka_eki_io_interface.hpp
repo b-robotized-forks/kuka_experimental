@@ -104,8 +104,8 @@ namespace kuka_eki_io_interface
             bool eki_write_command(const std::vector<int>& io_pins, const std::vector<bool>& target_ios);
             static int ekiCommandBufferSize_;
 
-            bool setInternalStates(const std::vector<int>& ioPins, const std::vector<bool>& targetIos);
-            bool getInternalCommands(std::vector<int>& ioPins, std::vector<bool>& ioStates);
+            bool setInternalStates(const std::string& interfaceName, const std::vector<int>& inKeys, const std::vector<bool>& inValues);
+            bool getInternalCommands(); //std::vector<int>& ioPins, std::vector<bool>& ioStates);
 
             bool parseKeyAndValue(tinyxml2::XMLElement* xmlIoState, const std::string& xmlChildElementName, int& key, bool& value);
     };
