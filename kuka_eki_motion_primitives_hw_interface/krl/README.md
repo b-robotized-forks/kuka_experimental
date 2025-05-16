@@ -76,6 +76,9 @@
     - Wait until project is activated
 3. On smartHMI navigate to  `R1/Program/ros2_driver`
 4. Select `motion_eki.src` &rarr; _Anwählen_
+
+![motion_eki anwaehlen](doc/motion_eki_anwaehlen.jpg)
+
 5. Select operating mode, e.g. Aut
     - Turn the switch on the smartPAD clockwise (keyswitch left to emergency stop button)
     - Select the operating mode on the smartHMI
@@ -94,7 +97,7 @@
 - Connect the Ubuntu PC to the robot's network cable
 - Manually assign the appropriate IP address in the network settings
 
-![IP-Adress](TODO)
+![IP-Adress](doc/manual_ip_adress.png)
 
 - Start the Docker container if necessary
 - Then, the motion_primitive_kuka_driver can be launched as described in the [main README](../README.md).
@@ -108,8 +111,8 @@ interrupt on 15
 ```
 This ensures the client (ROS2) can reconnect to the server. During testing/ implementing of the KRL files it's recommended to replace `reset_interface()` with `close_interface()` (in [`motion_eki.src`](motion_eki.src) and [`meta_eki.sub`](meta_eki.sub)) to close the connection propperly and don't reset it. This ensures that a new connection can be established after the program is restarted. (robot- and submit-interpreter needs to be restarted (deselect (abwählen) and then select (anwählen) again))
 
-![Submit interpreter](TODO)
+![Submit interpreter](doc/submit_interpreter_abwaehlen.jpg)
 
-![Robot interpreter](TODO)
+![Robot interpreter](doc/robot_interpreter_abwaehlen.jpg)
 
 Before transfering a new Version of the KUKA project to the Robot via WorkVisual, stop the ROS2 side and deselect the robot- and submit-interpreter (therefore you need to be in expert mode). If this is not done, the Robotersteuerung needs to get restarted.
