@@ -112,7 +112,7 @@ namespace kuka_eki_io_interface
 
         eki_server_address_ = info_.hardware_parameters["robot_ip"];
         eki_server_port_ = info_.hardware_parameters["eki_robot_port"];
-        numberOfIos_ = info_.gpios.size();
+        numberOfIos_ = 8; //info_.gpios.size();
 
         std::string completeAddress = eki_server_address_ + ":" + eki_server_port_;
         RCLCPP_INFO(logger, "using IP and port: %s", completeAddress.c_str());
@@ -150,13 +150,13 @@ namespace kuka_eki_io_interface
         outKeys.resize(numberOfIos_);
         outValues.resize(numberOfIos_);
         
-        if (!eki_read_state(inKeys, inValues, outKeys, outValues))
-        {
-            std::string errorMessage = "Failed to read from robot EKI server within alloted time of " + std::to_string(eki_read_state_timeout_) + " ms. Make sure eki_io_interface is running on the robot controller and all configurations are correct.";
-            RCLCPP_WARN(logger, errorMessage.c_str());
-            //throw std::runtime_error(errorMessage); // pk // Comment back in
-        }
-        setInternalStates("wtf2", inKeys, inValues);
+        // if (!eki_read_state(inKeys, inValues, outKeys, outValues))
+        // {
+        //     std::string errorMessage = "Failed to read from robot EKI server within alloted time of " + std::to_string(eki_read_state_timeout_) + " ms. Make sure eki_io_interface is running on the robot controller and all configurations are correct.";
+        //     RCLCPP_WARN(logger, errorMessage.c_str());
+        //     //throw std::runtime_error(errorMessage); // pk // Comment back in
+        // }
+        // setInternalStates("wtf2", inKeys, inValues);
 
         RCLCPP_INFO(logger, "KUKA EKI IO interface activated.");
         return hardware_interface::CallbackReturn::SUCCESS;
@@ -301,34 +301,37 @@ namespace kuka_eki_io_interface
         return true;
     }
 
-    bool KukaEkiIoInterface::eki_write_command(const std::vector<int> &ioPins, const std::vector<bool> &targetIos)
+    bool KukaEkiIoInterface::eki_write_command(const std::vector<int> &outKeys, const std::vector<bool>& outValues, const std::vector<int> &inKeys)
     {
         auto logger = rclcpp::get_logger(LOGGER_NAME);
+        const int requestId = 11; // TODO: make this configurable
 
-        // TODO: assert vectors' lengths
-        // TODO: extend vector if length < n_io_ // pk // Doesn't make sense.
-        if (ioPins.size() != numberOfIos_ || targetIos.size() != numberOfIos_)
+        if (outKeys.size() != outValues.size())
         {
-            RCLCPP_ERROR(logger, "Invalid command: size of ioPins, ioModes and targetIos must be equal to numberOfIos_=%d", numberOfIos_);
+            RCLCPP_ERROR(logger, "Invalid command: size of outKeys and outValues must be equal.");
             return false;
         }
 
         tinyxml2::XMLDocument xmlCommand;
-        auto ioCommand = xmlCommand.NewElement("IOCommand");
-        for (int i = 0; i < numberOfIos_; i++)
+        auto ioRequest = xmlCommand.NewElement("IoRequest");
+        ioRequest->SetAttribute("RequestId", requestId);   
+
+        for (int i = 0; i < outKeys.size(); i++)
         {
-            tinyxml2::XMLElement* ioElement = xmlCommand.NewElement(getInElementNameByIndex(i).c_str());
-            ioCommand->InsertEndChild(ioElement);
+            tinyxml2::XMLElement* outElement = xmlCommand.NewElement(getOutElementNameByIndex(i).c_str());
+            ioRequest->InsertEndChild(outElement);
 
-            // pk // What was the purpose of this??
-            // TiXmlText* empty_text = new TiXmlText("");
-            // io_element->LinkEndChild(empty_text);
-
-            ioElement->SetAttribute("Pin", ioPins[i]);
-            ioElement->SetAttribute("Mode", __ekiModeWrite);
-            ioElement->SetAttribute("Value", (int)targetIos[i]);
+            outElement->SetAttribute("Key", outKeys[i]);
+            outElement->SetAttribute("Value", outValues[i]);
         }
-        xmlCommand.InsertEndChild(ioCommand);
+        for (int i = 0; i < inKeys.size(); i++)
+        {
+            tinyxml2::XMLElement* inElement = xmlCommand.NewElement(getInElementNameByIndex(i).c_str());
+            ioRequest->InsertEndChild(inElement);
+
+            inElement->SetAttribute("Key", inKeys[i]);
+        }
+        xmlCommand.InsertEndChild(ioRequest);
 
         tinyxml2::XMLPrinter printer;
         xmlCommand.Print(&printer);
@@ -336,7 +339,9 @@ namespace kuka_eki_io_interface
         eki_server_socket_->send_to(boost::asio::buffer(printer.CStr(), printer.CStrSize()), eki_server_endpoint_);
         
         RCLCPP_DEBUG(logger, " sending XML: %s", printer.CStr());
-        return true;
+
+        bool isSame = printer.CStr() == XML_WRITE_EXAMPLE;
+        return isSame;
     }
 
     hardware_interface::return_type KukaEkiIoInterface::read(const rclcpp::Time& time, const rclcpp::Duration& period)
@@ -348,18 +353,23 @@ namespace kuka_eki_io_interface
         std::vector<int> outKeys;
         std::vector<bool> outValues;
 
+        std::pair<int, int> pair;
+
+        int first, second;
+        std::tie(first, second) = pair;
+
         if (!eki_read_state(inKeys, inValues, outKeys, outValues))
         {
             std::string msg = "Failed to read from robot EKI server within alloted time of " + std::to_string(eki_read_state_timeout_) + " seconds. Make sure eki_hw_interface is running on the robot controller and all configurations are correct.";
             RCLCPP_ERROR(logger, msg.c_str());
             //return hardware_interface::return_type::ERROR;
         }
-        if (!setInternalStates("wtf", inKeys, inValues))
-        {
-            std::string msg = "Failed to set state values from robot EKI server.";
-            RCLCPP_ERROR(logger, msg.c_str());
-            //return hardware_interface::return_type::ERROR;
-        }
+        // if (!setInternalStates("wtf", inKeys, inValues))
+        // {
+        //     std::string msg = "Failed to set state values from robot EKI server.";
+        //     RCLCPP_ERROR(logger, msg.c_str());
+        //     //return hardware_interface::return_type::ERROR;
+        // }
 
         RCLCPP_DEBUG(logger, "read %d IOs from robot EKI server.", numberOfIos_);
         for (int i = 0; i < numberOfIos_; i++)
@@ -372,22 +382,33 @@ namespace kuka_eki_io_interface
     {
         auto logger = rclcpp::get_logger(LOGGER_NAME);
 
-        auto ioCommands = std::vector<bool>();
-        auto ioPins = std::vector<int>();
-        if (!getInternalCommands()) //ioPins, ioCommands))
+        std::vector<int> inKeys = {500, 501, 502, 503, 504, 505, 506, 507}; // TODO: make this configurable
+
+        std::vector<int> outKeys;
+        std::vector<bool> outValues;
+        outKeys.resize(numberOfIos_);
+        outValues.resize(numberOfIos_);
+
+        if (updateStatesFromCommands() == hardware_interface::return_type::ERROR)
+            return hardware_interface::return_type::ERROR;
+        
+        if (!getKeysAndValuesFromCommands(outKeys, outValues))//, inKeys))
         {
-            std::string msg = "Failed to get command values from robot EKI server.";
+            std::string msg = "in write(): Failed to get Keys and Values from command_interfaces.";
             RCLCPP_ERROR(logger, msg.c_str());
             return hardware_interface::return_type::ERROR;
         }
 
-        // if (!eki_write_command(ioPins, ioCommands))
+        // 3. Stelle alle Werte von Key und Value nach in/out Index dem eki_write_command zur Verfügung. 
+        // if (!eki_write_command(outKeys, outValues, inKeys))
         // {
         //     std::string msg = "Failed to write to robot EKI server within alloted time of " + std::to_string(eki_read_state_timeout_) + " seconds. Make sure eki_hw_interface is running on the robot controller and all configurations are correct.";
         //     RCLCPP_ERROR(logger, msg.c_str());
         //     return hardware_interface::return_type::ERROR;
         // }
-        
+
+        // get data from command_interfaces and set the state interfaces.
+       
         return hardware_interface::return_type::OK;
     }
 
@@ -397,10 +418,15 @@ namespace kuka_eki_io_interface
 
         for (int i = 0; i < numberOfIos_; i++)
         {
-            std::string stateInterfaceNameKey = "eki_io_in/eki_io_in/" + std::to_string(i) + "/key";
-            std::string stateInterfaceNameValue = "eki_io_in/eki_io_in/" + std::to_string(i) + "/value";
-            set_state(stateInterfaceNameKey, double(inKeys[i]));
-            set_state(stateInterfaceNameValue, inValues[i] ? 1.0 : 1.0);
+            int key = inKeys[i];
+            bool value = inValues[i];
+            setStateInterfaceKeyValueByIndex(EKI_IN_NAME, i, &key, &value);
+            setStateInterfaceKeyValueByIndex(EKI_OUT_NAME, i, &key, &value);
+
+            // std::string stateInterfaceNameKey = "eki_io_in/eki_io_in/" + std::to_string(i) + "/key";
+            // std::string stateInterfaceNameValue = "eki_io_in/eki_io_in/" + std::to_string(i) + "/value";
+            // set_state(stateInterfaceNameKey, double(inKeys[i]));
+            // set_state(stateInterfaceNameValue, inValues[i] ? 1.0 : 0.0);
         }
         // auto stateInterfaceDescription = [interfaceName];
         // stateInterfaceDescription.get_interface_name
@@ -444,45 +470,176 @@ namespace kuka_eki_io_interface
         return true;
     }
 
-    bool KukaEkiIoInterface::getInternalCommands() //std::vector<int>& ekiIoOut, std::vector<int>& keys, std::vector<bool>& values)
+    bool KukaEkiIoInterface::getKeysAndValuesFromCommands(std::vector<int>& outKey, std::vector<bool>& outValue)//, std::vector<int>& inKeys) //std::vector<int>& ekiIoOut, std::vector<int>& keys, std::vector<bool>& values)
     {
-        auto logger = rclcpp::get_logger(LOGGER_NAME);
+        hardware_interface::return_type returnvalue = hardware_interface::return_type::OK;
 
-        // ekiIoOut.reserve(numberOfIos_);
-        // keys.reserve(numberOfIos_);
-        // values.reserve(numberOfIos_);
+        int index = 0;
 
+        for (const auto& [name, descr] : gpio_command_interfaces_)
+        {
+            auto key = getLastPart(name, '/'); 
+            auto value = get_command(name);
+
+            outKey[index] = std::stoi(key);
+            outValue[index] = value != 0.0 ? true : false; 
+            
+            // TODO // ReH // Hier waren wir.
+            try
+            {   
+                set_state(name, value);
+            }
+            catch (const std::runtime_error& e)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger(LOGGER_NAME), "in updateStatesFromCommands(): Failed to update state_interface with name=\"%s\" to value %f", name, value);
+                returnvalue = hardware_interface::return_type::ERROR;
+                break;
+            }
+        }
+
+        return returnvalue;
+
+        getCommandKeyValue
+        for (int i = 0; i < numberOfIos_; i++)
+        {
+            int key;
+            bool value;
+            if (!getCommandInterfaceKeyValueByIndex(EKI_OUT_NAME, i, key, value))
+            {
+                RCLCPP_ERROR(logger, "Failed to get command value for index %d", i);
+                return false;
+            }
+            outKey.push_back(key);
+            outValue.push_back(value);
+        }
+        // for (int i = 0; i < inKeys.size(); i++)
+        // {
+        //     int key;
+        //     bool value;
+        //     if (!getStateInterfaceKeyValueByIndex(EKI_IN_NAME, i, key, value))
+        //     {
+        //         RCLCPP_ERROR(logger, "A");
+        //         RCLCPP_ERROR(logger, "Failed to get state value for index %d", i);
+        //         return false;
+        //     }
+        //     inKeys.push_back(key);
+        // }
+
+        return true;
+    }
+
+    hardware_interface::return_type KukaEkiIoInterface::updateStatesFromCommands()
+    {
+        hardware_interface::return_type returnvalue = hardware_interface::return_type::OK;
+
+        for (const auto& [name, descr] : gpio_command_interfaces_)
+        {
+            auto value = get_command(name);
+            try
+            {   
+                set_state(name, value);
+            }
+            catch (const std::runtime_error& e)
+            {
+                RCLCPP_ERROR(rclcpp::get_logger(LOGGER_NAME), "in updateStatesFromCommands(): Failed to update state_interface with name=\"%s\" to value %f", name, value);
+                returnvalue = hardware_interface::return_type::ERROR;
+                break;
+            }
+        }
+
+        return returnvalue;
+    }
+
+    hardware_interface::return_type KukaEkiIoInterface::getCommandKeyValue(const std::string& commandName, int& key, bool& value)
+    {
         try
         {
-            for (const auto& [name, descr] : gpio_command_interfaces_)
-            {
-                auto value = get_command(name);
-                //RCLCPP_INFO(logger, "Set state of %s to %d", name.c_str(), int (value)); // TODO // PK // Schöne Debug-Ausgabe
-
-                set_state(name, value);
-                
-                // ioPins.push_back(pinNumber);
-                // ioStates.push_back(get_command<bool>(interfaceName));
-            }
+            auto key = getLastPart(commandName, '/'); 
+            value = get_command(commandName);
         }
         catch (const std::runtime_error& e)
         {
-            RCLCPP_ERROR(logger, "Failed to get command value: %s", e.what());
+            RCLCPP_ERROR(rclcpp::get_logger(LOGGER_NAME), "Failed to get command key/value: %s", e.what());
+            return hardware_interface::return_type::ERROR;
+        }
+
+        return hardware_interface::return_type::OK;
+    }
+
+    bool KukaEkiIoInterface::getStateInterfaceKeyValueByIndex(const std::string& name, const int& index, int& key, bool& value)
+    {
+        const std::string prefix = name + "/" + name;
+        const std::string stateInterfaceNameKey = prefix + "/" + std::to_string(index) + "/key";
+        const std::string stateInterfaceNameValue = prefix + "/" + std::to_string(index) + "/value";
+
+        try
+        {
+            key = get_state(stateInterfaceNameKey);
+            value = get_state(stateInterfaceNameValue);
+        }
+        catch (const std::runtime_error& e)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger(LOGGER_NAME), "Failed to get state key/value: %s", e.what());
             return false;
         }
 
         return true;
     }
 
-    std::string GpioPinInfo::GetCommandInterfaceName() const
+    bool KukaEkiIoInterface::setCommandInterfaceKeyValueByIndex(const std::string& name, const int& index, const int* key, const bool* value)
     {
-        return InterfaceName + "/" + CommandInterfaceName;
+        const std::string prefix = name + "/" + name;
+        const std::string commandInterfaceNameKey = prefix + "/" + std::to_string(index) + "/key";
+        const std::string commandInterfaceNameValue = prefix + "/" + std::to_string(index) + "/value";
+
+        try
+        {
+            if (key != nullptr)
+                set_command(commandInterfaceNameKey, *key);
+            if (value != nullptr)
+                set_command(commandInterfaceNameValue, *value ? 1.0 : 0.0);
+        }
+        catch (const std::runtime_error& e)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger(LOGGER_NAME), "Failed to set command value: %s", e.what());
+            return false;
+        }
+
+        return true;
     }
 
-    std::string GpioPinInfo::GetStateInterfaceName() const
+    bool KukaEkiIoInterface::setStateInterfaceKeyValueByIndex(const std::string& name, const int& index, const int* key, const bool* value)
     {
-        return InterfaceName + "/" + StateInterfaceName;
+        const std::string prefix = name + "/" + name;
+        const std::string stateInterfaceNameKey = prefix + "/" + std::to_string(index) + "/key";
+        const std::string stateInterfaceNameValue = prefix + "/" + std::to_string(index) + "/value";
+
+        try
+        {
+            if (key != nullptr)
+                set_state<double>(stateInterfaceNameKey, *key);
+            if (value != nullptr)
+                set_state<double>(stateInterfaceNameValue, *value ? 1.0 : 0.0);
+        }
+        catch (const std::runtime_error& e)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger(LOGGER_NAME), "Failed to set state value: %s", e.what());
+            return false;
+        }
+
+        return true;
     }
+
+
+    // std::string GpioPinInfo::GetCommandInterfaceName() const
+    // {
+    //     return InterfaceName + "/" + CommandInterfaceName;
+    // }
+
+    // std::string GpioPinInfo::GetStateInterfaceName() const
+    // {
+    //     return InterfaceName + "/" + StateInterfaceName;
+    // }
 
 
     // IPv4 pattern with optional port
@@ -506,8 +663,16 @@ namespace kuka_eki_io_interface
         } catch (const std::invalid_argument& e) {
             return false;
         } catch (const std::out_of_range& e) {
-            return true; // It's a number, but too large for int
+            return false; // It's a number, but too large for int
         }
+    }
+
+    std::string getLastPart(const std::string& str, char delimiter) 
+    {
+        size_t pos = str.find_last_of(delimiter);
+        if (pos != std::string::npos)
+            return str.substr(pos + 1);
+        return str; // Return the original string if delimiter not found
     }
 
     const std::string getInElementNameByIndex(int index)

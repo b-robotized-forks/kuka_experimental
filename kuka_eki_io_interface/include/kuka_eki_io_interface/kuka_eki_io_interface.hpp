@@ -28,16 +28,16 @@ namespace kuka_eki_io_interface
     // pk // This implementation doesn't allow for multiple command and state interfaces per GPIO and needs to be refactored if that is an issue.
     // pk // EXAMPLE URDF: /home/ws_infrastructure/src/maurob_gripper/maurob_gripper_description/urdf/maurob_steingreifer_v2.ros2_control.xacro
     // pk // This example URDF is how I think the URDF could(!) look like for the KUKA EKI IO interface (probably needs to be refactored)
-    struct GpioPinInfo
-    {
-        std::string InterfaceName;
-        std::string CommandInterfaceName;
-        std::string StateInterfaceName;
-        int PinNumber;
+    // struct GpioPinInfo
+    // {
+    //     std::string InterfaceName;
+    //     std::string CommandInterfaceName;
+    //     std::string StateInterfaceName;
+    //     int PinNumber;
 
-        std::string GetCommandInterfaceName() const;
-        std::string GetStateInterfaceName() const;
-    };
+    //     std::string GetCommandInterfaceName() const;
+    //     std::string GetStateInterfaceName() const;
+    // };
 
     using Socket = boost::asio::ip::udp::socket;
     using SocketPtr = std::unique_ptr<boost::asio::ip::udp::socket>;
@@ -51,6 +51,11 @@ namespace kuka_eki_io_interface
     using Seconds = boost::posix_time::seconds;
     using Milliseconds = boost::posix_time::milliseconds;
 
+    const std::string IO_STATE_ELEMENT_NAME = "IoState";
+    const std::string IO_REQUEST_ELEMENT_NAME = "IoRequest";
+    const std::string EKI_OUT_NAME = "eki_io_out";
+    const std::string EKI_IN_NAME = "eki_io_in";
+
     const std::string LOGGER_NAME = "KukaEkiIoInterface";
     const int __maxIoNumber = 8;
     const int __myCustomTemporaryDefaultValue = -42069;
@@ -59,6 +64,7 @@ namespace kuka_eki_io_interface
 
     bool isValidIPv4(const std::string& ipString);
     bool isInteger(const std::string& s);
+    std::string getLastPart(const std::string& str, char delimiter);
     const std::string getInElementNameByIndex(int index);
     const std::string getOutElementNameByIndex(int index);
 
@@ -83,7 +89,7 @@ namespace kuka_eki_io_interface
         private:
             int numberOfIos_;
 
-            std::unordered_map<int, GpioPinInfo> gpioInfos_;        // pk // This maps the actual pin number defined in the URDF and KUKA EKI configuration to the name of the gpio interface
+            // std::unordered_map<int, GpioPinInfo> gpioInfos_;        // pk // This maps the actual pin number defined in the URDF and KUKA EKI configuration to the name of the gpio interface
             
             std::string eki_server_address_;
             std::string eki_server_port_;
@@ -101,13 +107,20 @@ namespace kuka_eki_io_interface
             void eki_check_read_state_deadline();
             //static void eki_handle_receive(const boost::system::error_code& ec, size_t length, boost::system::error_code*  out_ec, size_t*  out_length);
             bool eki_read_state(std::vector<int>& inKeys, std::vector<bool>& inValues, std::vector<int>& outKeys, std::vector<bool>& outValues);
-            bool eki_write_command(const std::vector<int>& io_pins, const std::vector<bool>& target_ios);
+            bool eki_write_command(const std::vector<int> &outKeys, const std::vector<bool>& outValues, const std::vector<int> &inKeys);
             static int ekiCommandBufferSize_;
 
             bool setInternalStates(const std::string& interfaceName, const std::vector<int>& inKeys, const std::vector<bool>& inValues);
-            bool getInternalCommands(); //std::vector<int>& ioPins, std::vector<bool>& ioStates);
+            bool getKeysAndValuesFromCommands(std::vector<int>& outKey, std::vector<bool>& outValue);//, std::vector<int>& inKeys); //std::vector<int>& ioPins, std::vector<bool>& ioStates);
+            hardware_interface::return_type updateStatesFromCommands();
 
             bool parseKeyAndValue(tinyxml2::XMLElement* xmlIoState, const std::string& xmlChildElementName, int& key, bool& value);
+
+            //bool getCommandInterfaceKeyValueByIndex(const std::string& name, const int& index, int& key, bool& value);
+            hardware_interface::return_type getCommandKeyValue(const std::string& commandName, int& key, bool& value);
+            bool getStateInterfaceKeyValueByIndex(const std::string& name, const int& index, int& key, bool& value);
+            bool setCommandInterfaceKeyValueByIndex(const std::string& name, const int& index, const int* key, const bool* value);
+            bool setStateInterfaceKeyValueByIndex(const std::string& name, const int& index, const int* key, const bool* value);
     };
 } // namespace kuka_eki_io_interface
 
