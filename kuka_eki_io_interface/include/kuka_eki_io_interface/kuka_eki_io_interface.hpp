@@ -4,41 +4,24 @@
 #include <vector>
 #include <string>
 #include <map>
-
 #include <boost/asio.hpp>
+#include <tinyxml2.h>
 
-// ros2_control hardware_interface
-#include "hardware_interface/hardware_info.hpp"
-#include "hardware_interface/system_interface.hpp"
-#include "hardware_interface/types/hardware_interface_return_values.hpp"
-
-// ROS
+// ROS2
 #include "rclcpp/macros.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "rclcpp_lifecycle/state.hpp"
 
-
+// ROS2 // ros2_control
+#include "hardware_interface/hardware_info.hpp"
+#include "hardware_interface/system_interface.hpp"
+#include "hardware_interface/types/hardware_interface_return_values.hpp"
 
 namespace kuka_eki_io_interface
 {
-    // pk // This struct is used to store the information of the GPIOs defined in the URDF and KUKA EKI configuration
-    // pk // It contains the interface name, command interface name, state interface name and the pin number
-    // pk // The pin number is the actual pin number defined in the URDF and KUKA EKI configuration
-    // pk // The idea is to use this helper struct to map the actual pin number to the name of the gpio interface
-    // pk // This implementation doesn't allow for multiple command and state interfaces per GPIO and needs to be refactored if that is an issue.
     // pk // EXAMPLE URDF: /home/ws_infrastructure/src/maurob_gripper/maurob_gripper_description/urdf/maurob_steingreifer_v2.ros2_control.xacro
     // pk // This example URDF is how I think the URDF could(!) look like for the KUKA EKI IO interface (probably needs to be refactored)
-    // struct GpioPinInfo
-    // {
-    //     std::string InterfaceName;
-    //     std::string CommandInterfaceName;
-    //     std::string StateInterfaceName;
-    //     int PinNumber;
-
-    //     std::string GetCommandInterfaceName() const;
-    //     std::string GetStateInterfaceName() const;
-    // };
-
+    
     using Socket = boost::asio::ip::udp::socket;
     using SocketPtr = std::unique_ptr<boost::asio::ip::udp::socket>;
     using Endpoint = boost::asio::ip::udp::endpoint;
@@ -51,76 +34,70 @@ namespace kuka_eki_io_interface
     using Seconds = boost::posix_time::seconds;
     using Milliseconds = boost::posix_time::milliseconds;
 
-    const std::string IO_STATE_ELEMENT_NAME = "IoState";
-    const std::string IO_REQUEST_ELEMENT_NAME = "IoRequest";
-    const std::string EKI_OUT_NAME = "eki_io_out";
-    const std::string EKI_IN_NAME = "eki_io_in";
-
+    const std::string EKI_XML_ELEMENT_STATE = "IoState";
+    const std::string EKI_XML_ELEMENT_REQUEST = "IoRequest";
+    const std::string EKI_XML_ELEMENT_REQUEST_ID = "RequestId";
+    const std::string EKI_XML_ELEMENT_PREFIX_IN = "In";
+    const std::string EKI_XML_ELEMENT_PREFIX_OUT = "Out";
+    const std::string EKI_XML_ATTRIBUTE_KEY = "Key";
+    const std::string EKI_XML_ATTRIBUTE_VALUE = "Value";
     const std::string LOGGER_NAME = "KukaEkiIoInterface";
     const int __maxIoNumber = 8;
-    const int __myCustomTemporaryDefaultValue = -42069;
-    const int __ekiModeWrite = 2;
-    const int __ekiModeRead = 1;
-
-    bool isValidIPv4(const std::string& ipString);
-    bool isInteger(const std::string& s);
-    std::string getLastPart(const std::string& str, char delimiter);
-    const std::string getInElementNameByIndex(int index);
-    const std::string getOutElementNameByIndex(int index);
 
     class KukaEkiIoInterface : public hardware_interface::SystemInterface
     {
         public:
             RCLCPP_SHARED_PTR_DEFINITIONS(kuka_eki_io_interface::KukaEkiIoInterface)
-            // virtual ~KukaEkiIoInterface();
-
             hardware_interface::CallbackReturn on_init(const hardware_interface::HardwareInfo& system_info) final;
+            hardware_interface::CallbackReturn on_configure(const rclcpp_lifecycle::State& previous_state) final;
             hardware_interface::CallbackReturn on_activate(const rclcpp_lifecycle::State& previous_state) final;
             hardware_interface::CallbackReturn on_deactivate(const rclcpp_lifecycle::State& previous_state) final;
-            // pk // on_configure and on_cleanup are currently not used, but could be used in the future to configure and cleanup the interface
-
-            // std::vector<hardware_interface::StateInterface> export_state_interfaces() final;                                 // pk // DEPRECATED USE on_export_state_interfaces instead
-            // std::vector<hardware_interface::CommandInterface> export_command_interfaces() final;                             // pk // DEPRECATED USE on_export_command_interfaces instead
-            // virtual std::vector<hardware_interface::StateInterface::ConstSharedPtr> on_export_state_interfaces() final;      // pk // !! If hardware_interface::SystemInterface is implemented correctly and used as intended you do not need to override this function !!
-            // virtual std::vector<hardware_interface::CommandInterface::SharedPtr> on_export_command_interfaces() final;       // pk // !! If hardware_interface::SystemInterface is implemented correctly and used as intended you do not need to override this function !!
-
             hardware_interface::return_type read(const rclcpp::Time& time, const rclcpp::Duration& period) final;
             hardware_interface::return_type write(const rclcpp::Time& time, const rclcpp::Duration& period) final;
         private:
-            int numberOfIos_;
+            // Data Members // Tests
+            const std::string XML_READ_EXAMPLE = "<IoState StateId=\"697\"><In0 Key=\"500\" Value=\"1\"></In0><In1 Key=\"501\" Value=\"0\"></In1><In2 Key=\"502\" Value=\"1\"></In2><In3 Key=\"503\" Value=\"0\"></In3><In4 Key=\"504\" Value=\"0\"></In4><In5 Key=\"505\" Value=\"0\"></In5><In6 Key=\"506\" Value=\"0\"></In6><In7 Key=\"507\" Value=\"0\"></In7 RequestId=\"11\"><Out0 Key=\"500\" Value=\"0\"></Out0><Out1 Key=\"501\" Value=\"0\"></Out1><Out2 Key=\"502\" Value=\"0\"></Out2><Out3 Key=\"503\" Value=\"1\"></Out3><Out4 Key=\"504\" Value=\"0\"></Out4><Out5 Key=\"505\" Value=\"0\"></Out5><Out6 Key=\"506\" Value=\"0\"></Out6><Out7 Key=\"507\" Value=\"0\"></Out7></IoState>";
+            const std::string XML_WRITE_EXAMPLE = "<IoRequest RequestId=\"11\"><Out0 Key=\"500\" Value=\"0\"/><Out1 Key=\"501\" Value=\"0\"/><Out2 Key=\"502\" Value=\"0\"/><Out3 Key=\"503\" Value=\"0\"/><Out4 Key=\"504\" Value=\"0\"/><Out5 Key=\"505\" Value=\"0\"/><Out6 Key=\"506\" Value=\"0\"/><Out7 Key=\"507\" Value=\"0\"/><In0 Key=\"500\"/><In1 Key=\"501\"/><In2 Key=\"502\"/><In3 Key=\"503\"/><In4 Key=\"504\"/><In5 Key=\"505\"/><In6 Key=\"506\"/><In7 Key=\"507\"/></IoRequest>";
 
-            // std::unordered_map<int, GpioPinInfo> gpioInfos_;        // pk // This maps the actual pin number defined in the URDF and KUKA EKI configuration to the name of the gpio interface
-            
+            // Data Members
             std::string eki_server_address_;
             std::string eki_server_port_;
-
-            int eki_cmd_buff_len_;
-            int eki_max_cmd_buff_len_ = 5; // by default, limit command buffer to 5 (size of advance run in KRL)
+            std::vector<std::string> orderedCommandFullNames_;
+            std::vector<std::string> orderedCommandNames_;
+            std::vector<std::string> orderedCommandStateFullNames_;
+            std::vector<std::string> orderedCommandStateNames_;
+            std::vector<std::string> orderedCommandStateKeys_;
+            std::vector<std::string> orderedNonCommandStateFullNames_;
+            std::vector<std::string> orderedNonCommandStateNames_;
+            std::vector<std::string> orderedNonCommandStateKeys_;
+            int lastRequestId_;
 
             // EKI socket read/write
-            int eki_read_state_timeout_ = 5;  // [ms]; settable by parameter (default = 5)
+            int eki_read_state_timeout_ = 5;  // [ms], settable by parameter (default = 5)
             IoService ios_;
             DeadlineTimerPtr deadline_;
             Endpoint eki_server_endpoint_;
             SocketPtr eki_server_socket_;
 
+            // Setup
             void eki_check_read_state_deadline();
-            //static void eki_handle_receive(const boost::system::error_code& ec, size_t length, boost::system::error_code*  out_ec, size_t*  out_length);
-            bool eki_read_state(std::vector<int>& inKeys, std::vector<bool>& inValues, std::vector<int>& outKeys, std::vector<bool>& outValues);
-            bool eki_write_command(const std::vector<int> &outKeys, const std::vector<bool>& outValues, const std::vector<int> &inKeys);
-            static int ekiCommandBufferSize_;
+            static void eki_handle_receive(const boost::system::error_code& ec, size_t length, boost::system::error_code*  out_ec, size_t*  out_length);
+            bool isValidIPv4(const std::string& ipString);
+            hardware_interface::return_type assignOrderedInterfaceNames();
+            hardware_interface::return_type assignEkiConfiguration();
+            std::string removeInterfacePrefix(const std::string& interfaceName, const std::string& prefixName);
 
-            bool setInternalStates(const std::string& interfaceName, const std::vector<int>& inKeys, const std::vector<bool>& inValues);
-            bool getKeysAndValuesFromCommands(std::vector<int>& outKey, std::vector<bool>& outValue);//, std::vector<int>& inKeys); //std::vector<int>& ioPins, std::vector<bool>& ioStates);
-            hardware_interface::return_type updateStatesFromCommands();
+            // Read states
+            hardware_interface::return_type eki_read_state();
+            hardware_interface::return_type readIoValuesFromXmlIo(tinyxml2::XMLElement* xmlIo, int& key, bool& value);
+            hardware_interface::return_type getNonCommandStateFullNameByKey(const std::string& key, std::string& fullname);
 
-            bool parseKeyAndValue(tinyxml2::XMLElement* xmlIoState, const std::string& xmlChildElementName, int& key, bool& value);
-
-            //bool getCommandInterfaceKeyValueByIndex(const std::string& name, const int& index, int& key, bool& value);
-            hardware_interface::return_type getCommandKeyValue(const std::string& commandName, int& key, bool& value);
-            bool getStateInterfaceKeyValueByIndex(const std::string& name, const int& index, int& key, bool& value);
-            bool setCommandInterfaceKeyValueByIndex(const std::string& name, const int& index, const int* key, const bool* value);
-            bool setStateInterfaceKeyValueByIndex(const std::string& name, const int& index, const int* key, const bool* value);
+            // Write commands
+            hardware_interface::return_type updateCommandStates();
+            hardware_interface::return_type eki_write_command();
+            int getCommandAsValidDigit(const std::string& commandName);
+            const std::string getInElementNameByIndex(int index);
+            const std::string getOutElementNameByIndex(int index);
     };
 } // namespace kuka_eki_io_interface
 
