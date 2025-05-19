@@ -35,7 +35,7 @@ namespace kuka_eki_io_interface
 
         if (assignOrderedInterfaceNames()==hardware_interface::return_type::ERROR)
             return hardware_interface::CallbackReturn::ERROR;
-            
+
         if (assignEkiConfiguration()==hardware_interface::return_type::ERROR)
             return hardware_interface::CallbackReturn::ERROR;
 
@@ -133,14 +133,12 @@ namespace kuka_eki_io_interface
         lastRequestId_ = 0;
 
         // Initialize ordered interface names.
-        for (const auto& [name, command] : gpio_command_interfaces_)
-        {
+        for (const auto& [name, command] : gpio_command_interfaces_) {
             orderedCommandFullNames_.push_back(command.get_name());
             orderedCommandNames_.push_back(command.get_interface_name());
         }
 
-        for (const auto& [name, interface] : gpio_state_interfaces_)
-        {
+        for (const auto& [name, interface] : gpio_state_interfaces_) {
             if (std::find(orderedCommandFullNames_.begin(), orderedCommandFullNames_.end(), interface.get_name()) != orderedCommandFullNames_.end()) {
                 orderedCommandStateFullNames_.push_back(interface.get_name());
                 orderedCommandStateNames_.push_back(interface.get_interface_name());
@@ -274,6 +272,7 @@ namespace kuka_eki_io_interface
             ios_.run_one();
         while (systemErrorCode == boost::asio::error::would_block);
 
+        // TODO // ReH -> FoN // BEGIN // Change from test xml to real xml.
         // KUKAEKIIO_00001 // KUKAEKIIO_00002 // Log warning when errorcode is set and do not continue processing.
         if (systemErrorCode) {
             //RCLCPP_WARN(logger, "communication error code: %s", systemErrorCode.message().c_str());
@@ -286,10 +285,11 @@ namespace kuka_eki_io_interface
             //return false;
         }
 
-        // KUKAEKIIO_00006 // Materialize incoming c-string as XML DOM. 
+        // KUKAEKIIO_00006 // Materialize incoming c-string as XML DOM.  
         tinyxml2::XMLDocument xmlDocument;
         // tinyxml2::XMLError xmlDocumentParseError = xmlDocument.Parse(inBuffer.data(), receivedMessageLength);
-        tinyxml2::XMLError xmlDocumentParseError = xmlDocument.Parse(XML_READ_EXAMPLE.c_str(), XML_READ_EXAMPLE.size());
+        tinyxml2::XMLError xmlDocumentParseError = xmlDocument.Parse(XML_READ_EXAMPLE_OUTS_ARE_ZERO.c_str(), XML_READ_EXAMPLE_OUTS_ARE_ZERO.size());
+        // TODO // ReH -> FoN // END // Change from test xml to real xml.
 
         // TODO // HAndle parse error.
         if (xmlDocumentParseError != tinyxml2::XML_SUCCESS) {
@@ -300,7 +300,7 @@ namespace kuka_eki_io_interface
         // KUKAEKIIO_00009 // Log debug the XML DOM.
         tinyxml2::XMLPrinter printer(0, true, 0);
         xmlDocument.Print(&printer);
-        RCLCPP_DEBUG(logger, "Received EKI XML: %s", printer.CStr());
+        RCLCPP_INFO(logger, "Received EKI XML: %s", printer.CStr());
 
         tinyxml2::XMLElement* xmlIoState = xmlDocument.FirstChildElement(EKI_XML_ELEMENT_STATE.c_str());
 
@@ -315,10 +315,12 @@ namespace kuka_eki_io_interface
         bool value = false;
 
         for (tinyxml2::XMLElement* xmlIo = xmlIoState->FirstChildElement(); xmlIo != nullptr; xmlIo = xmlIo->NextSiblingElement()) {
-            std::string name = xmlIo->Name();    
+            std::string name = xmlIo->Name();
+
             if (name.find(EKI_XML_ELEMENT_PREFIX_IN.c_str()) != std::string::npos) {
                 if (readIoValuesFromXmlIo(xmlIo, key, value) == hardware_interface::return_type::OK) {
                     RCLCPP_DEBUG(logger, "Read values from %s. %s=%i %s=%d", name.c_str(), EKI_XML_ATTRIBUTE_KEY.c_str(), key, EKI_XML_ATTRIBUTE_VALUE.c_str(), value);
+                    
                     std::string nonCommandStateInterfaceName;
                     if (getNonCommandStateFullNameByKey(std::to_string(key), nonCommandStateInterfaceName) == hardware_interface::return_type::OK) {
                         set_state(nonCommandStateInterfaceName, value ? 1.0 : 0.0);
@@ -327,7 +329,22 @@ namespace kuka_eki_io_interface
                         RCLCPP_ERROR(logger, "Failed to find interface for %i. set_state is not executed.", key);
                         return hardware_interface::return_type::ERROR;
                     }
+                } else {
+                    RCLCPP_ERROR(logger, "Failed to read values from %s.", name.c_str());
+                    return hardware_interface::return_type::ERROR;
+                }
+            } else if (name.find(EKI_XML_ELEMENT_PREFIX_OUT.c_str()) != std::string::npos) {
+                if (readIoValuesFromXmlIo(xmlIo, key, value) == hardware_interface::return_type::OK) {
+                    RCLCPP_DEBUG(logger, "Read values from %s. %s=%i %s=%d", name.c_str(), EKI_XML_ATTRIBUTE_KEY.c_str(), key, EKI_XML_ATTRIBUTE_VALUE.c_str(), value);
                     
+                    std::string commandStateInterfaceName;
+                    if (getCommandStateFullNameByKey(std::to_string(key), commandStateInterfaceName) == hardware_interface::return_type::OK) {
+                        set_state(commandStateInterfaceName, value ? 1.0 : 0.0);
+                        RCLCPP_DEBUG(logger, "Setting command state %s to %f.", commandStateInterfaceName.c_str(), value ? 1.0 : 0.0);
+                    } else {
+                        RCLCPP_ERROR(logger, "Failed to find interface for %i. set_state is not executed.", key);
+                        return hardware_interface::return_type::ERROR;
+                    }
                 } else {
                     RCLCPP_ERROR(logger, "Failed to read values from %s.", name.c_str());
                     return hardware_interface::return_type::ERROR;
@@ -364,14 +381,24 @@ namespace kuka_eki_io_interface
         return hardware_interface::return_type::ERROR;
     }
 
+    hardware_interface::return_type KukaEkiIoInterface::getCommandStateFullNameByKey(const std::string& key, std::string& fullname) {
+        auto iterator = std::find_if(orderedCommandStateFullNames_.begin(), orderedCommandStateFullNames_.end(), [&key](const std::string orderedCommandStateFullName) {
+            return orderedCommandStateFullName.size() >= key.size() && orderedCommandStateFullName.compare(orderedCommandStateFullName.size() - key.size(), key.size(), key) == 0; 
+        });
+
+        if (iterator != orderedCommandStateFullNames_.end()) {
+            fullname = *iterator;
+            return hardware_interface::return_type::OK;
+        }
+
+        return hardware_interface::return_type::ERROR;
+    }
+
     hardware_interface::return_type KukaEkiIoInterface::write(const rclcpp::Time& time, const rclcpp::Duration& period) {
         auto logger = rclcpp::get_logger(LOGGER_NAME);
         RCLCPP_DEBUG(logger, "write() called. Time=[%f , %li] Duration=[ %f , %li ]", time.seconds(), time.nanoseconds(), period.seconds(), period.nanoseconds());
 
-        if (updateCommandStates() == hardware_interface::return_type::ERROR)
-            return hardware_interface::return_type::ERROR;
-
-        if (eki_write_command() == hardware_interface::return_type::ERROR) {
+        if (isCommandUpdateRequired() && eki_write_command() == hardware_interface::return_type::ERROR) {
             std::string msg = "Failed to write to robot EKI server within alloted time of " + std::to_string(eki_read_state_timeout_) + " seconds. Make sure eki_io_interface is running on the robot controller and all configurations are correct.";
             RCLCPP_ERROR(logger, msg.c_str());
             return hardware_interface::return_type::ERROR;
@@ -380,20 +407,23 @@ namespace kuka_eki_io_interface
         return hardware_interface::return_type::OK;
     }
 
-    hardware_interface::return_type KukaEkiIoInterface::updateCommandStates() {
-        hardware_interface::return_type returnvalue = hardware_interface::return_type::OK;
-
+    bool KukaEkiIoInterface::isCommandUpdateRequired() {
         for (const auto& name : orderedCommandStateFullNames_) {
-            try { 
-                set_state(name, get_command(name));
+            try {
+                if (std::isnan(get_command(name))) {
+                    RCLCPP_INFO(rclcpp::get_logger(LOGGER_NAME), "in isCommandUpdateRequired(): %s was NaN.", name.c_str());
+                    return false;
+                }
+
+                if (get_command(name) != get_state(name)) {
+                    RCLCPP_INFO(rclcpp::get_logger(LOGGER_NAME), "in isCommandUpdateRequired(): %s was TRUE because of %f==%f", name.c_str(), get_command(name), get_state(name));
+                    return true;
+                }
             } catch (const std::runtime_error& e) {
-                RCLCPP_ERROR(rclcpp::get_logger(LOGGER_NAME), "in updateCommandStates(): Failed to update state_interface with name=\"%s\"", name.c_str());
-                returnvalue = hardware_interface::return_type::ERROR;
-                break;
+                RCLCPP_ERROR(rclcpp::get_logger(LOGGER_NAME), "in isCommandUpdateRequired(): Failed to update state_interface with name=\"%s\"", name.c_str());
             }
         }
-        
-        return returnvalue;
+        return false;
     }
 
     hardware_interface::return_type KukaEkiIoInterface::eki_write_command() {
@@ -426,7 +456,7 @@ namespace kuka_eki_io_interface
         // Send XML String to EKI Server.
         try {
             eki_server_socket_->send_to(boost::asio::buffer(printer.CStr(), printer.CStrSize()), eki_server_endpoint_);
-            RCLCPP_DEBUG(logger, "Sending EKI XML: %s", printer.CStr());
+            RCLCPP_INFO(logger, "Sending EKI XML: %s", printer.CStr());
             return hardware_interface::return_type::OK;
         } catch(const std::exception& e) {
             RCLCPP_ERROR(logger, "Sending EKI XML: %s resulted in exception: %s", printer.CStr(), e.what());

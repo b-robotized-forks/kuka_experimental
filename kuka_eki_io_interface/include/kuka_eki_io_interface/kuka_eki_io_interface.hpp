@@ -57,6 +57,7 @@ namespace kuka_eki_io_interface
         private:
             // Data Members // Tests
             const std::string XML_READ_EXAMPLE = "<IoState StateId=\"697\"><In0 Key=\"500\" Value=\"1\"></In0><In1 Key=\"501\" Value=\"0\"></In1><In2 Key=\"502\" Value=\"1\"></In2><In3 Key=\"503\" Value=\"0\"></In3><In4 Key=\"504\" Value=\"0\"></In4><In5 Key=\"505\" Value=\"0\"></In5><In6 Key=\"506\" Value=\"0\"></In6><In7 Key=\"507\" Value=\"0\"></In7 RequestId=\"11\"><Out0 Key=\"500\" Value=\"0\"></Out0><Out1 Key=\"501\" Value=\"0\"></Out1><Out2 Key=\"502\" Value=\"0\"></Out2><Out3 Key=\"503\" Value=\"1\"></Out3><Out4 Key=\"504\" Value=\"0\"></Out4><Out5 Key=\"505\" Value=\"0\"></Out5><Out6 Key=\"506\" Value=\"0\"></Out6><Out7 Key=\"507\" Value=\"0\"></Out7></IoState>";
+            const std::string XML_READ_EXAMPLE_OUTS_ARE_ZERO = "<IoState StateId=\"697\"><In0 Key=\"500\" Value=\"1\"></In0><In1 Key=\"501\" Value=\"0\"></In1><In2 Key=\"502\" Value=\"1\"></In2><In3 Key=\"503\" Value=\"0\"></In3><In4 Key=\"504\" Value=\"0\"></In4><In5 Key=\"505\" Value=\"0\"></In5><In6 Key=\"506\" Value=\"0\"></In6><In7 Key=\"507\" Value=\"0\"></In7 RequestId=\"11\"><Out0 Key=\"500\" Value=\"0\"></Out0><Out1 Key=\"501\" Value=\"0\"></Out1><Out2 Key=\"502\" Value=\"0\"></Out2><Out3 Key=\"503\" Value=\"0\"></Out3><Out4 Key=\"504\" Value=\"0\"></Out4><Out5 Key=\"505\" Value=\"0\"></Out5><Out6 Key=\"506\" Value=\"0\"></Out6><Out7 Key=\"507\" Value=\"0\"></Out7></IoState>";
             const std::string XML_WRITE_EXAMPLE = "<IoRequest RequestId=\"11\"><Out0 Key=\"500\" Value=\"0\"/><Out1 Key=\"501\" Value=\"0\"/><Out2 Key=\"502\" Value=\"0\"/><Out3 Key=\"503\" Value=\"0\"/><Out4 Key=\"504\" Value=\"0\"/><Out5 Key=\"505\" Value=\"0\"/><Out6 Key=\"506\" Value=\"0\"/><Out7 Key=\"507\" Value=\"0\"/><In0 Key=\"500\"/><In1 Key=\"501\"/><In2 Key=\"502\"/><In3 Key=\"503\"/><In4 Key=\"504\"/><In5 Key=\"505\"/><In6 Key=\"506\"/><In7 Key=\"507\"/></IoRequest>";
 
             // Data Members
@@ -91,9 +92,10 @@ namespace kuka_eki_io_interface
             hardware_interface::return_type eki_read_state();
             hardware_interface::return_type readIoValuesFromXmlIo(tinyxml2::XMLElement* xmlIo, int& key, bool& value);
             hardware_interface::return_type getNonCommandStateFullNameByKey(const std::string& key, std::string& fullname);
+            hardware_interface::return_type getCommandStateFullNameByKey(const std::string& key, std::string& fullname);
 
             // Write commands
-            hardware_interface::return_type updateCommandStates();
+            bool isCommandUpdateRequired();
             hardware_interface::return_type eki_write_command();
             int getCommandAsValidDigit(const std::string& commandName);
             const std::string getInElementNameByIndex(int index);
