@@ -6,7 +6,7 @@ Hardware interface for executing motion primitives on a KUKA robot using the ROS
 [![Licence](https://img.shields.io/badge/License-Apache-2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 # Demo Video
-[![Play Video](TODO preview img)](TODO video link)
+[![Play Video](doc/kuka_demo_video_preview.png)](https://www.youtube.com/watch?v=8op5yFYDebU)
 
 # Related packages/ repos
 - [industrial_robot_motion_interfaces (with additional helper types for stop and motion sequence)](https://github.com/StoglRobotics-forks/industrial_robot_motion_interfaces/tree/helper-types)
