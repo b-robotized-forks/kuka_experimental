@@ -13,11 +13,13 @@
   <url type="repository">https://github.com/ros-industrial/kuka_experimental</url>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
+  <buildtool_depend>ament_cmake_python</buildtool_depend>
 
   <depend>hardware_interface</depend>
   <depend>pluginlib</depend>
   <depend>rclcpp</depend>
   <depend>tinyxml_vendor</depend>
+  <depend>trajectory_msgs</depend>
 
   <export>
     <build_type>ament_cmake</build_type>
