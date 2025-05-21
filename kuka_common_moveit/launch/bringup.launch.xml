@@ -30,6 +30,9 @@
   <arg name="eki_robot_port"
        default="54600"
        description="Port by which the robot can be reached for communication using EKI protocol." />
+  <arg name="eki_io_port"
+       default="54601"
+       description="Port by which the robot can be reached for io communication using EKI protocol." />
   <arg name="use_rsi_communication"
        default="false"
        description="Use RSI communication to the KUKA Robot Controller (KR-C). If true, 'rsi_listen_ip' and 'rsi_robot_port' define the endpoint where the robot controller should connect." />
@@ -110,6 +113,7 @@
                 use_eki_communication:=$(var use_eki_communication) \
                 eki_robot_ip:=$(var eki_robot_ip) \
                 eki_robot_port:=$(var eki_robot_port) \
+                eki_io_port:=$(var eki_io_port) \
                 use_rsi_communication:=$(var use_rsi_communication) \
                 rsi_listen_ip:=$(var rsi_listen_ip) \
                 rsi_listen_port:=$(var rsi_listen_port) \

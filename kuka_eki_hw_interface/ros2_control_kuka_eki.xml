@@ -1,4 +1,4 @@
-<library path="kuka_eki_hw_interface">
+<library path="iras_kuka_eki_hw_interface">
   <class name="kuka_eki_hw_interface/KukaEkiHardwareInterface"
          type="kuka_eki_hw_interface::KukaEkiHardwareInterface"
          base_class_type="hardware_interface::SystemInterface">

@@ -46,11 +46,11 @@ namespace kuka_eki_io_interface
         auto logger = rclcpp::get_logger(LOGGER_NAME);
         RCLCPP_INFO(logger, "on_activate() called. Previous state was [ %i, %s ]", previous_state.id(), previous_state.label().c_str());        
 
-        deadline_.reset(new DeadlineTimer(ios_));
-        eki_server_socket_.reset(new Socket(ios_, Endpoint(Udp::v4(), 0)));
+        deadline_.reset(new boost::asio::deadline_timer(ios_));
+        eki_server_socket_.reset(new boost::asio::ip::udp::socket(ios_, boost::asio::ip::udp::endpoint(boost::asio::ip::udp::v4(), 0)));
 
-        Udp::resolver resolver(ios_);
-        eki_server_endpoint_ = *resolver.resolve({Udp::v4(), eki_server_address_, eki_server_port_});
+        boost::asio::ip::udp::resolver resolver(ios_);
+        eki_server_endpoint_ = *resolver.resolve({boost::asio::ip::udp::v4(), eki_server_address_, eki_io_port_});
 
         // Initiate contact to start server. Do nothing until a read is invoked (deadline_ = +inf)
         boost::array<char, 1> ini_buf = {0};
@@ -99,7 +99,7 @@ namespace kuka_eki_io_interface
         deadline_->async_wait(boost::bind(&KukaEkiIoInterface::eki_check_read_state_deadline, this));
     }
 
-    void KukaEkiIoInterface::eki_handle_receive(const SystemErrorCode& systemErrorCode, size_t length, SystemErrorCode* out_ec, size_t* out_length) {
+    void KukaEkiIoInterface::eki_handle_receive(const boost::system::error_code& systemErrorCode, size_t length, boost::system::error_code* out_ec, size_t* out_length) {
         *out_ec = systemErrorCode;
         *out_length = length;
     }
@@ -205,12 +205,12 @@ namespace kuka_eki_io_interface
         auto logger = rclcpp::get_logger(LOGGER_NAME);
 
         eki_server_address_ = info_.hardware_parameters["robot_ip"];
-        eki_server_port_ = info_.hardware_parameters["eki_robot_port"];
+        eki_io_port_ = info_.hardware_parameters["eki_io_port"]; //"54601";
 
-        std::string completeAddress = eki_server_address_ + ":" + eki_server_port_;
+        std::string completeAddress = eki_server_address_ + ":" + eki_io_port_;
         RCLCPP_INFO(logger, "Configured EKI Server Url: %s", completeAddress.c_str());
-        if (eki_server_address_.empty() || eki_server_port_.empty()) {
-            RCLCPP_FATAL(logger, "robot_ip or eki_robot_port cannot be empty");
+        if (eki_server_address_.empty() || eki_io_port_.empty()) {
+            RCLCPP_FATAL(logger, "robot_ip or eki_io_port cannot be empty");
             return hardware_interface::return_type::ERROR;
         }
         if (!isValidIPv4(completeAddress)) {
@@ -241,7 +241,7 @@ namespace kuka_eki_io_interface
             std::string msg = "Failed to read from robot EKI server within alloted time of " + std::to_string(eki_read_state_timeout_) + " seconds. Make sure kuka_eki_io_interface is running on the robot controller and all configurations are correct.";
             RCLCPP_ERROR(logger, msg.c_str());
             RCLCPP_ERROR(logger, "Configured EKI Server Address: %s", eki_server_address_.c_str());
-            RCLCPP_ERROR(logger, "Configured EKI Server Port   : %s", eki_server_port_.c_str());
+            RCLCPP_ERROR(logger, "Configured EKI Server Port   : %s", eki_io_port_.c_str());
             return hardware_interface::return_type::ERROR;
         }
 
@@ -255,40 +255,39 @@ namespace kuka_eki_io_interface
         static boost::array<char, 2048> inBuffer;
 
         // Read socket buffer (with timeout) // Based off of Boost documentation example: doc/html/boost_asio/example/timeouts/blocking_udp_client.cpp
-        deadline_->expires_from_now(Milliseconds(eki_read_state_timeout_));
-        SystemErrorCode systemErrorCode = boost::asio::error::would_block;
+        deadline_->expires_from_now(boost::posix_time::milliseconds(eki_read_state_timeout_));
+        boost::system::error_code systemErrorCode = boost::asio::error::would_block;
         size_t receivedMessageLength = 0;
 
         eki_server_socket_->async_receive(boost::asio::buffer(inBuffer), boost::bind(&KukaEkiIoInterface::eki_handle_receive, _1, _2, &systemErrorCode, &receivedMessageLength));
-        eki_server_socket_->async_receive(
-            boost::asio::buffer(inBuffer),
-            [&systemErrorCode, &receivedMessageLength](const boost::system::error_code& errorCode, std::size_t length) {
-                systemErrorCode = errorCode;
-                receivedMessageLength = length;
-            }
-        );
+        // eki_server_socket_->async_receive(
+        //     boost::asio::buffer(inBuffer),
+        //     [&systemErrorCode, &receivedMessageLength](const boost::system::error_code& errorCode, std::size_t length) {
+        //         systemErrorCode = errorCode;
+        //         receivedMessageLength = length;
+        //     }
+        // );
 
         do
             ios_.run_one();
         while (systemErrorCode == boost::asio::error::would_block);
 
-        // TODO // ReH -> FoN // BEGIN // Change from test xml to real xml.
         // KUKAEKIIO_00001 // KUKAEKIIO_00002 // Log warning when errorcode is set and do not continue processing.
         if (systemErrorCode) {
-            //RCLCPP_WARN(logger, "communication error code: %s", systemErrorCode.message().c_str());
-            //return false;
+            RCLCPP_WARN(logger, "communication error code: %s", systemErrorCode.message().c_str());
+            return hardware_interface::return_type::OK;
         }
 
         // KUKAEKIIO_00003 // KUKAEKIIO_00004 // Log warning when packages with zero lenght are received and do not continue processing.
         if (receivedMessageLength == 0) {
-            //RCLCPP_WARN(logger, "message of length 0 received.");
-            //return false;
+            RCLCPP_WARN(logger, "message of length 0 received.");
+            return hardware_interface::return_type::OK;
         }
 
         // KUKAEKIIO_00006 // Materialize incoming c-string as XML DOM.  
         tinyxml2::XMLDocument xmlDocument;
-        // tinyxml2::XMLError xmlDocumentParseError = xmlDocument.Parse(inBuffer.data(), receivedMessageLength);
-        tinyxml2::XMLError xmlDocumentParseError = xmlDocument.Parse(XML_READ_EXAMPLE_OUTS_ARE_ZERO.c_str(), XML_READ_EXAMPLE_OUTS_ARE_ZERO.size());
+        tinyxml2::XMLError xmlDocumentParseError = xmlDocument.Parse(inBuffer.data(), receivedMessageLength);
+        // tinyxml2::XMLError xmlDocumentParseError = xmlDocument.Parse(XML_READ_EXAMPLE_OUTS_ARE_ZERO.c_str(), XML_READ_EXAMPLE_OUTS_ARE_ZERO.size());
         // TODO // ReH -> FoN // END // Change from test xml to real xml.
 
         // TODO // HAndle parse error.

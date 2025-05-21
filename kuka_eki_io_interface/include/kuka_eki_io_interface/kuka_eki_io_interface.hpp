@@ -63,6 +63,7 @@ namespace kuka_eki_io_interface
             // Data Members
             std::string eki_server_address_;
             std::string eki_server_port_;
+            std::string eki_io_port_;
             std::vector<std::string> orderedCommandFullNames_;
             std::vector<std::string> orderedCommandNames_;
             std::vector<std::string> orderedCommandStateFullNames_;
@@ -74,7 +75,7 @@ namespace kuka_eki_io_interface
             int lastRequestId_;
 
             // EKI socket read/write
-            int eki_read_state_timeout_ = 5;  // [ms], settable by parameter (default = 5)
+            int eki_read_state_timeout_ = 50;  // [ms], settable by parameter (default = 5)
             IoService ios_;
             DeadlineTimerPtr deadline_;
             Endpoint eki_server_endpoint_;
@@ -82,7 +83,7 @@ namespace kuka_eki_io_interface
 
             // Setup
             void eki_check_read_state_deadline();
-            static void eki_handle_receive(const boost::system::error_code& ec, size_t length, boost::system::error_code*  out_ec, size_t*  out_length);
+            static void eki_handle_receive(const boost::system::error_code& systemErrorCode, size_t length, boost::system::error_code* out_ec, size_t* out_length);
             bool isValidIPv4(const std::string& ipString);
             hardware_interface::return_type assignOrderedInterfaceNames();
             hardware_interface::return_type assignEkiConfiguration();
