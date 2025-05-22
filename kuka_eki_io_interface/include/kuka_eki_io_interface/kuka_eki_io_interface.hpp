@@ -75,7 +75,7 @@ namespace kuka_eki_io_interface
             int lastRequestId_;
 
             // EKI socket read/write
-            int eki_read_state_timeout_ = 50;  // [ms], settable by parameter (default = 5)
+            int eki_read_state_timeout_ = 100;  // [ms], settable by parameter (default = 5)
             IoService ios_;
             DeadlineTimerPtr deadline_;
             Endpoint eki_server_endpoint_;

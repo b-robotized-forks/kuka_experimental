@@ -299,7 +299,7 @@ namespace kuka_eki_io_interface
         // KUKAEKIIO_00009 // Log debug the XML DOM.
         tinyxml2::XMLPrinter printer(0, true, 0);
         xmlDocument.Print(&printer);
-        RCLCPP_INFO(logger, "Received EKI XML: %s", printer.CStr());
+        RCLCPP_DEBUG(logger, "Received EKI XML: %s", printer.CStr());
 
         tinyxml2::XMLElement* xmlIoState = xmlDocument.FirstChildElement(EKI_XML_ELEMENT_STATE.c_str());
 
