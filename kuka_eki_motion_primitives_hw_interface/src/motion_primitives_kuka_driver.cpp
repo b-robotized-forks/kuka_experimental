@@ -61,18 +61,14 @@ hardware_interface::CallbackReturn MotionPrimitivesKukaDriver::on_init(
 hardware_interface::CallbackReturn MotionPrimitivesKukaDriver::on_configure(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
-  RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Configuring Hardware Interface");
-
+  RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Configuring Hardware Interface ...");
   async_execute_motion_thread_ = std::make_unique<std::thread>(&MotionPrimitivesKukaDriver::asyncExecuteMotionThread, this);
-
-  // TODO(anyone): prepare the robot to be ready for read calls and write calls of some interfaces
-
   return CallbackReturn::SUCCESS;
 }
 
 std::vector<hardware_interface::StateInterface> MotionPrimitivesKukaDriver::export_state_interfaces()
 {
-  RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Exporting State Interfaces");
+  RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Exporting State Interfaces ...");
 
   std::vector<hardware_interface::StateInterface> state_interfaces;
   // State interfaces with joint states for RViz, ...
@@ -88,14 +84,6 @@ std::vector<hardware_interface::StateInterface> MotionPrimitivesKukaDriver::expo
   // State interfaces for the motion_primitive_forward_controller
   state_interfaces.emplace_back(hardware_interface::StateInterface("motion_primitive", "execution_status", &hw_mo_prim_states_[0]));
   state_interfaces.emplace_back(hardware_interface::StateInterface("motion_primitive", "ready_for_new_primitive", &hw_mo_prim_states_[1]));
-
-  for (const auto &state_interface : state_interfaces)
-  {
-    RCLCPP_INFO(
-      rclcpp::get_logger("MotionPrimitivesKukaDriver"),
-      "State Interface: Name = %s",
-      state_interface.get_name().c_str());
-  }
 
   return state_interfaces;
 }
@@ -137,15 +125,6 @@ std::vector<hardware_interface::CommandInterface> MotionPrimitivesKukaDriver::ex
   command_interfaces.emplace_back(hardware_interface::CommandInterface("motion_primitive", "acceleration", &hw_mo_prim_commands_[23]));
   command_interfaces.emplace_back(hardware_interface::CommandInterface("motion_primitive", "move_time", &hw_mo_prim_commands_[24]));
 
-  // Print all command interfaces with ROS info
-  for (const auto &command_interface : command_interfaces)
-  {
-    RCLCPP_INFO(
-      rclcpp::get_logger("MotionPrimitivesKukaDriver"),
-      "Command Interface: Name = %s",
-      command_interface.get_name().c_str());
-  }
-
   return command_interfaces;
 }
 
@@ -168,7 +147,7 @@ hardware_interface::CallbackReturn MotionPrimitivesKukaDriver::on_activate(
 
   RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Connecting to the robot ...");
   robot_.connect_async(robot_ip_, eki_robot_port_, eki_robot_meta_port_);
-  robot_.await_connection(); // TODO(mathias31415): Seems to not work with async connect? --> always returns true?
+  robot_.await_connection();
   RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Connected to the robot.");
     RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "System Successfully activated!");
 
@@ -209,7 +188,7 @@ hardware_interface::return_type MotionPrimitivesKukaDriver::read(
   hw_joint_vel_states_[5] = velocity.a6;
 
   // Handle robot status
-  // TODO(mathias31415): How to check if movement was SUCCESS?
+  // TODO: How to check if movement was SUCCESS?
   if (robot_error_) 
   {
     current_execution_status_ = ExecutionState::ERROR;
@@ -235,7 +214,6 @@ hardware_interface::return_type MotionPrimitivesKukaDriver::write(
 {
   // Check if we have a new command
   if (!std::isnan(hw_mo_prim_commands_[0])) {
-    // RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Command of type: %f recived", hw_mo_prim_commands_[0]);
     ready_for_new_primitive_ = false; // set to false to indicate that the driver is busy handeling a command
     double motion_type = hw_mo_prim_commands_[0];
     switch (static_cast<uint8_t>(motion_type)) 
@@ -283,10 +261,10 @@ hardware_interface::return_type MotionPrimitivesKukaDriver::write(
         if(!build_motion_sequence_) { // send single command imimediately
           std::lock_guard<std::mutex> guard(execution_mutex_);
           if (!new_execution_available_) {
-            new_execution_available_ = true;  // set flag for async thread to send command to robot
+            new_execution_available_ = true;
           }
         } else {
-          ready_for_new_primitive_ = true; // set to true to allow sending new commands
+          ready_for_new_primitive_ = true;
         }
         break;
       }
@@ -298,13 +276,13 @@ hardware_interface::return_type MotionPrimitivesKukaDriver::write(
           return hardware_interface::return_type::ERROR;
         }
         reset_command_interfaces();
-        if(!build_motion_sequence_) { // send single command imimediately
+        if(!build_motion_sequence_) {
           std::lock_guard<std::mutex> guard(execution_mutex_);
           if (!new_execution_available_) {
-            new_execution_available_ = true;  // set flag for async thread to send command to robot
+            new_execution_available_ = true;
           }
         } else {
-          ready_for_new_primitive_ = true; // set to true to allow sending new commands
+          ready_for_new_primitive_ = true;
         }
         break;
       }
@@ -316,20 +294,20 @@ hardware_interface::return_type MotionPrimitivesKukaDriver::write(
           return hardware_interface::return_type::ERROR;
         }
         reset_command_interfaces();
-        if(!build_motion_sequence_) { // send single command imimediately
+        if(!build_motion_sequence_) {
           std::lock_guard<std::mutex> guard(execution_mutex_);
           if (!new_execution_available_) {
-            new_execution_available_ = true;  // set flag for async thread to send command to robot
+            new_execution_available_ = true;
           }
         } else {
-          ready_for_new_primitive_ = true; // set to true to allow sending new commands
+          ready_for_new_primitive_ = true;
         }
         break;
       }
       default: {
         RCLCPP_ERROR(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Invalid motion command: motion type %f is not supported", motion_type);
         robot_error_ = true;
-        return hardware_interface::return_type::ERROR;  // TODO(mathias31415): OK or ERROR?
+        return hardware_interface::return_type::ERROR;
       }
     }
   } 
@@ -464,7 +442,7 @@ void MotionPrimitivesKukaDriver::add_vel_and_acc_to_command(rbt::MoveCommand &co
 
 void MotionPrimitivesKukaDriver::add_blending_to_command(rbt::MoveCommand &command)
 {
-  // Blending only alowed in sequence
+  // (Blending only alowed in sequence)
   if (std::isnan(hw_mo_prim_commands_[21]) || !build_motion_sequence_) {
     command.blending = 0.0;
   } else {

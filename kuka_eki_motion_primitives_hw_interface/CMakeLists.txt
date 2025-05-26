@@ -68,18 +68,6 @@ install(
   DESTINATION include
 )
 
-if(BUILD_TESTING)
-
-  ament_add_gmock(test_motion_primitives_kuka_driver test/test_motion_primitives_kuka_driver.cpp)
-  target_include_directories(test_motion_primitives_kuka_driver PRIVATE include)
-  ament_target_dependencies(
-    test_motion_primitives_kuka_driver
-    hardware_interface
-    pluginlib
-    ros2_control_test_assets
-  )
-endif()
-
 ament_export_include_directories(
   include
 )

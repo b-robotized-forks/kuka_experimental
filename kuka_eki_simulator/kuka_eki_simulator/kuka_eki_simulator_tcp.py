@@ -10,7 +10,6 @@ import errno
 import rclpy
 from std_msgs.msg import String
 
-# TODO(mathias31415): Aktuell nur für ein Motion Primitive implementiert. Problem wenn mehrere in einem XML gesendet werden
 max_vel = 1.0 * 100.0
 
 def create_eki_xml_rob(act_joint_pos, command_id="1"):
@@ -134,8 +133,6 @@ def main(args=None):
     cycle_time = 0.004
     act_joint_pos = np.array([0, -90, 90, 0, 90, 0], dtype=np.float64)
     act_command_id = -1
-    # cmd_joint_pos = act_joint_pos.copy()
-    # des_joint_absolute = np.zeros(6)
     timeout_count = 0
     max_timeout = 5
 
@@ -170,7 +167,6 @@ def main(args=None):
                 time.sleep(0.001)  # FIXME: make this a ros2 node
                 try:
                     # Create and send robot state as XML
-                    # str_data = create_eki_xml_rob(act_joint_pos, act_command_id)
                     str_data = create_eki_xml_rob(act_joint_pos, act_command_id+1)
                     msg = String()
                     msg.data = str(str_data)

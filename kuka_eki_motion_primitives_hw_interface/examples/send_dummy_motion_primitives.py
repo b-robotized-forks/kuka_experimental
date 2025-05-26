@@ -36,6 +36,7 @@ msg_stop.type = MotionPrimitive.STOP_MOTION
 msg_PTP_1 = MotionPrimitive()
 msg_PTP_1.type = MotionPrimitive.LINEAR_JOINT
 msg_PTP_1.joint_positions = [0.0, -1.57, 1.57, 0.0, 1.57, 0.0]
+msg_PTP_1.blend_radius = 0.1
 msg_PTP_1.additional_arguments = [
     MotionArgument(argument_name="velocity", argument_value=0.5),
     MotionArgument(argument_name="acceleration", argument_value=0.5)]
@@ -50,6 +51,7 @@ msg_PTP_1_slow.additional_arguments = [
 msg_PTP_11 = MotionPrimitive()
 msg_PTP_11.type = MotionPrimitive.LINEAR_JOINT
 msg_PTP_11.joint_positions = [0.15, -1.57, 1.57, 0.0, 1.57, 0.0]
+msg_PTP_11.blend_radius = 0.1
 msg_PTP_11.additional_arguments = [
     MotionArgument(argument_name="velocity", argument_value=0.5),
     MotionArgument(argument_name="acceleration", argument_value=0.5)]
@@ -57,6 +59,7 @@ msg_PTP_11.additional_arguments = [
 msg_PTP_12 = MotionPrimitive()
 msg_PTP_12.type = MotionPrimitive.LINEAR_JOINT
 msg_PTP_12.joint_positions = [0.3, -1.57, 1.57, 0.0, 1.57, 0.0]
+msg_PTP_12.blend_radius = 0.1
 msg_PTP_12.additional_arguments = [
     MotionArgument(argument_name="velocity", argument_value=0.5),
     MotionArgument(argument_name="acceleration", argument_value=0.5)]
@@ -64,6 +67,7 @@ msg_PTP_12.additional_arguments = [
 msg_PTP_2 = MotionPrimitive()
 msg_PTP_2.type = MotionPrimitive.LINEAR_JOINT
 msg_PTP_2.joint_positions = [0.5, -1.57, 1.57, 0.0, 1.57, 0.0]
+msg_PTP_2.blend_radius = 0.1
 msg_PTP_2.additional_arguments = [
     MotionArgument(argument_name="velocity", argument_value=0.5),
     MotionArgument(argument_name="acceleration", argument_value=0.5)]
@@ -78,6 +82,7 @@ msg_PTP_2_slow.additional_arguments = [
 msg_PTP_21 = MotionPrimitive()
 msg_PTP_21.type = MotionPrimitive.LINEAR_JOINT
 msg_PTP_21.joint_positions = [0.65, -1.57, 1.57, 0.0, 1.57, 0.0]
+msg_PTP_21.blend_radius = 0.1
 msg_PTP_21.additional_arguments = [
     MotionArgument(argument_name="velocity", argument_value=0.5),
     MotionArgument(argument_name="acceleration", argument_value=0.5)]
@@ -85,6 +90,7 @@ msg_PTP_21.additional_arguments = [
 msg_PTP_22 = MotionPrimitive()
 msg_PTP_22.type = MotionPrimitive.LINEAR_JOINT
 msg_PTP_22.joint_positions = [0.8, -1.57, 1.57, 0.0, 1.57, 0.0]
+msg_PTP_22.blend_radius = 0.1
 msg_PTP_22.additional_arguments = [
     MotionArgument(argument_name="velocity", argument_value=0.5),
     MotionArgument(argument_name="acceleration", argument_value=0.5)]
@@ -92,6 +98,7 @@ msg_PTP_22.additional_arguments = [
 msg_PTP_3 = MotionPrimitive()
 msg_PTP_3.type = MotionPrimitive.LINEAR_JOINT
 msg_PTP_3.joint_positions = [1.0, -1.57, 1.57, 0.0, 1.57, 0.0]
+msg_PTP_3.blend_radius = 0.1
 msg_PTP_3.additional_arguments = [
     MotionArgument(argument_name="velocity", argument_value=0.5),
     MotionArgument(argument_name="acceleration", argument_value=0.5)]
@@ -230,16 +237,16 @@ class MotionPublisher(Node):
         self.publisher_ = self.create_publisher(MotionPrimitive, '/motion_primitive_controller/reference', 10)
         # self.messages = [msg_start_sequence, msg_PTP_1, msg_PTP_2, msg_PTP_3, msg_LIN_1, msg_LIN_2, msg_end_sequence]
         # self.messages = [msg_PTP_1, msg_PTP_2, msg_PTP_3, msg_PTP_2, msg_LIN_1, msg_LIN_2]
-        # self.messages = [msg_PTP_2]
         # self.messages = [msg_PTP_1, msg_PTP_2, msg_PTP_3, msg_PTP_2, msg_LIN_1, msg_LIN_2, msg_start_sequence, msg_PTP_1, msg_PTP_2, msg_PTP_3, msg_LIN_1, msg_LIN_2, msg_moveC_1, msg_end_sequence, msg_PTP_1, msg_PTP_2]
         # self.messages = [msg_PTP_1, msg_PTP_2, msg_PTP_3, msg_LIN_1, msg_LIN_2, msg_moveC_1]
         # self.messages = [msg_start_sequence, msg_PTP_1, msg_PTP_2, msg_PTP_3, msg_LIN_1, msg_LIN_2, msg_moveC_1, msg_end_sequence]
-        # self.messages = [msg_PTP_1, msg_PTP_11, msg_PTP_12, msg_PTP_2, msg_PTP_21, msg_PTP_21, msg_PTP_22, msg_PTP_3, msg_start_sequence, msg_PTP_1, msg_PTP_11, msg_PTP_12, msg_PTP_2, msg_PTP_21, msg_PTP_21, msg_PTP_22, msg_PTP_3, msg_end_sequence]
+        # self.messages = [msg_PTP_1, msg_PTP_11, msg_PTP_12, msg_PTP_2, msg_PTP_21, msg_PTP_22, msg_PTP_3, msg_start_sequence, msg_PTP_1, msg_PTP_11, msg_PTP_12, msg_PTP_2, msg_PTP_21, msg_PTP_22, msg_PTP_3, msg_end_sequence]
         # self.messages = [msg_PTP_1, msg_PTP_2, msg_PTP_1_slow, msg_PTP_2_slow]
         # self.messages = [msg_PTP_1, msg_LIN_1, msg_LIN_2, msg_LIN_1_slow, msg_LIN_2_slow]
         # self.messages = [msg_PTP_2, msg_moveC_1, msg_PTP_2_slow, msg_moveC_1_slow]
         # self.messages = [msg_LIN_2, msg_LIN_3, msg_LIN_1, msg_LIN_4, msg_LIN_5, msg_start_sequence, msg_LIN_2, msg_LIN_3, msg_LIN_1, msg_LIN_4, msg_LIN_5, msg_end_sequence]
         self.messages = [msg_LIN_2, msg_LIN_3, msg_LIN_4, msg_LIN_5, msg_start_sequence, msg_LIN_2, msg_LIN_3, msg_LIN_4, msg_LIN_5, msg_end_sequence]
+        # self.messages = [msg_PTP_1, msg_PTP_2, msg_PTP_3, msg_PTP_2, msg_PTP_1, msg_start_sequence, msg_PTP_2, msg_PTP_3, msg_PTP_2, msg_PTP_1,  msg_end_sequence]
         self.get_logger().info(f"Number of messages: {len(self.messages)}")
 
         # Initial delay before the first message

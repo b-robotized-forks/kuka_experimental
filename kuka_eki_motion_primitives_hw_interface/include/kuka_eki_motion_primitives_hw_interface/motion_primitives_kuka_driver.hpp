@@ -28,8 +28,6 @@
 #include "rclcpp_lifecycle/state.hpp"
 
 #include "motion_primitives_forward_controller/execution_state.hpp"
-
-// #include "kuka_eki_hw_interface/eki_helper.hpp"
 #include "eki_communication/Robot.h"
 
 

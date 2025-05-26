@@ -54,7 +54,6 @@ bool rbt::EKInterface::is_connected()
 int rbt::EKInterface::send(const std::string &xml)
 {
     // std::cout<<"[EKInterface] Sending XML to robot ..."<<std::endl<<xml<<std::endl<<std::endl;
-    // std::cout<<"[EKInterface] Sending XML to robot ..."<<std::endl;
     return check_error(
         write(socket_, xml.c_str(), xml.size()),
         "ERROR writing to socket");

@@ -19,7 +19,6 @@
 #pragma once
 
 #include <thread>
-
 #include <eki_common/default.h>
 
 class ThreadExecuter
