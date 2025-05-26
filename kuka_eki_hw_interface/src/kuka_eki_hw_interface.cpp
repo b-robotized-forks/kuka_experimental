@@ -109,94 +109,94 @@ namespace kuka_eki_hw_interface
         return command_interfaces;
     }
 
-    // void KukaEkiHardwareInterface::eki_check_read_state_deadline()
-    // {
-    //     // Check if deadline has already passed
-    //     if (deadline_->expires_at() <= boost::asio::deadline_timer::traits_type::now())
-    //     {
-    //         eki_server_socket_->cancel();
-    //         deadline_->expires_at(boost::posix_time::pos_infin);
-    //     }
+    void KukaEkiHardwareInterface::eki_check_read_state_deadline()
+    {
+        // Check if deadline has already passed
+        if (deadline_->expires_at() <= boost::asio::deadline_timer::traits_type::now())
+        {
+            eki_server_socket_->cancel();
+            deadline_->expires_at(boost::posix_time::pos_infin);
+        }
 
-    //     // Sleep until deadline exceeded
-    //     deadline_->async_wait(boost::bind(&KukaEkiHardwareInterface::eki_check_read_state_deadline, this));
-    // }
+        // Sleep until deadline exceeded
+        deadline_->async_wait(boost::bind(&KukaEkiHardwareInterface::eki_check_read_state_deadline, this));
+    }
 
-    // void KukaEkiHardwareInterface::eki_handle_receive(const boost::system::error_code &ec, size_t length,
-    //                                               boost::system::error_code* out_ec, size_t* out_length)
-    // {
-    //     *out_ec = ec;
-    //     *out_length = length;
-    // }
+    void KukaEkiHardwareInterface::eki_handle_receive(const boost::system::error_code &ec, size_t length,
+                                                  boost::system::error_code* out_ec, size_t* out_length)
+    {
+        *out_ec = ec;
+        *out_length = length;
+    }
 
-    // bool KukaEkiHardwareInterface::eki_read_state(std::vector<double> &joint_position,
-    //                                               std::vector<double> &joint_velocity,
-    //                                               std::vector<double> &joint_effort,
-    //                                               int &cmd_buff_len)
-    // {
-    //     static boost::array<char, 2048> in_buffer;
-    //     // Read socket buffer (with timeout)
-    //     // Based off of Boost documentation example: doc/html/boost_asio/example/timeouts/blocking_udp_client.cpp
-    //     deadline_->expires_from_now(boost::posix_time::seconds(eki_read_state_timeout_));  // set deadline
-    //     boost::system::error_code ec = boost::asio::error::would_block;
-    //     size_t len = 0;
+    bool KukaEkiHardwareInterface::eki_read_state(std::vector<double> &joint_position,
+                                                  std::vector<double> &joint_velocity,
+                                                  std::vector<double> &joint_effort,
+                                                  int &cmd_buff_len)
+    {
+        static boost::array<char, 2048> in_buffer;
+        // Read socket buffer (with timeout)
+        // Based off of Boost documentation example: doc/html/boost_asio/example/timeouts/blocking_udp_client.cpp
+        deadline_->expires_from_now(boost::posix_time::seconds(eki_read_state_timeout_));  // set deadline
+        boost::system::error_code ec = boost::asio::error::would_block;
+        size_t len = 0;
 
-    //     eki_server_socket_->async_receive(boost::asio::buffer(in_buffer),
-    //                                    boost::bind(&KukaEkiHardwareInterface::eki_handle_receive, _1, _2, &ec, &len));
-    //     do
-    //         ios_.run_one();
-    //     while (ec == boost::asio::error::would_block);
+        eki_server_socket_->async_receive(boost::asio::buffer(in_buffer),
+                                       boost::bind(&KukaEkiHardwareInterface::eki_handle_receive, _1, _2, &ec, &len));
+        do
+            ios_.run_one();
+        while (ec == boost::asio::error::would_block);
 
-    //     if (ec)
-    //     {
-    //         RCLCPP_WARN(rclcpp::get_logger("KukaEkiHardwareInterface"), " communication error code: %s", ec.message().c_str());
-    //         return false;
-    //     }
+        if (ec)
+        {
+            RCLCPP_WARN(rclcpp::get_logger("KukaEkiHardwareInterface"), " communication error code: %s", ec.message().c_str());
+            return false;
+        }
 
-    //     // Update joint positions from XML packet (if received)
-    //     if (len == 0)
-    //     {
-    //         RCLCPP_WARN(rclcpp::get_logger("KukaEkiHardwareInterface"), " packet of len 0 received");
-    //         return false;
-    //     }
+        // Update joint positions from XML packet (if received)
+        if (len == 0)
+        {
+            RCLCPP_WARN(rclcpp::get_logger("KukaEkiHardwareInterface"), " packet of len 0 received");
+            return false;
+        }
 
-    //     // Parse XML
-    //     TiXmlDocument xml_in;
-    //     in_buffer[len] = '\0';  // null-terminate data buffer for parsing (expects c-string)
-    //     xml_in.Parse(in_buffer.data());
-    //     TiXmlElement* robot_state = xml_in.FirstChildElement("RobotState");
-    //     if (!robot_state)
-    //         return false;
-    //     TiXmlElement* pos = robot_state->FirstChildElement("Pos");
-    //     TiXmlElement* vel = robot_state->FirstChildElement("Vel");
-    //     TiXmlElement* eff = robot_state->FirstChildElement("Eff");
-    //     TiXmlElement* robot_command = robot_state->FirstChildElement("RobotCommand");
-    //     if (!pos || !vel || !eff || !robot_command)
-    //     {
-    //         RCLCPP_INFO(rclcpp::get_logger("KukaEkiHardwareInterface"), "parsing failed, one of pos, vel eff or RobotCommand missing");
-    //         return false;
-    //     }
+        // Parse XML
+        TiXmlDocument xml_in;
+        in_buffer[len] = '\0';  // null-terminate data buffer for parsing (expects c-string)
+        xml_in.Parse(in_buffer.data());
+        TiXmlElement* robot_state = xml_in.FirstChildElement("RobotState");
+        if (!robot_state)
+            return false;
+        TiXmlElement* pos = robot_state->FirstChildElement("Pos");
+        TiXmlElement* vel = robot_state->FirstChildElement("Vel");
+        TiXmlElement* eff = robot_state->FirstChildElement("Eff");
+        TiXmlElement* robot_command = robot_state->FirstChildElement("RobotCommand");
+        if (!pos || !vel || !eff || !robot_command)
+        {
+            RCLCPP_INFO(rclcpp::get_logger("KukaEkiHardwareInterface"), "parsing failed, one of pos, vel eff or RobotCommand missing");
+            return false;
+        }
 
-    //     // Extract axis positions
-    //     double joint_pos;  // [deg]
-    //     double joint_vel;  // [%max]
-    //     double joint_eff;  // [Nm]
-    //     char axis_name[] = "A1";
-    //     for (long unsigned int i = 0; i < hw_states_.size(); ++i)
-    //     {
-    //         pos->Attribute(axis_name, &joint_pos);
-    //         joint_position[i] = angles::from_degrees(joint_pos);  // convert deg to rad
-    //         vel->Attribute(axis_name, &joint_vel);
-    //         joint_velocity[i] = joint_vel;
-    //         eff->Attribute(axis_name, &joint_eff);
-    //         joint_effort[i] = joint_eff;
-    //         axis_name[1]++;
-    //     }
+        // Extract axis positions
+        double joint_pos;  // [deg]
+        double joint_vel;  // [%max]
+        double joint_eff;  // [Nm]
+        char axis_name[] = "A1";
+        for (long unsigned int i = 0; i < hw_states_.size(); ++i)
+        {
+            pos->Attribute(axis_name, &joint_pos);
+            joint_position[i] = angles::from_degrees(joint_pos);  // convert deg to rad
+            vel->Attribute(axis_name, &joint_vel);
+            joint_velocity[i] = joint_vel;
+            eff->Attribute(axis_name, &joint_eff);
+            joint_effort[i] = joint_eff;
+            axis_name[1]++;
+        }
 
-    //     // Extract number of command elements buffered on robot
-    //     robot_command->Attribute("Size", &cmd_buff_len);
-    //     return true;
-    // }
+        // Extract number of command elements buffered on robot
+        robot_command->Attribute("Size", &cmd_buff_len);
+        return true;
+    }
 
     bool KukaEkiHardwareInterface::eki_write_command(const std::vector<double> &joint_position_command)
     {
@@ -240,9 +240,7 @@ namespace kuka_eki_hw_interface
         }
 
         deadline_.reset(new boost::asio::deadline_timer(ios_));
-        // eki_server_socket_.reset(new boost::asio::ip::udp::socket(ios_, boost::asio::ip::udp::endpoint(boost::asio::ip::udp::v4(), 0)));
-        eki_server_socket_ = std::make_shared<boost::asio::ip::udp::socket>(ios_, boost::asio::ip::udp::endpoint(boost::asio::ip::udp::v4(), 0));
-
+        eki_server_socket_.reset(new boost::asio::ip::udp::socket(ios_, boost::asio::ip::udp::endpoint(boost::asio::ip::udp::v4(), 0)));
 
         boost::asio::ip::udp::resolver resolver(ios_);
         eki_server_endpoint_ = *resolver.resolve({boost::asio::ip::udp::v4(), eki_server_address_, eki_server_port_});
@@ -252,8 +250,7 @@ namespace kuka_eki_hw_interface
 
         // Start persistent actor to check for eki_read_state timeouts
         deadline_->expires_at(boost::posix_time::pos_infin);  // do nothing until a read is invoked (deadline_ = +inf)
-        // eki_check_read_state_deadline();
-        EkiHelper::check_read_state_deadline(*deadline_, eki_server_socket_,ios_);
+        eki_check_read_state_deadline();
 
         std::vector<double> joint_position;
         std::vector<double> joint_velocity;
@@ -261,8 +258,7 @@ namespace kuka_eki_hw_interface
         joint_position.resize(hw_states_.size());
         joint_velocity.resize(hw_states_.size());
         joint_effort.resize(hw_states_.size());
-        // if (!eki_read_state(joint_position, joint_velocity, joint_effort, eki_cmd_buff_len_))
-        if (!EkiHelper::eki_read_state(joint_position, joint_velocity, joint_effort, eki_cmd_buff_len_, *deadline_, eki_server_socket_, ios_, eki_read_state_timeout_, hw_states_))
+        if (!eki_read_state(joint_position, joint_velocity, joint_effort, eki_cmd_buff_len_))
         {
             std::string msg = "Failed to read from robot EKI server within alloted time of "
                               + std::to_string(eki_read_state_timeout_) + " seconds.  Make sure eki_hw_interface is running "
@@ -297,8 +293,7 @@ namespace kuka_eki_hw_interface
         joint_position.resize(hw_states_.size());
         joint_velocity.resize(hw_states_.size());
         joint_effort.resize(hw_states_.size());
-        // if (!eki_read_state(joint_position, joint_velocity, joint_effort, eki_cmd_buff_len_))
-        if (!EkiHelper::eki_read_state(joint_position, joint_velocity, joint_effort, eki_cmd_buff_len_, *deadline_, eki_server_socket_, ios_, eki_read_state_timeout_, hw_states_))
+        if (!eki_read_state(joint_position, joint_velocity, joint_effort, eki_cmd_buff_len_))
         {
             std::string msg = "Failed to read from robot EKI server within alloted time of "
                               + std::to_string(eki_read_state_timeout_) + " seconds.  Make sure eki_hw_interface is running "
