@@ -67,6 +67,9 @@ def motion_eki()
 
    interrupt decl 19 when $flag[3] == true do stop_movement()  ;local interrupt to use RESUME
  
+   ;$STOPNOAPROX=TRUE ; cause program to stop when approximation is not possible --> for debugging blending
+   ;$APO.CDIS=100.0 ; mm
+ 
    ; Communication process
    loop
       if get_command(current_command) then   
@@ -84,6 +87,7 @@ def motion_eki()
          CURRENT_COMMAND_ID = 0
       endif
    endloop 
+   close_interface()
 end
 
 deffct command_type null_command()
@@ -96,7 +100,7 @@ deffct command_type null_command()
    decl grip_type grip_data
    decl command_type command
    
-   move_data = { mode 0, base_index 0, tool_index 0, wait_for_gripper 0, teached 0, velocity 0, acceleration 0}
+   move_data = { mode 0, base_index 0, tool_index 0, wait_for_gripper 0, teached 0, velocity 0, acceleration 0, blending 0}
    joint = { a1 0, a2 0, a3 0, a4 0, a5 0, a6 0}
    move_data.joint = joint
    cartesian = { x 0, y 0, z 0, a 0, b 0, c 0 }
@@ -291,6 +295,7 @@ deffct bool get_command(command :out)
    status = eki_getint("MOTION_EKI", "RobotCommand/Move/@ToolIndex", command.move_data.tool_index)
    status = eki_getreal("MOTION_EKI", "RobotCommand/Move/@Velocity", command.move_data.velocity)
    status = eki_getreal("MOTION_EKI", "RobotCommand/Move/@Acceleration", command.move_data.acceleration)
+   status = eki_getreal("MOTION_EKI", "RobotCommand/Move/@Blending", command.move_data.blending)
    status = eki_getint("MOTION_EKI", "RobotCommand/Move/@WaitForGripper", command.move_data.wait_for_gripper)
    
    status = eki_getreal("MOTION_EKI", "RobotCommand/Move/Joint/@A1", command.move_data.joint.a1)
@@ -351,23 +356,26 @@ deffct int do_move(step :in, move_data :in)
    else 
       $tool = $nullframe
    endif
-  
+   
    switch (move_data.mode)
       case 1
          set_joint_vel(move_data.velocity)
          set_joint_acc(move_data.acceleration)
+         set_blending(move_data.blending)
          INTERRUPT ON 19   ; enable interrupt to stop movement
          ptp move_data.joint c_ptp C_DIS
          INTERRUPT OFF 19
       case 2
          set_joint_vel(move_data.velocity)
          set_joint_acc(move_data.acceleration)
+         set_blending(move_data.blending)
          INTERRUPT ON 19
          ptp move_data.cartesian c_ptp C_DIS
          INTERRUPT OFF 19
       case 3
          set_cart_vel(move_data.velocity)
          set_cart_acc(move_data.acceleration)
+         set_blending(move_data.blending)
          INTERRUPT ON 19
          lin move_data.cartesian C_DIS
          INTERRUPT OFF 19
@@ -380,6 +388,7 @@ deffct int do_move(step :in, move_data :in)
       case 6
          set_cart_vel(move_data.velocity)
          set_cart_acc(move_data.acceleration)
+         set_blending(move_data.blending)
          INTERRUPT ON 19
          circ move_data.cartesian_aux, move_data.cartesian C_DIS
          INTERRUPT OFF 19
@@ -492,7 +501,7 @@ def set_joint_vel(velocity :in)
         $VEL_AXIS[i] = velocity * 100
       endfor
       act_joint_vel = velocity
-      msgnotify("Set joint velocity to: %1 %","Motion EKI",velocity * 100)
+      ;msgnotify("Set joint velocity to: %1 %","Motion EKI",velocity * 100)
    endif   
 end
 
@@ -505,7 +514,7 @@ def set_joint_acc(acceleration :in)
         $ACC_AXIS[i] = acceleration * 100
       endfor
       act_joint_acc = acceleration
-      msgnotify("Set joint acceleration to: %1 %","Motion EKI",acceleration * 100)
+      ;msgnotify("Set joint acceleration to: %1 %","Motion EKI",acceleration * 100)
    endif
 end
 
@@ -514,7 +523,7 @@ def set_cart_vel(velocity :in)
    if (velocity > 0.0) AND (velocity <= $VEL_MA.CP) AND (velocity <> act_cart_vel) then
       $VEL.CP = velocity
       act_cart_vel = velocity
-      msgnotify("Set cartesian velocity to: %1 mm/s","Motion EKI",velocity * 1000)
+      ;msgnotify("Set cartesian velocity to: %1 mm/s","Motion EKI",velocity * 1000)
    endif
 end
 
@@ -523,6 +532,12 @@ def set_cart_acc(acceleration :in)
    if (acceleration > 0.0) AND (acceleration <= $ACC_MA.CP) AND (acceleration <> act_cart_acc) then
       $ACC.CP = acceleration  
       act_cart_acc = acceleration
-      msgnotify("Set cartesian acceleration to: %1 mm/s^2","Motion EKI",acceleration * 1000)
+      ;msgnotify("Set cartesian acceleration to: %1 mm/s^2","Motion EKI",acceleration * 1000)
    endif
+end
+
+def set_blending(blending :in)
+   decl real blending ; in m
+   $APO.CDIS = blending * 1000
+   ;msgnotify("Set blending to %1 mm","Motion EKI",blending * 1000)
 end

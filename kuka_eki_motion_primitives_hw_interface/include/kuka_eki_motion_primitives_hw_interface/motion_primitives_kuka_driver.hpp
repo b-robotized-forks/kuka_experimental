@@ -91,6 +91,7 @@ private:
   bool add_linear_cartesian_cmd();
   bool add_circular_cartesian_cmd();
   void add_vel_and_acc_to_command(rbt::MoveCommand &command);
+  void add_blending_to_command(rbt::MoveCommand &command);
   void reset_command_interfaces();
   void quaternionToEuler(double qx, double qy, double qz, double qw, double& rx, double& ry, double& rz);
 };

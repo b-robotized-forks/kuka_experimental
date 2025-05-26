@@ -45,6 +45,7 @@ public:
     int tool_index = 0;
     float velocity = 0.f;
     float acceleration = 0.f;
+    float blending = 0.f;
     bool wait_for_gripper = false;
 
     PoseJoints target_joints;

@@ -356,11 +356,12 @@ bool MotionPrimitivesKukaDriver::add_linear_joint_cmd()
   rbt::MoveCommand command;
   command = rbt::MoveCommand(rbt::PoseJoints(joints[0], joints[1], joints[2], joints[3], joints[4], joints[5], 0.0));   // last 0.0 for not used A7
   add_vel_and_acc_to_command(command);
+  add_blending_to_command(command);
   RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), 
         "Added LINEAR_JOINT with joint positions: [%f, %f, %f, %f, %f, %f]"
-        ", velocity: %f, acceleration: %f",
+        ", velocity: %f, acceleration: %f, blending: %f",
         joints[0], joints[1], joints[2], joints[3], joints[4], joints[5],
-        command.velocity, command.acceleration);
+        command.velocity, command.acceleration, command.blending);
   robot_.perform(command);
   return true;
 }
@@ -389,11 +390,12 @@ bool MotionPrimitivesKukaDriver::add_linear_cartesian_cmd()
   rbt::MoveCommand command;
   command = rbt::MoveCommand(rbt::PoseCartesian(pose[0], pose[1], pose[2], pose[3], pose[4], pose[5]), true);
   add_vel_and_acc_to_command(command);
+  add_blending_to_command(command);
   RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), 
         "Adding LINEAR_CARTESIAN with pose: [%f, %f, %f, %f, %f, %f]"
-        ", velocity: %f, acceleration: %f",
+        ", velocity: %f, acceleration: %f, blending: %f",
         pose[0], pose[1], pose[2], pose[3], pose[4], pose[5],
-        command.velocity, command.acceleration);
+        command.velocity, command.acceleration, command.blending);
   robot_.perform(command);
   return true;
 }
@@ -433,12 +435,13 @@ bool MotionPrimitivesKukaDriver::add_circular_cartesian_cmd()
   command = rbt::MoveCommand(rbt::PoseCartesian(via_pose[0], via_pose[1], via_pose[2], via_pose[3], via_pose[4], via_pose[5]),
                              rbt::PoseCartesian(goal_pose[0], goal_pose[1], goal_pose[2], goal_pose[3], goal_pose[4], goal_pose[5]));
   add_vel_and_acc_to_command(command);
+  add_blending_to_command(command);
   RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), 
         "Adding CIRCULAR_CARTESIAN with goal_pose: [%f, %f, %f, %f, %f, %f] and via_pose: [%f, %f, %f, %f, %f, %f]"
-        ", velocity: %f, acceleration: %f",
+        ", velocity: %f, acceleration: %f, blending: %f",
         goal_pose[0], goal_pose[1], goal_pose[2], goal_pose[3], goal_pose[4], goal_pose[5],
         via_pose[0], via_pose[1], via_pose[2], via_pose[3], via_pose[4], via_pose[5],
-        command.velocity, command.acceleration);
+        command.velocity, command.acceleration, command.blending);
   robot_.perform(command);
 
   return true;
@@ -456,6 +459,16 @@ void MotionPrimitivesKukaDriver::add_vel_and_acc_to_command(rbt::MoveCommand &co
     command.acceleration = 0.0;
   } else {
     command.acceleration = hw_mo_prim_commands_[23];
+  }
+}
+
+void MotionPrimitivesKukaDriver::add_blending_to_command(rbt::MoveCommand &command)
+{
+  // Blending only alowed in sequence
+  if (std::isnan(hw_mo_prim_commands_[21]) || !build_motion_sequence_) {
+    command.blending = 0.0;
+  } else {
+    command.blending = hw_mo_prim_commands_[21];
   }
 }
 

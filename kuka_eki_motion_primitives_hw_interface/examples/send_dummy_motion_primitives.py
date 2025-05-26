@@ -107,6 +107,7 @@ pose_L1.pose.orientation.y = 1.0
 pose_L1.pose.orientation.z = 0.0 
 pose_L1.pose.orientation.w = 0.0 
 msg_LIN_1.poses = [pose_L1]
+msg_LIN_1.blend_radius = 0.1
 msg_LIN_1.additional_arguments = [
     MotionArgument(argument_name="velocity", argument_value=2.0),
     MotionArgument(argument_name="acceleration", argument_value=2.0)]
@@ -129,6 +130,7 @@ pose_L2.pose.orientation.y = 1.0
 pose_L2.pose.orientation.z = 0.0 
 pose_L2.pose.orientation.w = 0.0 
 msg_LIN_2.poses = [pose_L2]
+msg_LIN_2.blend_radius = 0.1
 msg_LIN_2.additional_arguments = [
     MotionArgument(argument_name="velocity", argument_value=2.0),
     MotionArgument(argument_name="acceleration", argument_value=2.0)]
@@ -151,6 +153,7 @@ pose_L3.pose.orientation.y = 1.0
 pose_L3.pose.orientation.z = 0.0 
 pose_L3.pose.orientation.w = 0.0 
 msg_LIN_3.poses = [pose_L3]
+msg_LIN_3.blend_radius = 0.1
 msg_LIN_3.additional_arguments = [
     MotionArgument(argument_name="velocity", argument_value=2.0),
     MotionArgument(argument_name="acceleration", argument_value=2.0)]
@@ -166,6 +169,7 @@ pose_L4.pose.orientation.y = 1.0
 pose_L4.pose.orientation.z = 0.0 
 pose_L4.pose.orientation.w = 0.0 
 msg_LIN_4.poses = [pose_L4]
+msg_LIN_4.blend_radius = 0.1
 msg_LIN_4.additional_arguments = [
     MotionArgument(argument_name="velocity", argument_value=2.0),
     MotionArgument(argument_name="acceleration", argument_value=2.0)]
@@ -181,6 +185,7 @@ pose_L5.pose.orientation.y = 1.0
 pose_L5.pose.orientation.z = 0.0 
 pose_L5.pose.orientation.w = 0.0 
 msg_LIN_5.poses = [pose_L5]
+msg_LIN_5.blend_radius = 0.1
 msg_LIN_5.additional_arguments = [
     MotionArgument(argument_name="velocity", argument_value=2.0),
     MotionArgument(argument_name="acceleration", argument_value=2.0)]

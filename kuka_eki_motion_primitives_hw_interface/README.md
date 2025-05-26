@@ -34,7 +34,7 @@ These interfaces are used to send motion primitive data to the hardware interfac
 - `pos_via_qx`, `pos_via_qy`, `pos_via_qz`, `pos_via_qw`: Orientation quaternion of via-point
 - `velocity`: Desired motion velocity. For joint-based motions (PTP), it is a scaling factor (0 to 1) of the maximum joint velocity, and for cartesian motions (LIN, CIRC), it specifies the end-effector velocity in m/s.
 - `acceleration`: Desired motion acceleration. For joint-based motions (PTP), it is a scaling factor (0 to 1) of the maximum joint acceleration, and for cartesian motions (LIN, CIRC), it specifies the end-effector acceleration in m/s².
-- `blend_radius`: Blending radius for smooth transitions (currently not used by the **motion_primitive_kuka_driver**, but [**motion_primitive_kuka_driver**](https://github.com/StoglRobotics-forks/Universal_Robots_ROS2_Driver_MotionPrimitive/blob/main/ur_robot_driver/src/motion_primitives_ur_driver.cpp) uses it)
+- `blend_radius`: Blending radius for smooth transitions between two primitives.
 - `move_time`: Optional duration for time-based execution (currently not used by the **motion_primitive_kuka_driver**, but [**motion_primitive_kuka_driver**](https://github.com/StoglRobotics-forks/Universal_Robots_ROS2_Driver_MotionPrimitive/blob/main/ur_robot_driver/src/motion_primitives_ur_driver.cpp) uses it)
 
 ## State Interfaces
@@ -58,7 +58,7 @@ These interfaces are used to communicate the internal status of the hardware int
 - Additional helper types:
   - `STOP_MOTION`: Immediately stops the current robot motion and clears all pending primitives in the controller's queue.
   - `RESET_STOP`: After `RESET_STOP`, new commands can get handled.
-  - `MOTION_SEQUENCE_START` / `MOTION_SEQUENCE_END`: Define a motion sequence block. All primitives between these two markers will be sent to the robot in a single XML message, rather than as individual messages.
+  - `MOTION_SEQUENCE_START` / `MOTION_SEQUENCE_END`: Define a motion sequence block. All primitives between these two markers will be sent to the robot in a single XML message, rather than as individual messages. Within a sequence, blending can be used to enable smooth transitions between movements.
 
 ![MotionPrimitiveExecutionWithHelperTypes](doc/MotionPrimitiveExecutionWithHelperTypes_KUKA.drawio.png)
 
