@@ -279,7 +279,6 @@ void rbt::Robot::update_state(std::string &xml_message, bool is_meta)
             {
                 state_.from_xml(reader);
                 active_sequence_.update(state_);
-                // check_time();
             }
 
             call_listener(RobotEvent::STATE);
@@ -302,74 +301,5 @@ void rbt::Robot::call_listener(RobotEvent event)
     if (listener != nullptr)
     {
         listener(event, this);
-    }
-}
-
-void rbt::Robot::check_time()
-{
-    // TODO(mathias31415): Check/ Modifiy this?
-    if (!chrono_running_tote_ && state_.position_joints.a1 < -5)
-    {
-        std::cout << "Chrono started" << std::endl;
-
-        start_chrono("perform tote");
-        start_chrono("perform all");
-
-        chrono_running_tote_ = true;
-
-        if (remaining_runs < 0)
-        {
-            remaining_runs = 3;
-
-            start_chrono("perform 3 runs");
-        }
-    }
-
-    if (!chrono_running_pick_ && state_.position_joints.a1 < -30)
-    {
-        log_chrono("perform tote");
-
-        start_chrono("perform pick");
-
-        chrono_running_pick_ = true;
-    }
-
-    if (chrono_running_pick_ && state_.position_joints.a1 > -30)
-    {
-        log_chrono("perform pick");
-
-        chrono_running_pick_ = false;
-
-        start_chrono("perform between");
-
-        chrono_running_between_ = true;
-    }
-
-    if (chrono_running_between_ && state_.position_joints.a1 > 10)
-    {
-        log_chrono("perform between");
-
-        chrono_running_between_ = false;
-
-        start_chrono("perform drop");
-
-        chrono_running_drop_ = true;
-    }
-
-    if (chrono_running_drop_ && state_.position_joints.a1 < 10)
-    {
-        log_chrono("perform drop");
-
-        log_chrono("perform all");
-
-        chrono_running_drop_ = false;
-
-        chrono_running_tote_ = false;
-
-        if (--remaining_runs == 0)
-        {
-            log_chrono("perform 3 runs");
-            remaining_runs = -1;
-        }
     }
 }

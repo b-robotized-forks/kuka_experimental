@@ -57,16 +57,9 @@ namespace rbt
 
         ChronoEntry chrono_;
 
-        bool chrono_running_tote_ = false;
-        bool chrono_running_pick_ = false;
-        bool chrono_running_between_ = false;
-        bool chrono_running_drop_ = false;
-        int remaining_runs = -1;
-
         void perform(const Command &command);
         void send_sequence();
         void send_meta(bool abort_commands = false);
-        void check_time();
 
     public:
         Robot() : Component("rbt::Robot") {}
@@ -99,7 +92,7 @@ namespace rbt
         bool commands_paused() { return commands_paused_; }
 
         std::function<void(RobotEvent event, Robot *robot)> listener = nullptr;
-        /*CommandSequence get_active_sequence() { return active_sequence_; }
-    CommandSequence get_waiting_sequence() { return waiting_sequence_; }*/
+        // CommandSequence get_active_sequence() { return active_sequence_; }
+        // CommandSequence get_waiting_sequence() { return waiting_sequence_; }
     };
 } // namespace rbt
