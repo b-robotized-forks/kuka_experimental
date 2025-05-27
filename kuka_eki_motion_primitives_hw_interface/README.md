@@ -6,7 +6,7 @@ Hardware interface for executing motion primitives on a KUKA robot using the ROS
 [![Licence](https://img.shields.io/badge/License-Apache-2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 # Demo Video
-[![Play Video](doc/kuka_demo_video_preview.png)](https://www.youtube.com/watch?v=8op5yFYDebU)
+[![Play Video](doc/kuka_demo_video_preview.png)](https://www.youtube.com/watch?v=LFxwfy6cmH4)
 
 # Related packages/ repos
 - [industrial_robot_motion_interfaces (with additional helper types for stop and motion sequence)](https://github.com/StoglRobotics-forks/industrial_robot_motion_interfaces/tree/helper-types)
@@ -152,6 +152,5 @@ ros2 topic pub /motion_primitive_controller/reference industrial_robot_motion_in
 
 
 # TODOs
-- Blending between motion primitives not working yet
 - Check if motion execution ends with success
 - Execute eki_close() when programm is stopped/ deselected to properly close the connection --> without eki_close() its not possible to init a new server when restarting the program. 
