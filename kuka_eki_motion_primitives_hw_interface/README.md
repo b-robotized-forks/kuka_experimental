@@ -136,6 +136,8 @@ ros2 launch kuka_ros2_control_support motion_primitives_bringup.launch.py descri
 ```
 ## Publish dummy commands
 **Commands from python script**
+> [!WARNING]  
+> Ensure that the robot in your configuration is able to execute these motion primitives without any risk of collision.
 ```
 ros2 run kuka_eki_motion_primitives_hw_interface send_dummy_motion_primitives.py
 ```
