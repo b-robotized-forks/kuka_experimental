@@ -274,7 +274,7 @@ namespace kuka_eki_io_interface
 
         // KUKAEKIIO_00001 // KUKAEKIIO_00002 // Log warning when errorcode is set and do not continue processing.
         if (systemErrorCode) {
-            RCLCPP_WARN(logger, "communication error code: %s", systemErrorCode.message().c_str());
+            RCLCPP_DEBUG(logger, "communication error code: %s", systemErrorCode.message().c_str());
             return hardware_interface::return_type::OK;
         }
 
@@ -410,12 +410,12 @@ namespace kuka_eki_io_interface
         for (const auto& name : orderedCommandStateFullNames_) {
             try {
                 if (std::isnan(get_command(name))) {
-                    RCLCPP_INFO(rclcpp::get_logger(LOGGER_NAME), "in isCommandUpdateRequired(): %s was NaN.", name.c_str());
+                    RCLCPP_DEBUG(rclcpp::get_logger(LOGGER_NAME), "in isCommandUpdateRequired(): %s was NaN.", name.c_str());
                     return false;
                 }
 
                 if (get_command(name) != get_state(name)) {
-                    RCLCPP_INFO(rclcpp::get_logger(LOGGER_NAME), "in isCommandUpdateRequired(): %s was TRUE because of %f==%f", name.c_str(), get_command(name), get_state(name));
+                    RCLCPP_DEBUG(rclcpp::get_logger(LOGGER_NAME), "in isCommandUpdateRequired(): %s was TRUE because of %f==%f", name.c_str(), get_command(name), get_state(name));
                     return true;
                 }
             } catch (const std::runtime_error& e) {
@@ -455,7 +455,7 @@ namespace kuka_eki_io_interface
         // Send XML String to EKI Server.
         try {
             eki_server_socket_->send_to(boost::asio::buffer(printer.CStr(), printer.CStrSize()), eki_server_endpoint_);
-            RCLCPP_INFO(logger, "Sending EKI XML: %s", printer.CStr());
+            RCLCPP_DEBUG(logger, "Sending EKI XML: %s", printer.CStr());
             return hardware_interface::return_type::OK;
         } catch(const std::exception& e) {
             RCLCPP_ERROR(logger, "Sending EKI XML: %s resulted in exception: %s", printer.CStr(), e.what());
