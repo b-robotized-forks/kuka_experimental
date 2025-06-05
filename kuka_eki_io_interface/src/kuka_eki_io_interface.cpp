@@ -95,11 +95,7 @@ namespace kuka_eki_io_interface
         if (deadline_->expires_at() <= boost::asio::deadline_timer::traits_type::now()) {
             deadline_->expires_at(boost::posix_time::pos_infin);
             eki_server_socket_->cancel();
-            
-            RCLCPP_INFO(logger, "eki_check_read_state_deadline --> EXPIRED");
         }
-
-        RCLCPP_INFO(logger, "eki_check_read_state_deadline --> NOT EXPIRED");
 
         // Sleep until deadline exceeded
         deadline_->async_wait(boost::bind(&KukaEkiIoInterface::eki_check_read_state_deadline, this));
