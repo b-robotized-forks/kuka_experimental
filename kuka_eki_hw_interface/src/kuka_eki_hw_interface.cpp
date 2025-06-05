@@ -114,8 +114,8 @@ namespace kuka_eki_hw_interface
         // Check if deadline has already passed
         if (deadline_->expires_at() <= boost::asio::deadline_timer::traits_type::now())
         {
-            eki_server_socket_->cancel();
             deadline_->expires_at(boost::posix_time::pos_infin);
+            eki_server_socket_->cancel();
         }
 
         // Sleep until deadline exceeded
@@ -147,6 +147,8 @@ namespace kuka_eki_hw_interface
             ios_.run_one();
         while (ec == boost::asio::error::would_block);
 
+        deadline_->expires_at(boost::posix_time::pos_infin);
+        
         if (ec)
         {
             RCLCPP_WARN(rclcpp::get_logger("KukaEkiHardwareInterface"), " communication error code: %s", ec.message().c_str());

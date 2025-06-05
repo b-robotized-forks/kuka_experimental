@@ -89,11 +89,17 @@ namespace kuka_eki_io_interface
     }
 
     void KukaEkiIoInterface::eki_check_read_state_deadline() {
+        auto logger = rclcpp::get_logger(LOGGER_NAME);
+
         // Check, if deadline has already passed.
         if (deadline_->expires_at() <= boost::asio::deadline_timer::traits_type::now()) {
-            eki_server_socket_->cancel();
             deadline_->expires_at(boost::posix_time::pos_infin);
+            eki_server_socket_->cancel();
+            
+            RCLCPP_INFO(logger, "eki_check_read_state_deadline --> EXPIRED");
         }
+
+        RCLCPP_INFO(logger, "eki_check_read_state_deadline --> NOT EXPIRED");
 
         // Sleep until deadline exceeded
         deadline_->async_wait(boost::bind(&KukaEkiIoInterface::eki_check_read_state_deadline, this));
@@ -271,6 +277,8 @@ namespace kuka_eki_io_interface
         do
             ios_.run_one();
         while (systemErrorCode == boost::asio::error::would_block);
+
+        deadline_->expires_at(boost::posix_time::pos_infin);
 
         // KUKAEKIIO_00001 // KUKAEKIIO_00002 // Log warning when errorcode is set and do not continue processing.
         if (systemErrorCode) {
