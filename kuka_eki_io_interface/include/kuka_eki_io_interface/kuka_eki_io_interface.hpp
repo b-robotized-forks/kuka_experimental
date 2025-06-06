@@ -7,6 +7,7 @@
 #include <boost/asio.hpp>
 #include <boost/thread.hpp>
 #include <boost/thread/future.hpp>
+#include <boost/chrono.hpp>
 #include <tinyxml2.h>
 
 // ROS2
