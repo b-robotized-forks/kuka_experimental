@@ -19,6 +19,7 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(hardware_interface REQUIRED)
 find_package(Boost REQUIRED COMPONENTS system)
+find_package(Boost REQUIRED COMPONENTS thread)
 find_package(tinyxml_vendor REQUIRED)
 find_package(TinyXML REQUIRED)
 find_package(rclcpp REQUIRED)
@@ -58,11 +59,9 @@ ament_target_dependencies(
   pluginlib
   rclcpp
   rclcpp_lifecycle
+  Boost
 )
 pluginlib_export_plugin_description_file(hardware_interface ros2_control_kuka_eki_io.xml)
-
-
-
 
 ### ros2 control hardware plugin
 install(
@@ -89,5 +88,6 @@ ament_export_dependencies(
   pluginlib
   rclcpp
   rclcpp_lifecycle
+  Boost
 )
 ament_package()
