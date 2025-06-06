@@ -5,6 +5,8 @@
 #include <string>
 #include <map>
 #include <boost/asio.hpp>
+#include <boost/thread.hpp>
+#include <boost/thread/future.hpp>
 #include <tinyxml2.h>
 
 // ROS2
@@ -80,6 +82,13 @@ namespace kuka_eki_io_interface
             DeadlineTimerPtr deadline_;
             Endpoint eki_server_endpoint_;
             SocketPtr eki_server_socket_;
+
+            boost::mutex mutex_write_;
+            boost::unique_future<hardware_interface::return_type> future_write_;
+            boost::promise<hardware_interface::return_type> promise_write_;
+
+            hardware_interface::return_type write_throttle();
+
 
             // Setup
             void eki_check_read_state_deadline();

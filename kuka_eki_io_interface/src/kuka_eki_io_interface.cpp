@@ -15,6 +15,11 @@ namespace kuka_eki_io_interface
         auto logger = rclcpp::get_logger(LOGGER_NAME);
         RCLCPP_INFO(logger, "on_init() called.");
 
+        promise_write_ = boost::promise<hardware_interface::return_type>();
+        future_write_ = promise_write_.get_future();
+        promise_write_.set_value(hardware_interface::return_type::OK);
+
+
         if (hardware_interface::SystemInterface::on_init(info) != hardware_interface::CallbackReturn::SUCCESS)
             return hardware_interface::CallbackReturn::ERROR;
 
@@ -401,13 +406,29 @@ namespace kuka_eki_io_interface
         auto logger = rclcpp::get_logger(LOGGER_NAME);
         RCLCPP_DEBUG(logger, "write() called. Time=[%f , %li] Duration=[ %f , %li ]", time.seconds(), time.nanoseconds(), period.seconds(), period.nanoseconds());
 
-        if (isCommandUpdateRequired() && eki_write_command() == hardware_interface::return_type::ERROR) {
+        if (mutex_write_.try_lock()) {
+            if (future_write_.is_ready() && isCommandUpdateRequired()) {
+                future_write_ = boost::async([this]() { return write_throttle(); });
+            }
+
+            mutex_write_.unlock();
+        }
+       
+        return hardware_interface::return_type::OK;
+    }
+
+    hardware_interface::return_type KukaEkiIoInterface::write_throttle() {
+        auto logger = rclcpp::get_logger(LOGGER_NAME);
+
+        boost::this_thread::sleep_for(boost::chrono::milliseconds(10));
+
+        if (eki_write_command() == hardware_interface::return_type::ERROR) {
             std::string msg = "Failed to write to robot EKI server within alloted time of " + std::to_string(eki_read_state_timeout_) + " seconds. Make sure eki_io_interface is running on the robot controller and all configurations are correct.";
             RCLCPP_ERROR(logger, msg.c_str());
             return hardware_interface::return_type::ERROR;
         }
-       
-        return hardware_interface::return_type::OK;
+
+        return  hardware_interface::return_type::OK;
     }
 
     bool KukaEkiIoInterface::isCommandUpdateRequired() {
