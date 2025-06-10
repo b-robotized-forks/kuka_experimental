@@ -14,21 +14,22 @@
 //
 // Authors: Students of the Insitute for Robotics and Autonomous Systems (IRAS) 
 //          - (Supervisor: Prof. Dr.-Ing. Christian Wurll), 
-//          Moritz Weisenböhler
+//          Moritz Weisenböhler,
+//          Mathias Fuhrer
 
 #include <eki_communication/core/CommandSequence.h>
 #include <iostream>
 
 void rbt::CommandSequence::add(const rbt::Command &command)
 {
-    commands_.push_back(command.copy());
+    commands_.emplace_back(command);
 }
 
-void rbt::CommandSequence::add(const rbt::CommandSequence &sequence)
+void rbt::CommandSequence::add(rbt::CommandSequence &sequence)
 {
-    for (const Command &command : sequence.commands_)
+    for (Command &command : sequence.commands_)
     {
-        add(command);
+        commands_.emplace_back(command);
     }
 }
 
@@ -63,18 +64,8 @@ void rbt::CommandSequence::clear()
 
 void rbt::CommandSequence::to_xml(XmlWriter &writer)
 {
-    for (rbt::Command &command : remaining_commands())
+    for (auto cmd_it = commands_.begin() + position_; cmd_it != commands_.end(); ++cmd_it)
     {
-        command.to_xml(writer);
+        cmd_it->to_xml(writer);
     }
-}
-
-std::vector<rbt::Command> rbt::CommandSequence::all_commands()
-{
-    return commands_;
-}
-
-std::vector<rbt::Command> rbt::CommandSequence::remaining_commands()
-{
-    return std::vector<rbt::Command>(commands_.begin() + position_, commands_.end());
 }

@@ -14,7 +14,8 @@
 //
 // Authors: Students of the Insitute for Robotics and Autonomous Systems (IRAS) 
 //          - (Supervisor: Prof. Dr.-Ing. Christian Wurll), 
-//          Moritz Weisenböhler
+//          Moritz Weisenböhler,
+//          Mathias Fuhrer
 
 #pragma once
 
@@ -39,8 +40,6 @@ namespace rbt
         Command(const GripCommand &grip);
         Command(const MoveCommand &move, const GripCommand &grip);
         ~Command() {}
-
-        Command copy() const;
 
         int id() const { return id_; }
 

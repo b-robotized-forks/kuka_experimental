@@ -14,7 +14,8 @@
 //
 // Authors: Students of the Insitute for Robotics and Autonomous Systems (IRAS) 
 //          - (Supervisor: Prof. Dr.-Ing. Christian Wurll), 
-//          Moritz Weisenböhler
+//          Moritz Weisenböhler,
+//          Mathias Fuhrer
 
 #pragma once
 
@@ -37,7 +38,7 @@ namespace rbt
         ~CommandSequence() {}
 
         void add(const Command &command);
-        void add(const CommandSequence &sequence);
+        void add(CommandSequence &sequence);
 
         int position() { return position_; }
 
@@ -50,8 +51,5 @@ namespace rbt
 
         int size() { return commands_.size(); }
         bool is_finished() { return position_ == size(); }
-
-        std::vector<Command> all_commands();
-        std::vector<Command> remaining_commands();
     };
 } // namespace rbt

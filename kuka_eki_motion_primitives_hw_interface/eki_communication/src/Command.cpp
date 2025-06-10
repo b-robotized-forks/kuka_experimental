@@ -14,7 +14,8 @@
 //
 // Authors: Students of the Insitute for Robotics and Autonomous Systems (IRAS) 
 //          - (Supervisor: Prof. Dr.-Ing. Christian Wurll), 
-//          Moritz Weisenböhler
+//          Moritz Weisenböhler,
+//          Mathias Fuhrer
 
 #include <eki_communication/Command.h>
 
@@ -37,11 +38,6 @@ rbt::Command::Command(const MoveCommand &move, const GripCommand &grip) : Comman
     type_ = CommandType::COMBINED;
     move_ = move;
     grip_ = grip;
-}
-
-rbt::Command rbt::Command::copy() const
-{
-    return Command(move_, grip_);
 }
 
 void rbt::Command::to_xml(XmlWriter &writer) const

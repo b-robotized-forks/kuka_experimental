@@ -14,7 +14,8 @@
 //
 // Authors: Students of the Insitute for Robotics and Autonomous Systems (IRAS) 
 //          - (Supervisor: Prof. Dr.-Ing. Christian Wurll), 
-//          Moritz Weisenböhler
+//          Moritz Weisenböhler,
+//          Mathias Fuhrer
 
 #pragma once
 
@@ -47,7 +48,6 @@ public:
     bool suction = false;
     float cylinder = 0.f;
 
-    GripCommand copy() const;
     void from(const rbt::GripCommand &base);
 
     void to_xml(XmlWriter &writer) const;
