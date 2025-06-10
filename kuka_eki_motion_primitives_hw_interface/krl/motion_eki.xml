@@ -71,6 +71,7 @@
    <SEND>
       <XML>
          <ELEMENT Tag="RobotState/Command/@Id"/>
+         <ELEMENT Tag="RobotState/Command/@Finished_Id"/>
          <!-- Joint state positions -->
          <ELEMENT Tag="RobotState/Position/Joint/@A1"/>
          <ELEMENT Tag="RobotState/Position/Joint/@A2"/>

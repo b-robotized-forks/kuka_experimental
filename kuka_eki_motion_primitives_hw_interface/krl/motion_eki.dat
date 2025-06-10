@@ -15,8 +15,9 @@ defdat motion_eki
    decl real act_cart_vel
    decl real act_cart_acc    
    
-   ; added missing declerations?:
    decl int CURRENT_COMMAND_ID
+   decl int LAST_FINISHED_MOVE_ID
+   
    decl int ControlWord
    decl int DeviceMode
    decl int ActualPosition

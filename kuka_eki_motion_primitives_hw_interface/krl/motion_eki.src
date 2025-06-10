@@ -46,6 +46,7 @@ def motion_eki()
    init_interface()
    current_command = null_command()
    CURRENT_COMMAND_ID = 0
+   LAST_FINISHED_MOVE_ID = 0
    
    act_joint_vel = 1.0   ; 100%
    act_joint_acc = 1.0   ; 100%
@@ -77,12 +78,14 @@ def motion_eki()
          switch current_command.type
             case 1
                check_error(do_grip(current_command.grip_data))
-               check_error(do_move(current_command.step, current_command.move_data))
+               check_error(do_move(current_command.step, current_command.move_data, current_command.id))
             case 2
-               check_error(do_move(current_command.step, current_command.move_data))
+               check_error(do_move(current_command.step, current_command.move_data, current_command.id))
             case 3
                check_error(do_grip(current_command.grip_data))
          endswitch
+         msgnotify("Command with ID %1 done","Motion EKI",current_command.id) ; --> breaks the advance pointer, with out it finished_id is set to early
+         LAST_FINISHED_MOVE_ID = current_command.id
       else
          CURRENT_COMMAND_ID = 0
       endif
@@ -170,6 +173,7 @@ def send_status()
       ;msgnotify("Send status", "Motion EKI")
       ; Command id
       status = eki_setint("MOTION_EKI", "RobotState/Command/@Id", CURRENT_COMMAND_ID)
+      status = eki_setint("MOTION_EKI", "RobotState/Command/@Finished_Id", LAST_FINISHED_MOVE_ID)
       ; Joint position
       status = eki_setreal("MOTION_EKI", "RobotState/Position/Joint/@A1", $axis_act_meas.a1)
       status = eki_setreal("MOTION_EKI", "RobotState/Position/Joint/@A2", $axis_act_meas.a2)
@@ -192,12 +196,12 @@ def send_status()
       status = eki_setreal("MOTION_EKI", "RobotState/Velocity/@A5", $vel_axis_act[5] * $vel_axis_ma[5] / 100.0)
       status = eki_setreal("MOTION_EKI", "RobotState/Velocity/@A6", $vel_axis_act[6] * $vel_axis_ma[6] / 100.0)
       ; Torque
-      ;status = eki_setreal("MOTION_EKI", "RobotState/Torque/@A1", $torque_axis_act[1])
-      ;status = eki_setreal("MOTION_EKI", "RobotState/Torque/@A2", $torque_axis_act[2])
-      ;status = eki_setreal("MOTION_EKI", "RobotState/Torque/@A3", $torque_axis_act[3])
-      ;status = eki_setreal("MOTION_EKI", "RobotState/Torque/@A4", $torque_axis_act[4])
-      ;status = eki_setreal("MOTION_EKI", "RobotState/Torque/@A5", $torque_axis_act[5])
-      ;status = eki_setreal("MOTION_EKI", "RobotState/Torque/@A6", $torque_axis_act[6])
+      status = eki_setreal("MOTION_EKI", "RobotState/Torque/@A1", $torque_axis_act[1])
+      status = eki_setreal("MOTION_EKI", "RobotState/Torque/@A2", $torque_axis_act[2])
+      status = eki_setreal("MOTION_EKI", "RobotState/Torque/@A3", $torque_axis_act[3])
+      status = eki_setreal("MOTION_EKI", "RobotState/Torque/@A4", $torque_axis_act[4])
+      status = eki_setreal("MOTION_EKI", "RobotState/Torque/@A5", $torque_axis_act[5])
+      status = eki_setreal("MOTION_EKI", "RobotState/Torque/@A6", $torque_axis_act[6])
       ; Gripper
       ;status = eki_setint("MOTION_EKI", "RobotState/Gripper/Jaw/@Position", ActualPosition)
       ;status = eki_setint("MOTION_EKI", "RobotState/Gripper/Jaw/@Status", StatusWord)
@@ -339,9 +343,10 @@ deffct bool get_command(command :out)
 endfct
 
 
-deffct int do_move(step :in, move_data :in)
+deffct int do_move(step :in, move_data :in, cmd_id :in)
    decl int step
    decl move_type move_data
+   decl int cmd_id
    decl int error_code
    error_code = 0
    
@@ -365,6 +370,7 @@ deffct int do_move(step :in, move_data :in)
          INTERRUPT ON 19   ; enable interrupt to stop movement
          ptp move_data.joint c_ptp C_DIS
          INTERRUPT OFF 19
+         ;LAST_FINISHED_MOVE_ID = cmd_id  ; save id of last finished motion primitive
       case 2
          set_joint_vel(move_data.velocity)
          set_joint_acc(move_data.acceleration)
@@ -372,6 +378,7 @@ deffct int do_move(step :in, move_data :in)
          INTERRUPT ON 19
          ptp move_data.cartesian c_ptp C_DIS
          INTERRUPT OFF 19
+         ;LAST_FINISHED_MOVE_ID = cmd_id
       case 3
          set_cart_vel(move_data.velocity)
          set_cart_acc(move_data.acceleration)
@@ -379,6 +386,7 @@ deffct int do_move(step :in, move_data :in)
          INTERRUPT ON 19
          lin move_data.cartesian C_DIS
          INTERRUPT OFF 19
+         ;LAST_FINISHED_MOVE_ID = cmd_id
       ;case 4
       ;   INTERRUPT ON 19
       ;   ptp teached_points[move_data.teached] c_ptp C_DIS
@@ -392,11 +400,11 @@ deffct int do_move(step :in, move_data :in)
          INTERRUPT ON 19
          circ move_data.cartesian_aux, move_data.cartesian C_DIS
          INTERRUPT OFF 19
+         ;LAST_FINISHED_MOVE_ID = cmd_id
    endswitch
    
    return error_code
 endfct
-
 
 deffct int do_grip(grip_data :in)
    decl grip_type grip_data
