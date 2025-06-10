@@ -202,6 +202,7 @@ def update_meta(meta :in)
       msgnotify("Set abort_commands flag to TRUE", "Meta EKI")
    else
       $FLAG[3] = FALSE
+      ROBOT_STOPPED = FALSE
       msgnotify("Set abort_commands flag to FALSE", "Meta EKI")
    endif   
 end

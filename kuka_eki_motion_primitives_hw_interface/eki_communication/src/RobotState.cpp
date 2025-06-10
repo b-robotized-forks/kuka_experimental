@@ -26,6 +26,7 @@ void rbt::RobotState::from_xml(XmlReader &reader)
     auto element = reader.get_element("Command");
     command_id = element->IntAttribute("Id");
     last_finished_command_id = element->IntAttribute("Finished_Id");
+    robot_stopped = element->IntAttribute("Stopped");
 
     element = reader.get_element("Position/Joint");
     position_joints = PoseJoints{element->FloatAttribute("A1"),

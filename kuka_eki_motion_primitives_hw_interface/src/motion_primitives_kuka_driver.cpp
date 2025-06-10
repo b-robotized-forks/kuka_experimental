@@ -32,6 +32,11 @@ MotionPrimitivesKukaDriver::~MotionPrimitivesKukaDriver()
     async_execute_motion_thread_->join();
     async_execute_motion_thread_.reset();
   }
+  if (async_execute_motion_thread_ && async_stop_motion_thread_->joinable()) 
+  {
+    async_stop_motion_thread_->join();
+    async_stop_motion_thread_.reset();
+  }
 }
 hardware_interface::CallbackReturn MotionPrimitivesKukaDriver::on_init(
   const hardware_interface::HardwareInfo & info)
@@ -63,6 +68,7 @@ hardware_interface::CallbackReturn MotionPrimitivesKukaDriver::on_configure(
 {
   RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Configuring Hardware Interface ...");
   async_execute_motion_thread_ = std::make_unique<std::thread>(&MotionPrimitivesKukaDriver::asyncExecuteMotionThread, this);
+  async_stop_motion_thread_ = std::make_unique<std::thread>(&MotionPrimitivesKukaDriver::asyncStopMotionThread, this);
   return CallbackReturn::SUCCESS;
 }
 
@@ -79,6 +85,9 @@ std::vector<hardware_interface::StateInterface> MotionPrimitivesKukaDriver::expo
 
     state_interfaces.emplace_back(hardware_interface::StateInterface(
       info_.joints[i].name, hardware_interface::HW_IF_VELOCITY, &hw_joint_vel_states_[i]));
+
+      state_interfaces.emplace_back(hardware_interface::StateInterface(
+      info_.joints[i].name, hardware_interface::HW_IF_EFFORT, &hw_joint_eff_states_[i]));
   }
 
   // State interfaces for the motion_primitive_forward_controller
@@ -225,17 +234,20 @@ hardware_interface::return_type MotionPrimitivesKukaDriver::write(
     {
       case MotionType::STOP_MOTION: {
         RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "STOP_MOTION command received");
-        robot_.abort_commands();
-        reset_command_interfaces();
-        robot_stopped_ = true;
+        std::lock_guard<std::mutex> guard(stop_mutex_);
+        if (!new_stop_available_) {
+          new_stop_available_ = true;
+          reset_command_interfaces();
+        }
         break;
       }
       case MotionType::RESET_STOP: {
         RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "RESET_STOP command received");
-        reset_command_interfaces();
-        robot_.reset_abort_commands();
-        robot_stopped_ = false;
-        ready_for_new_primitive_ = true;
+        std::lock_guard<std::mutex> guard(stop_mutex_);
+        if (!new_reset_available_) {
+          new_reset_available_ = true;
+          reset_command_interfaces();
+        }
         break;
       }
       case MotionType::MOTION_SEQUENCE_START: {
@@ -459,6 +471,38 @@ void MotionPrimitivesKukaDriver::reset_command_interfaces()
 {
   std::fill(hw_mo_prim_commands_.begin(), hw_mo_prim_commands_.end(), std::numeric_limits<double>::quiet_NaN());
 }
+
+void MotionPrimitivesKukaDriver::asyncStopMotionThread()
+{
+   while (!async_thread_shutdown_) {
+    if (new_stop_available_) {
+      std::lock_guard<std::mutex> guard(stop_mutex_);
+      new_stop_available_ = false;
+      robot_.abort_commands();
+      RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Waiting for Robot to stop ...");
+      while(!robot_.robot_stopped()) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(100)); // wait until robot is stopped
+      }
+      RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Robot stopped");
+      robot_stopped_ = true;
+    } else if (new_reset_available_) {
+      std::lock_guard<std::mutex> guard(stop_mutex_);
+      new_reset_available_ = false;
+      robot_.reset_abort_commands();
+      RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Waiting for Robot to reset stop ...");
+      while(robot_.robot_stopped()) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+      }
+      RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Robot reset stop done");
+      robot_stopped_ = false;
+      ready_for_new_primitive_ = true;
+    }
+    // Small sleep to prevent busy waiting
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
+  RCLCPP_INFO(rclcpp::get_logger("URPositionHardwareInterface"), "[asyncMoprimStopThread] Exiting");
+}
+
 
 void MotionPrimitivesKukaDriver::asyncExecuteMotionThread()
 {

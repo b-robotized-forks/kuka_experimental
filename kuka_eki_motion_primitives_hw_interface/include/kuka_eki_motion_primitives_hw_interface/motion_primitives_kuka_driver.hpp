@@ -82,10 +82,16 @@ private:
 
   // Async thread handling
   std::unique_ptr<std::thread> async_execute_motion_thread_;
+  std::shared_ptr<std::thread> async_stop_motion_thread_;
   std::atomic_bool async_thread_shutdown_{ false };
   std::mutex execution_mutex_;
+  std::mutex stop_mutex_;
+
   std::atomic_bool new_execution_available_{ false };
+  std::atomic_bool new_stop_available_{ false };
+  std::atomic_bool new_reset_available_{ false };
   void asyncExecuteMotionThread();
+  void asyncStopMotionThread();
 
   std::atomic_bool build_motion_sequence_{false};   // flag to put all following primitives into a motion sequence instead of sending single primitives
   bool add_linear_joint_cmd();

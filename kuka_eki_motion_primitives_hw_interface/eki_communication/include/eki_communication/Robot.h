@@ -93,6 +93,7 @@ namespace rbt
 
         int last_command_id_of_sequence() const { return waiting_sequence_.last_command_id(); };
         int last_finished_command_id() const { return state_.last_finished_command_id; }
+        int robot_stopped() const { return state_.robot_stopped; }
 
         std::function<void(RobotEvent event, Robot *robot)> listener = nullptr;
         // CommandSequence get_active_sequence() { return active_sequence_; }

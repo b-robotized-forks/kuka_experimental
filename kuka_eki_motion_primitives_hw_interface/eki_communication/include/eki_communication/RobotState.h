@@ -38,6 +38,7 @@ namespace rbt
 
         int command_id = 0;
         int last_finished_command_id = 0;
+        bool robot_stopped = false;
         int command_step = 0;
         int command_max_step = 0;
 

@@ -1,0 +1,5 @@
+&ACCESS RVP
+&REL 48
+defdat global_eki public
+   global bool ROBOT_STOPPED
+enddat
