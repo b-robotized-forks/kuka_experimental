@@ -9,9 +9,9 @@ Hardware interface for executing motion primitives on a KUKA robot using the ROS
 [![Play Video](doc/kuka_demo_video_preview.png)](https://www.youtube.com/watch?v=LFxwfy6cmH4)
 
 # Related packages/ repos
-- [industrial_robot_motion_interfaces (with additional helper types for stop and motion sequence)](https://github.com/StoglRobotics-forks/industrial_robot_motion_interfaces/tree/helper-types)
-- [ros2_controllers with motion_primitives_forward_controller](https://github.com/StoglRobotics-forks/ros2_controllers/tree/motion_primitive_forward_controller/motion_primitives_forward_controller)
-- [kuka_experimental with motion_primitive_kuka_driver](https://github.com/StoglRobotics-forks/kuka_experimental/tree/hka_motion_primitive_kuka_driver)
+- [industrial_robot_motion_interfaces](https://github.com/b-robotized-forks/industrial_robot_motion_interfaces/tree/helper-types)
+- [ros2_controllers with motion_primitives_forward_controller](https://github.com/b-robotized-forks/ros2_controllers/tree/motion_primitive_forward_controller/motion_primitives_forward_controller)
+- [kuka_experimental with motion_primitive_kuka_driver](https://github.com/b-robotized-forks/kuka_experimental/tree/motion_primitive_kuka_driver)
 
 
 # Architecture
@@ -35,7 +35,7 @@ These interfaces are used to send motion primitive data to the hardware interfac
 - `velocity`: Desired motion velocity. For joint-based motions (PTP), it is a scaling factor (0 to 1) of the maximum joint velocity, and for cartesian motions (LIN, CIRC), it specifies the end-effector velocity in m/s.
 - `acceleration`: Desired motion acceleration. For joint-based motions (PTP), it is a scaling factor (0 to 1) of the maximum joint acceleration, and for cartesian motions (LIN, CIRC), it specifies the end-effector acceleration in m/s².
 - `blend_radius`: Blending radius for smooth transitions between two primitives.
-- `move_time`: Optional duration for time-based execution (currently not used by the **motion_primitive_kuka_driver**, but [**motion_primitive_kuka_driver**](https://github.com/StoglRobotics-forks/Universal_Robots_ROS2_Driver_MotionPrimitive/blob/main/ur_robot_driver/src/motion_primitives_ur_driver.cpp) uses it)
+- `move_time`: Optional duration for time-based execution (currently not used by the **motion_primitive_kuka_driver**, but [**UR driver**](https://github.com/b-robotized-forks/Universal_Robots_ROS2_Driver_MotionPrimitive) uses it)
 
 ## State Interfaces
 
@@ -47,6 +47,7 @@ These interfaces are used to communicate the internal status of the hardware int
   - `EXECUTING`: Currently executing a primitive
   - `ERROR`: An error occurred during execution
   - `STOPPED`: The robot was stopped using the `STOP_MOTION` command and must be reset with the `RESET_STOP` command before executing new commands.
+  - `SUCCESS`: Execution was successfull
 - `ready_for_new_primitive`: Boolean flag indicating whether the interface is ready to receive a new motion primitive
 
 # Supported Motion Primitives
@@ -101,7 +102,7 @@ The `write()` method checks whether a new motion primitive command has been rece
 
 The `read()` method:
 - Retrieves the joint positions and velocities of the robot and publishes them via the corresponding state interfaces. These can then be read by the joint_state_broadcaster, allowing tools like RViz to visualize the current robot state.
-- Publishes the `execution_status` over a state interface with possible values: `IDLE`, `EXECUTING`, `ERROR`, `STOPPED`.
+- Publishes the `execution_status` over a state interface with possible values: `IDLE`, `EXECUTING`, `ERROR`, `STOPPED`, `SUCCESS`.
 - Publishes `ready_for_new_primitive` over a state interface to signal whether the interface is ready to receive a new primitive.
 
 ## KUKA KRL implementation
@@ -141,16 +142,8 @@ ros2 launch kuka_ros2_control_support motion_primitives_bringup.launch.py descri
 ```
 ros2 run kuka_eki_motion_primitives_hw_interface send_dummy_motion_primitives.py
 ```
-**`STOP_MOVEMENT` command in terminal**
-```
-ros2 topic pub /motion_primitive_controller/reference industrial_robot_motion_interfaces/msg/MotionPrimitive "{type: 66, blend_radius: 0.0, additional_arguments: [], poses: [], joint_positions: []}" --once
-```
-**`RESET_STOP` command in terminal**
-```
-ros2 topic pub /motion_primitive_controller/reference industrial_robot_motion_interfaces/msg/MotionPrimitive "{type: 67, blend_radius: 0.0, additional_arguments: [], poses: [], joint_positions: []}" --once
-```
+During the execution of the motion primitives, the movement can be stopped by pressing the Enter key in the terminal.
 
 
-# TODOs
-- Check if motion execution ends with success
+# TODOs/ Improvements
 - Execute eki_close() when programm is stopped/ deselected to properly close the connection --> without eki_close() its not possible to init a new server when restarting the program. 

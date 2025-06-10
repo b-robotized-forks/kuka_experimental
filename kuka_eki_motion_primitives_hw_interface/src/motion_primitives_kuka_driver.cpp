@@ -195,6 +195,11 @@ hardware_interface::return_type MotionPrimitivesKukaDriver::read(
   } else if(robot_stopped_) 
   {
     current_execution_status_ = ExecutionState::STOPPED;
+  } else if(!checkCommandIdDoneQueue.empty() && checkCommandIdDoneQueue.front() == robot_.last_finished_command_id()) // Motion Primitive or Sequence done
+  {
+    RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Robot finished command with ID: %d", robot_.last_finished_command_id());
+    checkCommandIdDoneQueue.pop();
+    current_execution_status_ = ExecutionState::SUCCESS;
   } else if (robot_.robot_in_movement()) 
   {
     current_execution_status_ = ExecutionState::EXECUTING;
@@ -220,16 +225,16 @@ hardware_interface::return_type MotionPrimitivesKukaDriver::write(
     {
       case MotionType::STOP_MOTION: {
         RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "STOP_MOTION command received");
-        robot_stopped_ = true;
         robot_.abort_commands();
         reset_command_interfaces();
+        robot_stopped_ = true;
         break;
       }
       case MotionType::RESET_STOP: {
         RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "RESET_STOP command received");
-        robot_stopped_ = false;
         reset_command_interfaces();
         robot_.reset_abort_commands();
+        robot_stopped_ = false;
         ready_for_new_primitive_ = true;
         break;
       }
@@ -466,6 +471,9 @@ void MotionPrimitivesKukaDriver::asyncExecuteMotionThread()
       new_execution_available_ = false;
       RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Sending command to robot ...");
       auto start_time = std::chrono::steady_clock::now();
+      // Store last command ID to check if it was executed
+      RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Last command ID: %d", robot_.last_command_id_of_sequence());
+      checkCommandIdDoneQueue.push(robot_.last_command_id_of_sequence());
       while (!robot_.run()) 
       {
         // Check if the timeout has been reached

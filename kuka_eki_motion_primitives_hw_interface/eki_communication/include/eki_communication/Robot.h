@@ -91,6 +91,9 @@ namespace rbt
         float get_velocity_override() { return velocity_override_; }
         bool commands_paused() { return commands_paused_; }
 
+        int last_command_id_of_sequence() const { return waiting_sequence_.last_command_id(); };
+        int last_finished_command_id() const { return state_.last_finished_command_id; }
+
         std::function<void(RobotEvent event, Robot *robot)> listener = nullptr;
         // CommandSequence get_active_sequence() { return active_sequence_; }
         // CommandSequence get_waiting_sequence() { return waiting_sequence_; }

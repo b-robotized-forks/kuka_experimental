@@ -51,5 +51,14 @@ namespace rbt
 
         int size() { return commands_.size(); }
         bool is_finished() { return position_ == size(); }
+
+        int last_command_id() const
+        {
+            if (commands_.empty())
+            {
+                return -1;
+            }
+            return commands_.back().id();
+        }
     };
 } // namespace rbt

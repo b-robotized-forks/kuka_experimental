@@ -19,6 +19,7 @@
 
 #include <string>
 #include <vector>
+#include <queue>
 
 #include "hardware_interface/system_interface.hpp"
 #include "hardware_interface/handle.hpp"
@@ -68,6 +69,8 @@ private:
 
   std::atomic<int8_t> current_execution_status_{ExecutionState::IDLE};
   std::atomic_bool ready_for_new_primitive_{false}; // Flag to indicate if the hw-interface is ready for a new motion primitive
+
+  std::queue<int> checkCommandIdDoneQueue;  // Queue to check if a command with a specific ID is done to return SUCCESS
   
   std::string robot_ip_;
   int eki_robot_port_;
