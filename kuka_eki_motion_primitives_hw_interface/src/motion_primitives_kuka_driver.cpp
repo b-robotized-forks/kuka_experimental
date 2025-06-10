@@ -55,6 +55,7 @@ hardware_interface::CallbackReturn MotionPrimitivesKukaDriver::on_init(
   // Joint states for RViz, ...
   hw_joint_pos_states_.resize(info_.joints.size(), std::numeric_limits<double>::quiet_NaN());
   hw_joint_vel_states_.resize(info_.joints.size(), std::numeric_limits<double>::quiet_NaN());
+  hw_joint_eff_states_.resize(info_.joints.size(), std::numeric_limits<double>::quiet_NaN());
 
   // State interfaces for the motion_primitive_forward_controller
   hw_mo_prim_states_.resize(2, std::numeric_limits<double>::quiet_NaN());     // execution_status, ready_for_new_primitive
@@ -196,8 +197,15 @@ hardware_interface::return_type MotionPrimitivesKukaDriver::read(
   hw_joint_vel_states_[4] = velocity.a5;
   hw_joint_vel_states_[5] = velocity.a6;
 
-  // Handle robot status
-  // TODO: How to check if movement was SUCCESS?
+  // TODO(mathias31415) check if calculculation for effort from torque is needed
+  const rbt::PoseJoints& torque = robot_state.torque;
+  hw_joint_eff_states_[0] = torque.a1;
+  hw_joint_eff_states_[1] = torque.a2;
+  hw_joint_eff_states_[2] = torque.a3;
+  hw_joint_eff_states_[3] = torque.a4;
+  hw_joint_eff_states_[4] = torque.a5;
+  hw_joint_eff_states_[5] = torque.a6;
+
   if (robot_error_) 
   {
     current_execution_status_ = ExecutionState::ERROR;
