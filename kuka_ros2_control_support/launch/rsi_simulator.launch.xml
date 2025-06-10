@@ -1,0 +1,12 @@
+<launch>
+  <arg name="simulator_ip"
+       default="127.0.0.1"
+       description="IP on which simulator should run."/>
+  <arg name="simulator_port"
+       default="49152"
+       description="Port on wich simulator should run."/>
+
+  <!-- Load RSI simulation node -->
+  <node name='kuka_rsi_simulator' pkg='kuka_rsi_simulator' exec="kuka_rsi_simulator" args="--rsi_hw_iface_ip $(var simulator_ip) --rsi_hw_iface_port $(var simulator_port)" />
+
+</launch>

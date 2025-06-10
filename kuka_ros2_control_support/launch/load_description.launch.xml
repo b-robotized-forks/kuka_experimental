@@ -1,0 +1,69 @@
+<?xml version="1.0"?>
+<launch>
+
+  <!-- Declare launch arguments -->
+  <arg name="robot_name" default="kuka" description="Name of the robot or application for unique identification."/>
+  <arg name="prefix" default="" description="Prefix for the robot. If you have multiple robots in the same namespace, you can use this to distinguish them."/>
+  <arg name="hardware_is_async" default="false" description="If true, the hardware interface will be asynchronous. If false, it will be synchronous."/>
+
+  <arg name="configuration_package"
+       default="kuka_resources"
+       description="Package with configuration files, e.g., controllers, initial positions." />
+
+  <arg name="initial_positions_file" default="initial_positions.yaml" description="YAML file with the initial positions when using mock hardware from ros2_control. Robots using '_all_zeros' file are - kr210l150 -">
+    <choice value="initial_positions.yaml"/>
+    <choice value="initial_positions_all_zeros.yaml"/>
+  </arg>
+
+  <arg name="description_package" description="Description package with robot URDF/xacro files.">
+    <choice value="kuka_kr3_support"/>
+    <choice value="kuka_kr5_support"/>
+    <choice value="kuka_kr6_support"/>
+    <choice value="kuka_kr10_support"/>
+    <choice value="kuka_kr16_support"/>
+    <choice value="kuka_kr120_support"/>
+    <choice value="kuka_kr150_support"/>
+    <choice value="kuka_kr210_support"/>
+    <choice value="kuka_lbr_iiwa_support"/>
+  </arg>
+
+  <arg name="description_macro_file" description="URDF/XACRO description file with of the robot or application. The expected location of the file is description_package/urdf/.">
+    <choice value="kr3r540_macro.xacro"/>
+    <choice value="kr5_arc_macro.xacro"/>
+    <choice value="kr6r700sixx_macro.xacro"/>
+    <choice value="kr6r900_2_macro.xacro"/>
+    <choice value="kr6r900sixx_macro.xacro"/>
+    <choice value="kr10r900_2_macro.xacro"/>
+    <choice value="kr10r1100sixx_macro.xacro"/>
+    <choice value="kr10r1420_macro.xacro"/>
+    <choice value="kr16_2_macro.xacro"/>
+    <choice value="kr120r2500pro_macro.xacro"/>
+    <choice value="kr150_2_macro.xacro"/>
+    <choice value="kr150r3100_2_macro.xacro"/>
+    <choice value="kr210l150_macro.xacro"/>
+    <choice value="lbr_iiwa_14_r820_macro.xacro"/>
+  </arg>
+
+  <arg name="use_eki_communication" default="false" description="Use EKI communication to the KUKA Robot Controller (KR-C). If the flag is set to true 'eki_robot_ip' and 'eki_robot_port' arguments define the endpoint of robot controller to connect."/>
+
+  <arg name="eki_robot_ip" default="127.0.0.1" description="IP address for the robot controller for communication using EKI protocol."/>
+
+  <arg name="eki_robot_port" default="54600" description="Port by which the robot can be reached for communication using EKI protocol."/>
+
+  <arg name="use_rsi_communication" default="false" description="Use RSI communication to the KUKA Robot Controller (KR-C). If the flag is set to true 'rsi_listen_ip' and 'rsi_robot_port' arguments define the endpoint where robot controller should connect to. (Keep in mind that you have to define this endpoint also in the RSI configuration of the program.)"/>
+
+  <arg name="rsi_listen_ip" default="127.0.0.1" description="IP address of a computer where robot controller should connect for communication using RSI protocol."/>
+
+  <arg name="rsi_listen_port" default="49152" description="Port on a computer where robot controller should connect for communication using RSI protocol."/>
+
+  <arg name="use_mock_hardware" default="true" description="Start robot with robot with fake hardware mirroring command to its states."/>
+
+
+  <!-- Nodes and actions -->
+  <let name="robot_description_content" value="$(command '$(find-exec xacro) $(find-pkg-share kuka_ros2_control_support)/urdf/common_kuka.xacro robot_name:=$(var robot_name) prefix:=$(var prefix) is_async:=$(var hardware_is_async) description_package:=$(var description_package) description_macro_file:=$(var description_macro_file) use_eki_communication:=$(var use_eki_communication) eki_robot_ip:=$(var eki_robot_ip) eki_robot_port:=$(var eki_robot_port) use_rsi_communication:=$(var use_rsi_communication) rsi_listen_ip:=$(var rsi_listen_ip) rsi_listen_port:=$(var rsi_listen_port) use_mock_hardware:=$(var use_mock_hardware) initial_positions_file:=$(find-pkg-share $(var configuration_package))/config/$(var initial_positions_file)')" />
+
+  <node pkg="robot_state_publisher" exec="robot_state_publisher" output="both">
+    <param name="robot_description" value="$(var robot_description_content)" />
+  </node>
+
+</launch>
