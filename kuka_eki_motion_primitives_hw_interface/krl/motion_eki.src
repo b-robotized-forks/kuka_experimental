@@ -85,8 +85,6 @@ def motion_eki()
             case 3
                check_error(do_grip(current_command.grip_data))
          endswitch
-         ;msgnotify("Command with ID %1 done","Motion EKI",current_command.id) ; --> breaks the advance pointer, with out it finished_id is set to early
-         ;LAST_FINISHED_MOVE_ID = current_command.id
       else
          CURRENT_COMMAND_ID = 0
       endif
@@ -352,6 +350,8 @@ deffct int do_move(step :in, move_data :in, cmd_id :in)
    decl int error_code
    error_code = 0
    
+   temp_cmd_id = cmd_id
+   
    if move_data.base_index > 0 then
       $base = base_data[move_data.base_index]
    else 
@@ -369,26 +369,26 @@ deffct int do_move(step :in, move_data :in, cmd_id :in)
          set_joint_vel(move_data.velocity)
          set_joint_acc(move_data.acceleration)
          set_blending(move_data.blending)
+         TRIGGER WHEN DISTANCE=1 DELAY=0 DO set_cmd_id_done(temp_cmd_id) PRIO=-1 ; save id of last finished motion primitive
          INTERRUPT ON 19   ; enable interrupt to stop movement
          ptp move_data.joint c_ptp C_DIS
          INTERRUPT OFF 19
-         LAST_FINISHED_MOVE_ID = cmd_id  ; save id of last finished motion primitive
       case 2
          set_joint_vel(move_data.velocity)
          set_joint_acc(move_data.acceleration)
          set_blending(move_data.blending)
+         TRIGGER WHEN DISTANCE=1 DELAY=0 DO set_cmd_id_done(temp_cmd_id) PRIO=-1
          INTERRUPT ON 19
          ptp move_data.cartesian c_ptp C_DIS
          INTERRUPT OFF 19
-         LAST_FINISHED_MOVE_ID = cmd_id
       case 3
          set_cart_vel(move_data.velocity)
          set_cart_acc(move_data.acceleration)
          set_blending(move_data.blending)
+         TRIGGER WHEN DISTANCE=1 DELAY=0 DO set_cmd_id_done(temp_cmd_id) PRIO=-1
          INTERRUPT ON 19
          lin move_data.cartesian C_DIS
          INTERRUPT OFF 19
-         LAST_FINISHED_MOVE_ID = cmd_id
       ;case 4
       ;   INTERRUPT ON 19
       ;   ptp teached_points[move_data.teached] c_ptp C_DIS
@@ -399,10 +399,10 @@ deffct int do_move(step :in, move_data :in, cmd_id :in)
          set_cart_vel(move_data.velocity)
          set_cart_acc(move_data.acceleration)
          set_blending(move_data.blending)
+         TRIGGER WHEN DISTANCE=1 DELAY=0 DO set_cmd_id_done(temp_cmd_id) PRIO=-1
          INTERRUPT ON 19
          circ move_data.cartesian_aux, move_data.cartesian C_DIS
          INTERRUPT OFF 19
-         LAST_FINISHED_MOVE_ID = cmd_id
    endswitch
    
    return error_code
@@ -476,6 +476,13 @@ deffct int do_grip(grip_data :in)
    
    return error_code
 endfct
+
+
+def set_cmd_id_done(cmd_id :in)
+   decl int cmd_id
+   msgnotify("Command with ID %1 done","Motion EKI",cmd_id)
+   LAST_FINISHED_MOVE_ID = cmd_id
+end
 
 def stop_movement()
    decl eki_status status

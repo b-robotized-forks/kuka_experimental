@@ -18,6 +18,8 @@ defdat motion_eki
    decl int CURRENT_COMMAND_ID
    decl int LAST_FINISHED_MOVE_ID
    
+   decl int temp_cmd_id
+   
    decl int ControlWord
    decl int DeviceMode
    decl int ActualPosition

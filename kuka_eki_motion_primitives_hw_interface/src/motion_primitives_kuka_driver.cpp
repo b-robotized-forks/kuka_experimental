@@ -205,22 +205,26 @@ hardware_interface::return_type MotionPrimitivesKukaDriver::read(
   hw_joint_eff_states_[3] = torque.a4;
   hw_joint_eff_states_[4] = torque.a5;
   hw_joint_eff_states_[5] = torque.a6;
-
-  if (robot_error_) 
-  {
-    current_execution_status_ = ExecutionState::ERROR;
-  } else if(robot_stopped_) 
-  {
-    current_execution_status_ = ExecutionState::STOPPED;
-  } else if(!checkCommandIdDoneQueue.empty() && checkCommandIdDoneQueue.front() == robot_.last_finished_command_id()) // Motion Primitive or Sequence done
+  
+  if(!checkCommandIdDoneQueue.empty() && checkCommandIdDoneQueue.front() == robot_.last_finished_command_id()) // Motion Primitive or Sequence done
   {
     RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Robot finished command with ID: %d", robot_.last_finished_command_id());
     checkCommandIdDoneQueue.pop();
     current_execution_status_ = ExecutionState::SUCCESS;
-  } else if (robot_.robot_in_movement()) 
+  } 
+  else if (robot_error_) 
+  {
+    current_execution_status_ = ExecutionState::ERROR;
+  } 
+  else if(robot_stopped_) 
+  {
+    current_execution_status_ = ExecutionState::STOPPED;
+  } 
+  else if (robot_.robot_in_movement()) 
   {
     current_execution_status_ = ExecutionState::EXECUTING;
-  } else 
+  } 
+  else 
   {
     current_execution_status_ = ExecutionState::IDLE;
   }
@@ -490,6 +494,10 @@ void MotionPrimitivesKukaDriver::asyncStopMotionThread()
       RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Waiting for Robot to stop ...");
       while(!robot_.robot_stopped()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(100)); // wait until robot is stopped
+      }
+      while(!checkCommandIdDoneQueue.empty()){
+        // Remove all command IDs from the queue --> dont wait for them to get finished since they are discarded
+        checkCommandIdDoneQueue.pop();    
       }
       RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Robot stopped");
       robot_stopped_ = true;
