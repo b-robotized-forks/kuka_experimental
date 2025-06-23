@@ -16,6 +16,8 @@
 
 #include <limits>
 #include <vector>
+#include <tf2/LinearMath/Quaternion.h>
+#include <tf2/LinearMath/Matrix3x3.h>
 
 #include "kuka_eki_motion_primitives_hw_interface/motion_primitives_kuka_driver.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
@@ -382,17 +384,17 @@ bool MotionPrimitivesKukaDriver::add_linear_cartesian_cmd()
         return false;
     }
   }
-  double rx, ry, rz;
-  quaternionToEuler(hw_mo_prim_commands_[10], hw_mo_prim_commands_[11], hw_mo_prim_commands_[12], hw_mo_prim_commands_[13], rx, ry, rz);
+  double roll, pitch, yaw;
+  quaternionToEuler(hw_mo_prim_commands_[10], hw_mo_prim_commands_[11], hw_mo_prim_commands_[12], hw_mo_prim_commands_[13], roll, pitch, yaw);
 
   constexpr double rad_to_deg = 180.0 / M_PI;
   std::vector<double> pose = {
     hw_mo_prim_commands_[7] * 1000.0, // from m to mm
     hw_mo_prim_commands_[8] * 1000.0,
     hw_mo_prim_commands_[9] * 1000.0,
-    rx * rad_to_deg,  // from rad to deg
-    ry * rad_to_deg,
-    rz * rad_to_deg};
+    roll * rad_to_deg,  // from rad to deg
+    pitch * rad_to_deg,
+    yaw * rad_to_deg};
 
   rbt::MoveCommand command;
   command = rbt::MoveCommand(rbt::PoseCartesian(pose[0], pose[1], pose[2], pose[3], pose[4], pose[5]), true);
@@ -416,27 +418,27 @@ bool MotionPrimitivesKukaDriver::add_circular_cartesian_cmd()
         return false;
     }
   }
-  double goal_rx, goal_ry, goal_rz;
-  quaternionToEuler(hw_mo_prim_commands_[10], hw_mo_prim_commands_[11], hw_mo_prim_commands_[12], hw_mo_prim_commands_[13], goal_rx, goal_ry, goal_rz);
+  double goal_roll, goal_pitch, goal_yaw;
+  quaternionToEuler(hw_mo_prim_commands_[10], hw_mo_prim_commands_[11], hw_mo_prim_commands_[12], hw_mo_prim_commands_[13], goal_roll, goal_pitch, goal_yaw);
 
-  double via_rx, via_ry, via_rz;
-  quaternionToEuler(hw_mo_prim_commands_[17], hw_mo_prim_commands_[18], hw_mo_prim_commands_[19], hw_mo_prim_commands_[20], via_rx, via_ry, via_rz);
+  double via_roll, via_pitch, via_yaw;
+  quaternionToEuler(hw_mo_prim_commands_[17], hw_mo_prim_commands_[18], hw_mo_prim_commands_[19], hw_mo_prim_commands_[20], via_roll, via_pitch, via_yaw);
 
   constexpr double rad_to_deg = 180.0 / M_PI;
   std::vector<double> goal_pose = {
     hw_mo_prim_commands_[7] * 1000.0, // from m to mm
     hw_mo_prim_commands_[8] * 1000.0,
     hw_mo_prim_commands_[9] * 1000.0,
-    goal_rx * rad_to_deg,  // from rad to deg
-    goal_ry * rad_to_deg,
-    goal_rz * rad_to_deg};
+    goal_roll * rad_to_deg,  // from rad to deg
+    goal_pitch * rad_to_deg,
+    goal_yaw * rad_to_deg};
   std::vector<double> via_pose = {
     hw_mo_prim_commands_[14] * 1000.0, // from m to mm
     hw_mo_prim_commands_[15] * 1000.0,
     hw_mo_prim_commands_[16] * 1000.0,
-    via_rx * rad_to_deg,  // from rad to deg
-    via_ry * rad_to_deg,
-    via_rz * rad_to_deg};
+    via_roll * rad_to_deg,  // from rad to deg
+    via_pitch * rad_to_deg,
+    via_yaw * rad_to_deg};
 
   rbt::MoveCommand command;
   command = rbt::MoveCommand(rbt::PoseCartesian(via_pose[0], via_pose[1], via_pose[2], via_pose[3], via_pose[4], via_pose[5]),
@@ -556,26 +558,12 @@ void MotionPrimitivesKukaDriver::asyncExecuteMotionThread()
   RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "[asyncExecuteMotionThread] Exiting");
 }
 
-
-// Convert quaternion to Euler angles (roll, pitch, yaw) 
-// https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles
-void MotionPrimitivesKukaDriver::quaternionToEuler(double qx, double qy, double qz, double qw, double& rx, double& ry, double& rz) {
-  // roll (x-axis rotation)
-  double sinr_cosp = 2 * (qw * qx + qy * qz);
-  double cosr_cosp = 1 - 2 * (qx * qx + qy * qy);
-  rx = std::atan2(sinr_cosp, cosr_cosp);
-
-  // pitch (y-axis rotation)
-  double sinp = std::sqrt(1 + 2 * (qw * qy - qx * qz));
-  double cosp = std::sqrt(1 - 2 * (qw * qy - qx * qz));
-  ry = 2 * std::atan2(sinp, cosp) - M_PI / 2;
-
-  // yaw (z-axis rotation)
-  double siny_cosp = 2 * (qw * qz + qx * qy);
-  double cosy_cosp = 1 - 2 * (qy * qy + qz * qz);
-  rz = std::atan2(siny_cosp, cosy_cosp);
-
-  // RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Converted quaternion [%f, %f, %f, %f] to Euler angles: [%f, %f, %f]",qx, qy, qz, qw, rx, ry, rz);
+// Convert quaternion to Euler angles (roll, pitch, yaw)
+void MotionPrimitivesKukaDriver::quaternionToEuler(double qx, double qy, double qz, double qw, double& roll, double& pitch, double& yaw)
+{
+  tf2::Quaternion quat_tf(qx, qy, qz, qw);
+  tf2::Matrix3x3 rot_mat(quat_tf);
+  rot_mat.getRPY(roll, pitch, yaw);
 }
 
 }  // namespace kuka_eki_motion_primitives_hw_interface
