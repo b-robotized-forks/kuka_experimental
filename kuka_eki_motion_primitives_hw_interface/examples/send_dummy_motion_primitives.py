@@ -222,8 +222,8 @@ moveC_1_slow.additional_arguments = [
     MotionArgument(argument_name="acceleration", argument_value=0.1)]
 
 # Motions to compare moprim driver and rsi driver
-eval_vel = 0.5
-eval_acc = 0.5
+eval_vel = 0.1
+eval_acc = 0.1
 eval_blend_radius = 0.0
 
 PTP_eval_0 = MotionPrimitive()

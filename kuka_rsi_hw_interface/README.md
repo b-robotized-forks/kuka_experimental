@@ -16,6 +16,10 @@ ros2 run kuka_rsi_simulator kuka_rsi_simulator
 ```
 ros2 launch kuka_ros2_control_support bringup.launch.py description_package:=kuka_kr3_support description_macro_file:=kr3r540_macro.xacro use_rsi_communication:=true rsi_listen_port:=49152 
 ```
+Using alternative FZI RSI Driver:
+```
+ros2 launch kuka_rsi_driver test_bringup.launch.py description_package:=kuka_kr3_support description_macro_file:=kr3r540_macro.xacro macro_name:=kuka_kr3r540 rsi_listen_ip:=193.196.1.30
+```
 ## With ready2educate cell 2
 ### Launch rsi hw-interface
 ```

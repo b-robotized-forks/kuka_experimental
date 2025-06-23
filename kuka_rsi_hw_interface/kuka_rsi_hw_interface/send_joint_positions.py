@@ -8,7 +8,8 @@ import time
 class TrajectoryPublisher(Node):
     def __init__(self):
         super().__init__('trajectory_publisher')
-        self.publisher_ = self.create_publisher(JointTrajectory, '/position_trajectory_controller/joint_trajectory', 10)
+        # self.publisher_ = self.create_publisher(JointTrajectory, '/position_trajectory_controller/joint_trajectory', 10)
+        self.publisher_ = self.create_publisher(JointTrajectory, '/joint_trajectory_controller/joint_trajectory' , 10)
         time.sleep(1)  # Allow time for publisher to be ready
 
     def publish_trajectory_startponit(self):
@@ -27,14 +28,14 @@ class TrajectoryPublisher(Node):
         # Define multiple trajectory points
         points = [
             # JointTrajectoryPoint(positions=[0, -1.57, 1.57, 0.0, 1.57, 0.0], velocities=[0.0]*6, time_from_start=rclpy.duration.Duration(seconds=).to_msg()),
-            JointTrajectoryPoint(positions=[0, -1.1, 1.0, 0.0, 1.57, 0.0], velocities=[0.0]*6, time_from_start=rclpy.duration.Duration(seconds=0.5).to_msg()),
-            JointTrajectoryPoint(positions=[0.7, -0.9, 0.7, 0.0, 1.57, 0.0], velocities=[0.0]*6, time_from_start=rclpy.duration.Duration(seconds=1.0).to_msg()),
-            JointTrajectoryPoint(positions=[1.57, -1.57, 1.57, 0.0, 1.57, 0.0], velocities=[0.0]*6, time_from_start=rclpy.duration.Duration(seconds=1.5).to_msg()),
-            JointTrajectoryPoint(positions=[0, -1.57, 1.57, 0.0, 1.57, 0.0], velocities=[0.0]*6, time_from_start=rclpy.duration.Duration(seconds=2.0).to_msg()),
-            JointTrajectoryPoint(positions=[0, -1.1, 1.0, 0.0, 1.57, 0.0], velocities=[0.0]*6, time_from_start=rclpy.duration.Duration(seconds=2.5).to_msg()),
-            JointTrajectoryPoint(positions=[-0.7, -0.9, 0.7, 0.0, 1.57, 0.0], velocities=[0.0]*6, time_from_start=rclpy.duration.Duration(seconds=3.0).to_msg()),
-            JointTrajectoryPoint(positions=[-1.57, -1.57, 1.57, 0.0, 1.57, 0.0], velocities=[0.0]*6, time_from_start=rclpy.duration.Duration(seconds=3.5).to_msg()),
-            JointTrajectoryPoint(positions=[0, -1.57, 1.57, 0.0, 1.57, 0.0], velocities=[0.0]*6, time_from_start=rclpy.duration.Duration(seconds=4.0).to_msg()),
+            JointTrajectoryPoint(positions=[0, -1.1, 1.0, 0.0, 1.57, 0.0], velocities=[0.0]*6, time_from_start=rclpy.duration.Duration(seconds=1).to_msg()),
+            JointTrajectoryPoint(positions=[0.7, -0.9, 0.7, 0.0, 1.57, 0.0], velocities=[0.0]*6, time_from_start=rclpy.duration.Duration(seconds=2).to_msg()),
+            JointTrajectoryPoint(positions=[1.57, -1.57, 1.57, 0.0, 1.57, 0.0], velocities=[0.0]*6, time_from_start=rclpy.duration.Duration(seconds=3).to_msg()),
+            JointTrajectoryPoint(positions=[0, -1.57, 1.57, 0.0, 1.57, 0.0], velocities=[0.0]*6, time_from_start=rclpy.duration.Duration(seconds=4).to_msg()),
+            JointTrajectoryPoint(positions=[0, -1.1, 1.0, 0.0, 1.57, 0.0], velocities=[0.0]*6, time_from_start=rclpy.duration.Duration(seconds=5).to_msg()),
+            JointTrajectoryPoint(positions=[-0.7, -0.9, 0.7, 0.0, 1.57, 0.0], velocities=[0.0]*6, time_from_start=rclpy.duration.Duration(seconds=6).to_msg()),
+            JointTrajectoryPoint(positions=[-1.57, -1.57, 1.57, 0.0, 1.57, 0.0], velocities=[0.0]*6, time_from_start=rclpy.duration.Duration(seconds=7).to_msg()),
+            JointTrajectoryPoint(positions=[0, -1.57, 1.57, 0.0, 1.57, 0.0], velocities=[0.0]*6, time_from_start=rclpy.duration.Duration(seconds=8).to_msg()),
         ]
 
         msg.points = points
@@ -47,9 +48,9 @@ def main(args=None):
     node = TrajectoryPublisher()
     node.publish_trajectory_startponit()
     time.sleep(4)
-    for _ in range(5):
+    for _ in range(1):
         node.publish_trajectory_sequence()
-        time.sleep(4)   # Adjust time to sequence length
+        time.sleep(8)   # Adjust time to sequence length
     node.destroy_node()
     rclpy.shutdown()
 
