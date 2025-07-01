@@ -55,7 +55,6 @@ position_trajectory_controller:
 
 motion_primitive_controller:
   ros__parameters:
-    name: motion_primitive
     command_interfaces:
       - motion_type
       - q1
@@ -85,4 +84,3 @@ motion_primitive_controller:
     state_interfaces:
       - execution_status
       - ready_for_new_primitive
-    queue_size: 20    # queue size to buffer incoming commands
