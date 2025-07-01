@@ -411,7 +411,7 @@ namespace kuka_eki_io_interface
 
         if (mutex_write_.try_lock()) {
             if (future_write_.is_ready() && isCommandUpdateRequired()) {
-                RCLCPP_INFO(logger, "Is ready.");
+                RCLCPP_DEBUG(logger, "Is ready.");
                 future_write_ = boost::async([this]() { return write_throttle(); });
             }
 
@@ -423,15 +423,15 @@ namespace kuka_eki_io_interface
 
     hardware_interface::return_type KukaEkiIoInterface::write_throttle() {
         auto logger = rclcpp::get_logger(LOGGER_NAME);
-        RCLCPP_INFO(logger, "WRITE / Before sleep.");
+        RCLCPP_DEBUG(logger, "WRITE / Before sleep.");
         boost::this_thread::sleep(boost::posix_time::milliseconds(1000));
-        RCLCPP_INFO(logger, "WRITE / After sleep.");
+        RCLCPP_DEBUG(logger, "WRITE / After sleep.");
         if (eki_write_command() == hardware_interface::return_type::ERROR) {
             std::string msg = "Failed to write to robot EKI server within alloted time of " + std::to_string(eki_read_state_timeout_) + " seconds. Make sure eki_io_interface is running on the robot controller and all configurations are correct.";
             RCLCPP_ERROR(logger, msg.c_str());
             return hardware_interface::return_type::ERROR;
         }
-        RCLCPP_INFO(logger, "WRITE / OKAY.");
+        RCLCPP_DEBUG(logger, "WRITE / OKAY.");
 
         return  hardware_interface::return_type::OK;
     }
