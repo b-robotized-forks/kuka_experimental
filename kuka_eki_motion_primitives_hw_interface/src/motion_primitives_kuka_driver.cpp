@@ -23,8 +23,6 @@
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "rclcpp/rclcpp.hpp"
 
-#include "motion_primitives_forward_controller/motion_type.hpp"
-
 namespace kuka_eki_motion_primitives_hw_interface
 {
 MotionPrimitivesKukaDriver::~MotionPrimitivesKukaDriver()
@@ -212,26 +210,26 @@ hardware_interface::return_type MotionPrimitivesKukaDriver::read(
   {
     RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Robot finished command with ID: %d", robot_.last_finished_command_id());
     checkCommandIdDoneQueue.pop();
-    current_execution_status_ = ExecutionState::SUCCESS;
+    current_execution_status_ = MoprimExecutionState::SUCCESS;
   } 
   else if (robot_error_) 
   {
-    current_execution_status_ = ExecutionState::ERROR;
+    current_execution_status_ = MoprimExecutionState::ERROR;
   } 
   else if(robot_stopped_) 
   {
-    current_execution_status_ = ExecutionState::STOPPED;
+    current_execution_status_ = MoprimExecutionState::STOPPED;
   } 
   else if (robot_.robot_in_movement()) 
   {
-    current_execution_status_ = ExecutionState::EXECUTING;
+    current_execution_status_ = MoprimExecutionState::EXECUTING;
   } 
   else 
   {
-    current_execution_status_ = ExecutionState::IDLE;
+    current_execution_status_ = MoprimExecutionState::IDLE;
   }
 
-  hw_mo_prim_states_[0] = current_execution_status_;
+  hw_mo_prim_states_[0] = static_cast<uint8_t>(current_execution_status_);
   hw_mo_prim_states_[1] = static_cast<double>(ready_for_new_primitive_);
 
   return hardware_interface::return_type::OK;
@@ -244,9 +242,9 @@ hardware_interface::return_type MotionPrimitivesKukaDriver::write(
   if (!std::isnan(hw_mo_prim_commands_[0])) {
     ready_for_new_primitive_ = false; // set to false to indicate that the driver is busy handeling a command
     double motion_type = hw_mo_prim_commands_[0];
-    switch (static_cast<uint8_t>(motion_type)) 
+    switch (static_cast<MoprimMotionType>(static_cast<uint8_t>(motion_type))) 
     {
-      case MotionType::STOP_MOTION: {
+      case MoprimMotionType::STOP_MOTION: {
         RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "STOP_MOTION command received");
         std::lock_guard<std::mutex> guard(stop_mutex_);
         if (!new_stop_available_) {
@@ -255,7 +253,7 @@ hardware_interface::return_type MotionPrimitivesKukaDriver::write(
         }
         break;
       }
-      case MotionType::RESET_STOP: {
+      case MoprimMotionType::RESET_STOP: {
         RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "RESET_STOP command received");
         std::lock_guard<std::mutex> guard(stop_mutex_);
         if (!new_reset_available_) {
@@ -264,14 +262,14 @@ hardware_interface::return_type MotionPrimitivesKukaDriver::write(
         }
         break;
       }
-      case MotionType::MOTION_SEQUENCE_START: {
+      case MoprimMotionType::MOTION_SEQUENCE_START: {
         RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Received MOTION_SEQUENCE_START: add all following commands to the motion sequence.");
         build_motion_sequence_ = true;  // set flag to put all following commands into the motion sequence
         reset_command_interfaces();
         ready_for_new_primitive_ = true; // set to true to allow sending new commands
         break;
       }
-      case MotionType::MOTION_SEQUENCE_END: {
+      case MoprimMotionType::MOTION_SEQUENCE_END: {
         RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Received MOTION_SEQUENCE_END: executing motion sequence ...");
         build_motion_sequence_ = false;
         std::lock_guard<std::mutex> guard(execution_mutex_);
@@ -281,7 +279,7 @@ hardware_interface::return_type MotionPrimitivesKukaDriver::write(
         reset_command_interfaces();
         break;
       }
-      case MotionType::LINEAR_JOINT: { // MoveJ/ PTP
+      case MoprimMotionType::LINEAR_JOINT: { // MoveJ/ PTP
         RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "LINEAR_JOINT command received");
         if(!add_linear_joint_cmd()) {
           RCLCPP_ERROR(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Failed to add LINEAR_JOINT command");
@@ -299,7 +297,7 @@ hardware_interface::return_type MotionPrimitivesKukaDriver::write(
         }
         break;
       }
-      case MotionType::LINEAR_CARTESIAN: { // MoveL/ LIN
+      case MoprimMotionType::LINEAR_CARTESIAN: { // MoveL/ LIN
         RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "LINEAR_CARTESIAN command received");
         if(!add_linear_cartesian_cmd()) {
           RCLCPP_ERROR(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Failed to add LINEAR_CARTESIAN command");
@@ -317,7 +315,7 @@ hardware_interface::return_type MotionPrimitivesKukaDriver::write(
         }
         break;
       }
-      case MotionType::CIRCULAR_CARTESIAN: {  // MoveC/ CIRC
+      case MoprimMotionType::CIRCULAR_CARTESIAN: {  // MoveC/ CIRC
         RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "CIRCULAR_CARTESIAN command received");
         if(!add_circular_cartesian_cmd()) {
           RCLCPP_ERROR(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Failed to add CIRCULAR_CARTESIAN command");

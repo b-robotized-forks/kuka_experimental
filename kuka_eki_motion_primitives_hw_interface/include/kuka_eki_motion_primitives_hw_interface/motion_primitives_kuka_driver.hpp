@@ -28,9 +28,11 @@
 #include "rclcpp/macros.hpp"
 #include "rclcpp_lifecycle/state.hpp"
 
-#include "motion_primitives_forward_controller/execution_state.hpp"
+#include "motion_primitives_forward_controller/motion_primitives_forward_controller.hpp"
 #include "eki_communication/Robot.h"
 
+using MoprimExecutionState = motion_primitives_forward_controller::ExecutionState;
+using MoprimMotionType = motion_primitives_forward_controller::MotionType;
 
 namespace kuka_eki_motion_primitives_hw_interface
 {
@@ -68,7 +70,7 @@ private:
   std::vector<double> hw_mo_prim_states_;
   std::vector<double> hw_mo_prim_commands_;
 
-  std::atomic<int8_t> current_execution_status_{ExecutionState::IDLE};
+  MoprimExecutionState current_execution_status_{MoprimExecutionState::IDLE};
   std::atomic_bool ready_for_new_primitive_{false}; // Flag to indicate if the hw-interface is ready for a new motion primitive
 
   std::queue<int> checkCommandIdDoneQueue;  // Queue to check if a command with a specific ID is done to return SUCCESS
