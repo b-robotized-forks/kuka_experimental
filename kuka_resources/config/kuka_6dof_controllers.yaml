@@ -11,7 +11,7 @@ controller_manager:
     position_trajectory_controller:
       type: joint_trajectory_controller/JointTrajectoryController
     
-    motion_primitive_controller:
+    motion_primitive_forward_controller:
       type: motion_primitives_forward_controller/MotionPrimitivesForwardController
 
 forward_position_controller:
@@ -51,9 +51,7 @@ position_trajectory_controller:
       stopped_velocity_tolerance: 0.01 # Defaults to 0.01
       goal_time: 0.0 # Defaults to 0.0 (start immediately)
 
-      
-
-motion_primitive_controller:
+motion_primitive_forward_controller:
   ros__parameters:
     command_interfaces:
       - motion_type

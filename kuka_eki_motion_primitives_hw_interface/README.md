@@ -135,7 +135,7 @@ ros2 launch kuka_ros2_control_support motion_primitives_bringup.launch.py descri
 ```
 ros2 launch kuka_ros2_control_support motion_primitives_bringup.launch.py description_package:=kuka_kr3_support description_macro_file:=kr3r540_macro.xacro eki_robot_ip:=10.181.116.51
 ```
-## Publish dummy commands
+## Send dummy commands
 **Commands from python script**
 > [!WARNING]  
 > Ensure that the robot in your configuration is able to execute these motion primitives without any risk of collision.

@@ -20,9 +20,10 @@ import rclpy
 from rclpy.node import Node
 from rclpy.action import ActionClient
 from geometry_msgs.msg import PoseStamped
-from industrial_robot_motion_interfaces.msg import MotionPrimitive, MotionArgument, MotionSequence
-from industrial_robot_motion_interfaces.action import ExecuteMotion
+from control_msgs.msg import MotionPrimitive, MotionArgument, MotionPrimitiveSequence
+from control_msgs.action import ExecuteMotionPrimitiveSequence
 from action_msgs.srv import CancelGoal
+from action_msgs.msg import GoalStatus
 import threading
 import sys
 
@@ -302,13 +303,17 @@ class ExecuteMotionClient(Node):
     def __init__(self):
         super().__init__("motion_sequence_client")
 
-        # Initialize action client for ExecuteMotion action
+        # Initialize action client for ExecuteMotionPrimitiveSequence action
         self._client = ActionClient(
-            self, ExecuteMotion, "/motion_primitive_controller/motion_sequence")
+            self,
+            ExecuteMotionPrimitiveSequence,
+            "/motion_primitive_forward_controller/motion_sequence",
+        )
 
         # Initialize client for cancel_goal service
         self._cancel_client = self.create_client(
-            CancelGoal, "/motion_primitive_controller/motion_sequence/_action/cancel_goal")
+            CancelGoal, "/motion_primitive_forward_controller/motion_sequence/_action/cancel_goal"
+        )
 
         self._goal_id = None  # To store the goal ID for cancellation
 
@@ -324,8 +329,8 @@ class ExecuteMotionClient(Node):
         self.get_logger().info("Waiting for action server...")
         self._client.wait_for_server()
 
-        goal_msg = ExecuteMotion.Goal()
-        goal_msg.trajectory = MotionSequence()
+        goal_msg = ExecuteMotionPrimitiveSequence.Goal()
+        goal_msg.trajectory = MotionPrimitiveSequence()
 
         # Different Primitives
         # goal_msg.trajectory.motions = [PTP_1, PTP_2, PTP_3, PTP_2, LIN_1, LIN_2, PTP_1, PTP_2, PTP_3, LIN_1, LIN_2, moveC_1, PTP_1, PTP_2]
@@ -342,8 +347,12 @@ class ExecuteMotionClient(Node):
         # Evaluation sequence with PTP movements (to compare moprim driver and rsi driver)
         goal_msg.trajectory.motions = [PTP_eval_0, PTP_eval_1, PTP_eval_2, PTP_eval_3, PTP_eval_4, PTP_eval_5, PTP_eval_6, PTP_eval_7, PTP_eval_8]
 
-        self.get_logger().info(f"Sending {len(goal_msg.trajectory.motions)} motion primitives as a sequence...")
-        send_goal_future = self._client.send_goal_async(goal_msg, feedback_callback=self.feedback_callback)
+        self.get_logger().info(
+            f"Sending {len(goal_msg.trajectory.motions)} motion primitives as a sequence..."
+        )
+        send_goal_future = self._client.send_goal_async(
+            goal_msg, feedback_callback=self.feedback_callback
+        )
         send_goal_future.add_done_callback(self.goal_response_callback)
 
     def goal_response_callback(self, future):
@@ -367,15 +376,18 @@ class ExecuteMotionClient(Node):
 
     def result_callback(self, future):
         """Handle the result from the action server after goal finishes or is canceled."""
-        result = future.result().result
-        if result.error_code == ExecuteMotion.Result.SUCCESSFUL:
+        result = future.result()
+        status = result.status
+
+        if status == GoalStatus.STATUS_SUCCEEDED:
             self.get_logger().info("Motion sequence executed successfully!")
-        elif result.error_code == ExecuteMotion.Result.CANCELED:
+        elif status == GoalStatus.STATUS_CANCELED:
             self.get_logger().info("Motion sequence was canceled.")
-        elif result.error_code == ExecuteMotion.Result.FAILED:
+        elif status == GoalStatus.STATUS_ABORTED:
             self.get_logger().error("Motion sequence execution failed.")
         else:
-            self.get_logger().error(f"Execution failed: {result.error_code} - {result.error_string}")
+            self.get_logger().error(f"Execution ended with status: {status}")
+
         rclpy.shutdown()
 
     def _wait_for_keypress(self):
