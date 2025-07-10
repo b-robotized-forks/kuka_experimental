@@ -241,9 +241,9 @@ hardware_interface::return_type MotionPrimitivesKukaDriver::write(
   if (!std::isnan(hw_mo_prim_commands_[0])) {
     ready_for_new_primitive_ = false; // set to false to indicate that the driver is busy handeling a command
     double motion_type = hw_mo_prim_commands_[0];
-    switch (static_cast<MoprimMotionType>(static_cast<uint8_t>(motion_type))) 
+    switch (static_cast<uint8_t>(motion_type))
     {
-      case MoprimMotionType::STOP_MOTION: {
+      case static_cast<uint8_t>(MoprimMotionHelperType::STOP_MOTION): {
         RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "STOP_MOTION command received");
         std::lock_guard<std::mutex> guard(stop_mutex_);
         if (!new_stop_available_) {
@@ -252,7 +252,7 @@ hardware_interface::return_type MotionPrimitivesKukaDriver::write(
         }
         break;
       }
-      case MoprimMotionType::RESET_STOP: {
+      case static_cast<uint8_t>(MoprimMotionHelperType::RESET_STOP): {
         RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "RESET_STOP command received");
         std::lock_guard<std::mutex> guard(stop_mutex_);
         if (!new_reset_available_) {
@@ -261,14 +261,14 @@ hardware_interface::return_type MotionPrimitivesKukaDriver::write(
         }
         break;
       }
-      case MoprimMotionType::MOTION_SEQUENCE_START: {
+      case static_cast<uint8_t>(MoprimMotionHelperType::MOTION_SEQUENCE_START): {
         RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Received MOTION_SEQUENCE_START: add all following commands to the motion sequence.");
         build_motion_sequence_ = true;  // set flag to put all following commands into the motion sequence
         reset_command_interfaces();
         ready_for_new_primitive_ = true; // set to true to allow sending new commands
         break;
       }
-      case MoprimMotionType::MOTION_SEQUENCE_END: {
+      case static_cast<uint8_t>(MoprimMotionHelperType::MOTION_SEQUENCE_END): {
         RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Received MOTION_SEQUENCE_END: executing motion sequence ...");
         build_motion_sequence_ = false;
         std::lock_guard<std::mutex> guard(execution_mutex_);

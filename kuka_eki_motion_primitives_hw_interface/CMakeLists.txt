@@ -19,7 +19,7 @@ find_package(angles REQUIRED)
 find_package(tinyxml_vendor REQUIRED)
 find_package(TinyXML REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
-
+find_package(control_msgs REQUIRED)
 
 add_subdirectory(eki_communication)
 
@@ -50,6 +50,7 @@ ament_target_dependencies(
   TinyXML
   angles
   tf2_geometry_msgs
+  control_msgs
 )
 
 # prevent pluginlib from using boost
