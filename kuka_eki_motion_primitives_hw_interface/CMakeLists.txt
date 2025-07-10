@@ -18,7 +18,8 @@ find_package(motion_primitives_forward_controller REQUIRED)
 find_package(angles REQUIRED)
 find_package(tinyxml_vendor REQUIRED)
 find_package(TinyXML REQUIRED)
-find_package(tf2 REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
+
 
 add_subdirectory(eki_communication)
 
@@ -48,7 +49,7 @@ ament_target_dependencies(
   motion_primitives_forward_controller
   TinyXML
   angles
-  tf2
+  tf2_geometry_msgs
 )
 
 # prevent pluginlib from using boost
