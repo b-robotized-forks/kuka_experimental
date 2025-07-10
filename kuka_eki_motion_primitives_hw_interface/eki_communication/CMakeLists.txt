@@ -22,3 +22,12 @@ target_include_directories(eki_communication PUBLIC
 target_link_libraries(eki_communication PUBLIC
   eki_common
 )
+
+install(TARGETS eki_communication
+  EXPORT eki_communicationTargets
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
+
+install(DIRECTORY include/ DESTINATION include)
