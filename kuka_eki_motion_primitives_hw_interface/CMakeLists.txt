@@ -36,22 +36,21 @@ target_include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/eki_communication/include
 )
 
-target_link_libraries(
-  kuka_eki_motion_primitives_hw_interface
-  eki_communication
+target_link_libraries(kuka_eki_motion_primitives_hw_interface
+  PRIVATE
+    eki_communication
+  PUBLIC
+    ${control_msgs_TARGETS}
+    angles::angles
+    hardware_interface::hardware_interface
+    hardware_interface::mock_components
+    motion_primitives_forward_controller::motion_primitives_forward_controller
+    motion_primitives_forward_controller::motion_primitives_forward_controller_parameters
+    rclcpp::rclcpp
+    rclcpp_lifecycle::rclcpp_lifecycle
+    tf2_geometry_msgs::tf2_geometry_msgs
 )
 
-ament_target_dependencies(
-  kuka_eki_motion_primitives_hw_interface
-  hardware_interface
-  rclcpp
-  rclcpp_lifecycle
-  motion_primitives_forward_controller
-  TinyXML
-  angles
-  tf2_geometry_msgs
-  control_msgs
-)
 
 # prevent pluginlib from using boost
 target_compile_definitions(kuka_eki_motion_primitives_hw_interface PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
