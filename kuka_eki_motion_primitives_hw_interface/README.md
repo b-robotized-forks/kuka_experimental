@@ -145,5 +145,15 @@ ros2 run kuka_eki_motion_primitives_hw_interface send_dummy_motion_primitives.py
 During the execution of the motion primitives, the movement can be stopped by pressing the Enter key in the terminal.
 
 
+## MoveIt
+With mock hardware:
+```
+ros2 launch kuka_common_moveit bringup.launch.py description_package:=kuka_kr3_support description_macro_file:=kr3r540_macro.xacro
+```
+With real robot: 
+```
+ros2 launch kuka_common_moveit bringup.launch.py description_package:=kuka_kr3_support description_macro_file:=kr3r540_macro.xacro use_eki_communication:=true use_mock_hardware:=false eki_robot_ip:=10.181.116.51 use_eki_communication:=true
+```
+
 # TODOs/ Improvements
 - Execute eki_close() when programm is stopped/ deselected to properly close the connection --> without eki_close() its not possible to init a new server when restarting the program. 
