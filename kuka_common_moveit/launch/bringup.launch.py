@@ -414,15 +414,21 @@ def generate_launch_description():
     # see https://github.com/ros-planning/moveit/issues/2268
     ompl_planning_pipeline_config = {
         "ompl": {
-            "planning_plugin": "ompl_interface/OMPLPlanner",
-            "request_adapters": """default_planner_request_adapters/AddTimeOptimalParameterization default_planner_request_adapters/ResolveConstraintFrames default_planner_request_adapters/FixWorkspaceBounds default_planner_request_adapters/FixStartStateBounds default_planner_request_adapters/FixStartStatePathConstraints""",
+            "planning_plugins": ["ompl_interface/OMPLPlanner"],
+            "request_adapters": [
+                "default_planning_request_adapters/ResolveConstraintFrames",
+                "default_planning_request_adapters/ValidateWorkspaceBounds",
+                "default_planning_request_adapters/CheckStartStateBounds",
+                "default_planning_request_adapters/CheckStartStateCollision",
+                "default_planning_request_adapters/CheckForStackedConstraints"
+            ],
             "start_state_max_bounds_error": 0.1,
         }
     }
 
     pilz_planning_pipeline_config = {
         "pilz": {
-            "planning_plugin": "pilz_industrial_motion_planner/CommandPlanner",
+            "planning_plugins": ["pilz_industrial_motion_planner/CommandPlanner"],
             "default_planner_config": "PTP"
         }
     }
@@ -446,13 +452,13 @@ def generate_launch_description():
     pilz_limits_yaml = load_yaml(
         "kuka_common_moveit", "config/pilz_cartesian_limits.yaml"
     )
+    pilz_limits_parameters = pilz_limits_yaml['/**']['ros__parameters']['robot_description_planning']
     robot_description_planning_config = {
-        "robot_description_planning" : pilz_limits_yaml
+        "robot_description_planning" : pilz_limits_parameters
     }
-
     stomp_planning_pipeline_config = {
             "stomp": {
-                "planning_plugin": "stomp_moveit/StompPlanner",
+                "planning_plugins": ["stomp_moveit/StompPlanner"],
             }
     }
 
