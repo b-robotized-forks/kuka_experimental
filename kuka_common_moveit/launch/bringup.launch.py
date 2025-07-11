@@ -347,17 +347,28 @@ def generate_launch_description():
     )
 
     # Spawn controllers
+    controllers_yaml = PathJoinSubstitution([
+        FindPackageShare("kuka_ros2_control_support"),
+        "config",
+        "6dof_controllers.yaml",
+    ])
+
     load_and_activate_controllers = []
     for controller in ["position_trajectory_controller", "joint_state_broadcaster"]:
-        load_and_activate_controllers += [
+        load_and_activate_controllers.append(
             ExecuteProcess(
-                cmd=[f"ros2 run controller_manager spawner {controller} -c controller_manager -p /home/oguz/maurobot_ws/install/kuka_ros2_control_support/share/kuka_ros2_control_support/config/6dof_controllers.yaml"],
+                cmd=[
+                    "ros2 run controller_manager spawner",
+                    controller,
+                    "-c controller_manager",
+                    "-p", controllers_yaml,
+                ],
                 shell=True,
                 output="screen",
                 condition=IfCondition(use_mock_hardware),
             )
-        ]
-    
+        )
+
     # Spawn gripper controllers - only if mock hardware
     load_and_activate_gripper_controllers = []
     for controller in ["gripper", "mocked_sensors_controller"]:
