@@ -125,7 +125,7 @@ ros2 run kuka_eki_simulator kuka_eki_simulator_tcp
 
 **2. Launch KR3 with motion primitive driver**
 ```
-ros2 launch kuka_ros2_control_support motion_primitives_bringup.launch.py description_package:=kuka_kr3_support description_macro_file:=kr3r540_macro.xacro
+ros2 launch kuka_ros2_control_support motion_primitives_forward_bringup.launch.py description_package:=kuka_kr3_support description_macro_file:=kr3r540_macro.xacro
 ```
 ## With ready2educate H-KA cell 2 (adjust robot_ip for other cells)
 > [!NOTE]   
@@ -133,7 +133,7 @@ ros2 launch kuka_ros2_control_support motion_primitives_bringup.launch.py descri
 
 **Launch kr3 with motion primitive driver**
 ```
-ros2 launch kuka_ros2_control_support motion_primitives_bringup.launch.py description_package:=kuka_kr3_support description_macro_file:=kr3r540_macro.xacro eki_robot_ip:=10.181.116.51
+ros2 launch kuka_ros2_control_support motion_primitives_forward_bringup.launch.py description_package:=kuka_kr3_support description_macro_file:=kr3r540_macro.xacro eki_robot_ip:=10.181.116.51
 ```
 ## Send dummy commands
 **Commands from python script**
@@ -146,13 +146,22 @@ During the execution of the motion primitives, the movement can be stopped by pr
 
 
 ## MoveIt
-With mock hardware:
+**With "simulation":**
+(start simulation as explained above)
+Start MoveIt and RViz:
 ```
-ros2 launch kuka_common_moveit bringup.launch.py description_package:=kuka_kr3_support description_macro_file:=kr3r540_macro.xacro
+ros2 launch kuka_common_moveit bringup.launch.py description_package:=kuka_kr3_support description_macro_file:=kr3r540_macro.xacro use_eki_communication:=true use_mock_hardware:=false activate_ros2_control:=false
 ```
+Start controller:
+```
+ros2 launch kuka_ros2_control_support motion_primitives_from_traj_bringup.launch.py description_package:=kuka_kr3_support description_macro_file:=kr3r540_macro.xacro start_rviz:=false
+```
+
+
 With real robot: 
+TODO
 ```
-ros2 launch kuka_common_moveit bringup.launch.py description_package:=kuka_kr3_support description_macro_file:=kr3r540_macro.xacro use_eki_communication:=true use_mock_hardware:=false eki_robot_ip:=10.181.116.51 use_eki_communication:=true
+ros2 launch kuka_common_moveit bringup.launch.py description_package:=kuka_kr3_support description_macro_file:=kr3r540_macro.xacro use_eki_communication:=true use_mock_hardware:=false eki_robot_ip:=10.181.116.51
 ```
 
 # TODOs/ Improvements

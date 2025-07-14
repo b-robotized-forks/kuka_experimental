@@ -354,7 +354,7 @@ def generate_launch_description():
     ])
 
     load_and_activate_controllers = []
-    for controller in ["position_trajectory_controller", "joint_state_broadcaster"]:
+    for controller in ["motion_primitive_from_trajectory_controller", "joint_state_broadcaster"]:
         load_and_activate_controllers.append(
             ExecuteProcess(
                 cmd=[
@@ -365,7 +365,7 @@ def generate_launch_description():
                 ],
                 shell=True,
                 output="screen",
-                condition=IfCondition(use_mock_hardware),
+                condition=IfCondition(activate_ros2_control),
             )
         )
 
@@ -522,8 +522,8 @@ def generate_launch_description():
         name="rviz2",
         #output="log",
         output={
-            'stdout': 'log',
-            'stderr': 'log'
+            'stdout': 'screen',
+            'stderr': 'screen'
             },
         arguments=["-d", rviz_config],
         parameters=[
