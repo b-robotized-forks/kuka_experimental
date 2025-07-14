@@ -117,3 +117,15 @@ motion_primitive_from_trajectory_controller:
     state_interfaces:
       - execution_status
       - ready_for_new_primitive
+    local_joint_order:
+      - joint_a1
+      - joint_a2
+      - joint_a3
+      - joint_a4
+      - joint_a5
+      - joint_a6
+    approximate_mode: "RDP_PTP"  # "RDP_LIN" or "RDP_PTP"
+    use_time_not_vel_and_acc: false
+    epsilon_joint_angle: 0.01
+    epsilon_cart_position: 0.01
+    epsilon_cart_angle: 0.01
