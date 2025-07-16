@@ -380,17 +380,15 @@ bool MotionPrimitivesKukaDriver::add_linear_cartesian_cmd()
         return false;
     }
   }
-  double roll, pitch, yaw;
-  quaternionToEuler(hw_mo_prim_commands_[10], hw_mo_prim_commands_[11], hw_mo_prim_commands_[12], hw_mo_prim_commands_[13], roll, pitch, yaw);
+  double a, b, c;
+  quaternionToKukaABC(hw_mo_prim_commands_[10], hw_mo_prim_commands_[11], hw_mo_prim_commands_[12], hw_mo_prim_commands_[13], a, b, c);
 
-  constexpr double rad_to_deg = 180.0 / M_PI;
+
   std::vector<double> pose = {
     hw_mo_prim_commands_[7] * 1000.0, // from m to mm
     hw_mo_prim_commands_[8] * 1000.0,
     hw_mo_prim_commands_[9] * 1000.0,
-    roll * rad_to_deg,  // from rad to deg
-    pitch * rad_to_deg,
-    yaw * rad_to_deg};
+    a, b, c};
 
   rbt::MoveCommand command;
   command = rbt::MoveCommand(rbt::PoseCartesian(pose[0], pose[1], pose[2], pose[3], pose[4], pose[5]), true);
@@ -414,27 +412,22 @@ bool MotionPrimitivesKukaDriver::add_circular_cartesian_cmd()
         return false;
     }
   }
-  double goal_roll, goal_pitch, goal_yaw;
-  quaternionToEuler(hw_mo_prim_commands_[10], hw_mo_prim_commands_[11], hw_mo_prim_commands_[12], hw_mo_prim_commands_[13], goal_roll, goal_pitch, goal_yaw);
+  double goal_a, goal_b, goal_c;
+  quaternionToKukaABC(hw_mo_prim_commands_[10], hw_mo_prim_commands_[11], hw_mo_prim_commands_[12], hw_mo_prim_commands_[13], goal_a, goal_b, goal_c);
+  
+  double via_a, via_b, via_c;
+  quaternionToKukaABC(hw_mo_prim_commands_[17], hw_mo_prim_commands_[18], hw_mo_prim_commands_[19], hw_mo_prim_commands_[20], via_a, via_b, via_c);
 
-  double via_roll, via_pitch, via_yaw;
-  quaternionToEuler(hw_mo_prim_commands_[17], hw_mo_prim_commands_[18], hw_mo_prim_commands_[19], hw_mo_prim_commands_[20], via_roll, via_pitch, via_yaw);
-
-  constexpr double rad_to_deg = 180.0 / M_PI;
   std::vector<double> goal_pose = {
     hw_mo_prim_commands_[7] * 1000.0, // from m to mm
     hw_mo_prim_commands_[8] * 1000.0,
     hw_mo_prim_commands_[9] * 1000.0,
-    goal_roll * rad_to_deg,  // from rad to deg
-    goal_pitch * rad_to_deg,
-    goal_yaw * rad_to_deg};
+    goal_a, goal_b, goal_c};
   std::vector<double> via_pose = {
     hw_mo_prim_commands_[14] * 1000.0, // from m to mm
     hw_mo_prim_commands_[15] * 1000.0,
     hw_mo_prim_commands_[16] * 1000.0,
-    via_roll * rad_to_deg,  // from rad to deg
-    via_pitch * rad_to_deg,
-    via_yaw * rad_to_deg};
+    via_a, via_b, via_c};
 
   rbt::MoveCommand command;
   command = rbt::MoveCommand(rbt::PoseCartesian(via_pose[0], via_pose[1], via_pose[2], via_pose[3], via_pose[4], via_pose[5]),
@@ -554,12 +547,22 @@ void MotionPrimitivesKukaDriver::asyncExecuteMotionThread()
   RCLCPP_INFO(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "[asyncExecuteMotionThread] Exiting");
 }
 
-// Convert quaternion to Euler angles (roll, pitch, yaw)
-void MotionPrimitivesKukaDriver::quaternionToEuler(double qx, double qy, double qz, double qw, double& roll, double& pitch, double& yaw)
+
+void MotionPrimitivesKukaDriver::quaternionToKukaABC(double qx, double qy, double qz, double qw,
+                                                     double& A, double& B, double& C)
 {
-  tf2::Quaternion quat_tf(qx, qy, qz, qw);
-  tf2::Matrix3x3 rot_mat(quat_tf);
-  rot_mat.getRPY(roll, pitch, yaw);
+  double norm = std::sqrt(qx*qx + qy*qy + qz*qz + qw*qw);
+  if (std::abs(norm - 1.0) > 0.001) {
+    RCLCPP_ERROR(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Quaternion is not normalized! Norm is %f (expected ~1.0)", norm);
+  }
+  // Calculation according to https://doc.rc-visard.com/v21.07/en/pose_format_kuka.html
+  const double rad2deg = 180.0 / M_PI;
+  A = std::atan2(2.0 * (qw * qz + qx * qy), 1.0 - 2.0 * (qy * qy + qz * qz)) * rad2deg;
+  B = std::asin (2.0 * (qw * qy - qz * qx)) * rad2deg;
+  C = std::atan2(2.0 * (qw * qx + qy * qz), 1.0 - 2.0 * (qx * qx + qy * qy)) * rad2deg;
+
+  RCLCPP_DEBUG(rclcpp::get_logger("MotionPrimitivesKukaDriver"), "Converted quaternion [%f, %f, %f, %f] to Kuka ABC angles: A=%f, B=%f, C=%f",
+              qx, qy, qz, qw, A, B, C);
 }
 
 }  // namespace kuka_eki_motion_primitives_hw_interface
