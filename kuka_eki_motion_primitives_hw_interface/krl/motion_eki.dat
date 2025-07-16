@@ -13,7 +13,10 @@ defdat motion_eki
    decl real act_joint_vel
    decl real act_joint_acc
    decl real act_cart_vel
-   decl real act_cart_acc    
+   decl real act_cart_acc
+   
+   decl real max_joint_vel
+   decl real max_joint_acc
    
    decl int CURRENT_COMMAND_ID
    decl int LAST_FINISHED_MOVE_ID

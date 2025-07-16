@@ -32,8 +32,8 @@ These interfaces are used to send motion primitive data to the hardware interfac
 - `pos_qx`, `pos_qy`, `pos_qz`, `pos_qw`: Orientation quaternion of the target pose
 - `pos_via_x`, `pos_via_y`, `pos_via_z`: Intermediate via-point position for circular motion
 - `pos_via_qx`, `pos_via_qy`, `pos_via_qz`, `pos_via_qw`: Orientation quaternion of via-point
-- `velocity`: Desired motion velocity. For joint-based motions (PTP), it is a scaling factor (0 to 1) of the maximum joint velocity, and for cartesian motions (LIN, CIRC), it specifies the end-effector velocity in m/s.
-- `acceleration`: Desired motion acceleration. For joint-based motions (PTP), it is a scaling factor (0 to 1) of the maximum joint acceleration, and for cartesian motions (LIN, CIRC), it specifies the end-effector acceleration in m/s².
+- `velocity`: Desired motion velocity. For joint-based motions (PTP), it specifies the joint velocitiy in rad/s and for cartesian motions (LIN, CIRC), it specifies the end-effector velocity in m/s.
+- `acceleration`: Desired motion acceleration. For joint-based motions (PTP), it specifies the joint acceleration in rad/s² and for cartesian motions (LIN, CIRC), it specifies the end-effector acceleration in m/s².
 - `blend_radius`: Blending radius for smooth transitions between two primitives.
 - `move_time`: Optional duration for time-based execution (currently not used by the **motion_primitive_kuka_driver**, but [**UR driver**](https://github.com/b-robotized-forks/Universal_Robots_ROS2_Driver_MotionPrimitive) uses it)
 
@@ -146,23 +146,22 @@ During the execution of the motion primitives, the movement can be stopped by pr
 
 
 ## MoveIt
-**With "simulation":**
-(start simulation as explained above)
+**With "simulation":**  
+(start simulation as explained above)   
 Start MoveIt and RViz:
 ```
-ros2 launch kuka_common_moveit bringup.launch.py description_package:=kuka_kr3_support description_macro_file:=kr3r540_macro.xacro use_eki_communication:=true use_mock_hardware:=false activate_ros2_control:=false
+ros2 launch kuka_common_moveit bringup.launch.py description_package:=kuka_kr3_support description_macro_file:=kr3r540_macro.xacro use_mock_hardware:=false activate_ros2_control:=false
 ```
-Start controller:
+Start controller and hardware interface with **"simulation"**:
 ```
 ros2 launch kuka_ros2_control_support motion_primitives_from_traj_bringup.launch.py description_package:=kuka_kr3_support description_macro_file:=kr3r540_macro.xacro start_rviz:=false
 ```
-
-
-With real robot: 
-TODO
+Start controller and hardware interface with **ready2educate H-KA cell 2**:
 ```
-ros2 launch kuka_common_moveit bringup.launch.py description_package:=kuka_kr3_support description_macro_file:=kr3r540_macro.xacro use_eki_communication:=true use_mock_hardware:=false eki_robot_ip:=10.181.116.51
+ros2 launch kuka_ros2_control_support motion_primitives_from_traj_bringup.launch.py description_package:=kuka_kr3_support description_macro_file:=kr3r540_macro.xacro start_rviz:=false use_mock_hardware:=false eki_robot_ip:=10.181.116.51
 ```
 
 # TODOs/ Improvements
-- Execute eki_close() when programm is stopped/ deselected to properly close the connection --> without eki_close() its not possible to init a new server when restarting the program. 
+- KRL: Occasionally, the error "Kontrollstruktur nächster Satz" occurs when stopping/ canceling movement. This error must be acknowledged on the touch panel before the program can continue. Why does this error occur?
+- KRL: Get max_joit_acc and calculate acc_scale=acceleration/max_joit_acc to set $ACC_AXIS[] --> for now, joint acceleration is set to 50%
+- KRL: Execute eki_close() when programm is stopped/ deselected to properly close the connection --> without eki_close() its not possible to init a new server when restarting the program.

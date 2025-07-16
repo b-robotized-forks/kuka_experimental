@@ -196,7 +196,6 @@ hardware_interface::return_type MotionPrimitivesKukaDriver::read(
   hw_joint_vel_states_[4] = velocity.a5;
   hw_joint_vel_states_[5] = velocity.a6;
 
-  // TODO(mathias31415) check if calculculation for effort from torque is needed
   const rbt::PoseJoints& torque = robot_state.torque;
   hw_joint_eff_states_[0] = torque.a1;
   hw_joint_eff_states_[1] = torque.a2;
