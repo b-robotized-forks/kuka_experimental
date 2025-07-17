@@ -150,15 +150,15 @@ During the execution of the motion primitives, the movement can be stopped by pr
 (start simulation as explained above)   
 Start MoveIt and RViz:
 ```
-ros2 launch kuka_common_moveit bringup.launch.py description_package:=kuka_kr3_support description_macro_file:=kr3r540_macro.xacro use_mock_hardware:=false activate_ros2_control:=false
+ros2 launch kuka_common_moveit_setup_assistant kuka_moveit.launch.py kuka_type:=kuka_kr3r540
 ```
 Start controller and hardware interface with **"simulation"**:
 ```
-ros2 launch kuka_ros2_control_support motion_primitives_from_traj_bringup.launch.py description_package:=kuka_kr3_support description_macro_file:=kr3r540_macro.xacro start_rviz:=false
+ros2 launch kuka_ros2_control_support motion_primitives_from_traj_bringup.launch.py description_package:=kuka_kr3_support description_macro_file:=kr3r540_macro.xacro start_rviz:=false robot_name:=kuka_kr3r540
 ```
 Start controller and hardware interface with **ready2educate H-KA cell 2**:
 ```
-ros2 launch kuka_ros2_control_support motion_primitives_from_traj_bringup.launch.py description_package:=kuka_kr3_support description_macro_file:=kr3r540_macro.xacro start_rviz:=false use_mock_hardware:=false eki_robot_ip:=10.181.116.51
+ros2 launch kuka_ros2_control_support motion_primitives_from_traj_bringup.launch.py description_package:=kuka_kr3_support description_macro_file:=kr3r540_macro.xacro start_rviz:=false use_mock_hardware:=false eki_robot_ip:=10.181.116.51 robot_name:=kuka_kr3r540
 ```
 
 # TODOs/ Improvements

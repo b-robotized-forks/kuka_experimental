@@ -74,8 +74,21 @@ def declare_arguments():
                 "kuka_type",
                 description="Typo/series of used KUKA robot.",
                 choices=[
-                    "kr3",
-                    "TODO", 
+                    "kuka_kr3r540",
+                    "kuka_kr5_arc",
+                    "kuka_kr6r700sixx",
+                    "kuka_kr6r900_2",
+                    "kuka_kr6r900sixx",
+                    "kuka_kr10r900_2",
+                    "kuka_kr10r1100sixx",
+                    "kuka_kr10r1420",
+                    "kuka_kr16_2",
+                    "kuka_kr120r2500pro",
+                    "kuka_kr150_2",
+                    "kuka_kr150r3100_2",
+                    "kuka_kr210l150",
+                    "kuka_kr210r3100",
+                    "kuka_lbr_iiwa_14_r820"
                 ],
             ),
             DeclareLaunchArgument(
@@ -110,8 +123,8 @@ def generate_launch_description():
 
 
     moveit_config = (
-        MoveItConfigsBuilder(robot_name="kuka_robot_name", package_name="kuka_common_moveit_setup_assistant")
-        .robot_description_semantic(Path("srdf") / "kuka_kr3r540.srdf")
+        MoveItConfigsBuilder(robot_name="kuka", package_name="kuka_common_moveit_setup_assistant")
+        .robot_description_semantic(Path("srdf") / "common_kuka.srdf.xacro", {"robot_name": kuka_type})
         .to_moveit_configs()
     )
 
