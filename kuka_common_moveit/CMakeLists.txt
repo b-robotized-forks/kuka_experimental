@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(kuka_common_moveit_setup_assistant)
+project(kuka_common_moveit)
 
 find_package(ament_cmake REQUIRED)
 

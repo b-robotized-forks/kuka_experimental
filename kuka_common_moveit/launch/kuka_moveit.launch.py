@@ -123,7 +123,7 @@ def generate_launch_description():
 
 
     moveit_config = (
-        MoveItConfigsBuilder(robot_name="kuka", package_name="kuka_common_moveit_setup_assistant")
+        MoveItConfigsBuilder(robot_name="kuka", package_name="kuka_common_moveit")
         .robot_description_semantic(Path("srdf") / "common_kuka.srdf.xacro", {"robot_name": kuka_type})
         .to_moveit_configs()
     )
@@ -137,7 +137,7 @@ def generate_launch_description():
     ld.add_entity(declare_arguments())
 
     wait_robot_description = Node(
-        package="kuka_common_moveit_setup_assistant",
+        package="kuka_common_moveit",
         executable="wait_for_robot_description",
         output="screen",
     )
@@ -157,7 +157,7 @@ def generate_launch_description():
         ],
     )
 
-    servo_yaml = load_yaml("kuka_common_moveit_setup_assistant", "config/kuka_servo_config.yaml")
+    servo_yaml = load_yaml("kuka_common_moveit", "config/kuka_servo_config.yaml")
     servo_params = {"moveit_servo": servo_yaml}
     servo_node = Node(
         package="moveit_servo",
@@ -171,7 +171,7 @@ def generate_launch_description():
     )
 
     rviz_config_file = PathJoinSubstitution(
-        [FindPackageShare("kuka_common_moveit_setup_assistant"), "config", "moveit.rviz"]
+        [FindPackageShare("kuka_common_moveit"), "config", "moveit.rviz"]
     )
     rviz_node = Node(
         package="rviz2",

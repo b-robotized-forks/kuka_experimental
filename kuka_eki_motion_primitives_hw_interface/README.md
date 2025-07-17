@@ -150,7 +150,7 @@ During the execution of the motion primitives, the movement can be stopped by pr
 (start simulation as explained above)   
 Start MoveIt and RViz:
 ```
-ros2 launch kuka_common_moveit_setup_assistant kuka_moveit.launch.py kuka_type:=kuka_kr3r540
+ros2 launch kuka_common_moveit kuka_moveit.launch.py kuka_type:=kuka_kr3r540
 ```
 Start controller and hardware interface with **"simulation"**:
 ```

@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>kuka_common_moveit_setup_assistant</name>
+  <name>kuka_common_moveit</name>
   <version>0.3.0</version>
   <description>
      An automatically generated package with all the configuration and launch files for using the kuka_kr3r540 with the MoveIt Motion Planning Framework
@@ -14,7 +14,7 @@
   <url type="bugtracker">https://github.com/moveit/moveit2/issues</url>
   <url type="repository">https://github.com/moveit/moveit2</url>
 
-  <author email="todo@b-robotized.com">todo</author>
+  <author email="mathias.fuhrer@b-robotized.com">Mathias Fuhrer</author>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
