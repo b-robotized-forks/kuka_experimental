@@ -55,4 +55,66 @@
     <disable_collisions link1="$(arg prefix)link_3" link2="$(arg prefix)link_6" reason="Never"/>
     <disable_collisions link1="$(arg prefix)link_4" link2="$(arg prefix)link_5" reason="Adjacent"/>
     <disable_collisions link1="$(arg prefix)link_5" link2="$(arg prefix)link_6" reason="Adjacent"/>
+
+    <!-- Only for ready2educate cell -->
+    <xacro:property name="robot_name" value="$(arg robot_name)"/>
+    <xacro:if value="${robot_name == 'ready2_educate'}">
+        <disable_collisions link1="base_link" link2="camera" reason="Never"/>
+        <disable_collisions link1="base_link" link2="cell_link" reason="Adjacent"/>
+        <disable_collisions link1="base_link" link2="roof" reason="Never"/>
+        <disable_collisions link1="base_link" link2="wall_1" reason="Never"/>
+        <disable_collisions link1="base_link" link2="wall_2" reason="Never"/>
+        <disable_collisions link1="base_link" link2="wall_3" reason="Never"/>
+        <disable_collisions link1="base_link" link2="wall_4" reason="Never"/>
+        <disable_collisions link1="camera" link2="cell_link" reason="Adjacent"/>
+        <disable_collisions link1="camera" link2="link_1" reason="Never"/>
+        <disable_collisions link1="camera" link2="link_2" reason="Never"/>
+        <disable_collisions link1="camera" link2="link_3" reason="Never"/>
+        <disable_collisions link1="camera" link2="roof" reason="Default"/>
+        <disable_collisions link1="camera" link2="wall_1" reason="Never"/>
+        <disable_collisions link1="camera" link2="wall_2" reason="Never"/>
+        <disable_collisions link1="camera" link2="wall_3" reason="Never"/>
+        <disable_collisions link1="camera" link2="wall_4" reason="Never"/>
+        <disable_collisions link1="cell_link" link2="link_1" reason="Default"/>
+        <disable_collisions link1="cell_link" link2="roof" reason="Adjacent"/>
+        <disable_collisions link1="cell_link" link2="wall_1" reason="Adjacent"/>
+        <disable_collisions link1="cell_link" link2="wall_2" reason="Adjacent"/>
+        <disable_collisions link1="cell_link" link2="wall_3" reason="Adjacent"/>
+        <disable_collisions link1="cell_link" link2="wall_4" reason="Adjacent"/>
+        <!-- <disable_collisions link1="gripper_link" link2="link_3" reason="Never"/> -->
+        <!-- <disable_collisions link1="gripper_link" link2="link_4" reason="Never"/> -->
+        <!-- <disable_collisions link1="gripper_link" link2="link_5" reason="Never"/> -->
+        <!-- <disable_collisions link1="gripper_link" link2="link_6" reason="Adjacent"/> -->
+        <disable_collisions link1="link_1" link2="roof" reason="Never"/>
+        <disable_collisions link1="link_1" link2="wall_1" reason="Never"/>
+        <disable_collisions link1="link_1" link2="wall_2" reason="Never"/>
+        <disable_collisions link1="link_1" link2="wall_3" reason="Never"/>
+        <disable_collisions link1="link_1" link2="wall_4" reason="Never"/>
+        <disable_collisions link1="link_2" link2="link_3" reason="Adjacent"/>
+        <disable_collisions link1="link_2" link2="link_5" reason="Never"/>
+        <disable_collisions link1="link_2" link2="link_6" reason="Never"/>
+        <disable_collisions link1="link_2" link2="roof" reason="Never"/>
+        <disable_collisions link1="link_2" link2="wall_1" reason="Never"/>
+        <disable_collisions link1="link_2" link2="wall_3" reason="Never"/>
+        <disable_collisions link1="link_2" link2="wall_4" reason="Never"/>
+        <disable_collisions link1="link_3" link2="roof" reason="Never"/>
+        <disable_collisions link1="link_3" link2="wall_1" reason="Never"/>
+        <disable_collisions link1="link_3" link2="wall_3" reason="Never"/>
+        <disable_collisions link1="link_3" link2="wall_4" reason="Never"/>
+        <disable_collisions link1="link_4" link2="roof" reason="Never"/>
+        <disable_collisions link1="link_4" link2="wall_1" reason="Default"/>
+        <disable_collisions link1="link_5" link2="roof" reason="Never"/>
+        <disable_collisions link1="link_5" link2="wall_1" reason="Default"/>
+        <disable_collisions link1="link_6" link2="roof" reason="Never"/>
+        <disable_collisions link1="roof" link2="wall_1" reason="Default"/>
+        <disable_collisions link1="roof" link2="wall_2" reason="Default"/>
+        <disable_collisions link1="roof" link2="wall_3" reason="Default"/>
+        <disable_collisions link1="roof" link2="wall_4" reason="Default"/>
+        <disable_collisions link1="wall_1" link2="wall_2" reason="Never"/>
+        <disable_collisions link1="wall_1" link2="wall_3" reason="Default"/>
+        <disable_collisions link1="wall_1" link2="wall_4" reason="Default"/>
+        <disable_collisions link1="wall_2" link2="wall_3" reason="Default"/>
+        <disable_collisions link1="wall_2" link2="wall_4" reason="Default"/>
+        <disable_collisions link1="wall_3" link2="wall_4" reason="Never"/>
+    </xacro:if>
 </robot>

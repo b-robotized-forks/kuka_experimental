@@ -124,8 +124,13 @@ ros2 run kuka_eki_simulator kuka_eki_simulator_tcp
 
 
 **2. Launch KR3 with motion primitive driver**
+Without r2e cell
 ```
 ros2 launch kuka_ros2_control_support motion_primitives_forward_bringup.launch.py description_package:=kuka_kr3_support description_macro_file:=kr3r540_macro.xacro
+```
+With r2e cell:
+```
+ros2 launch kuka_ros2_control_support motion_primitives_forward_bringup.launch.py description_package:=kuka_ready2_educate_support description_macro_file:=ready2_educate_macro.xacro
 ```
 ## With ready2educate H-KA cell 2 (adjust robot_ip for other cells)
 > [!NOTE]   
@@ -148,13 +153,23 @@ During the execution of the motion primitives, the movement can be stopped by pr
 ## MoveIt
 **With "simulation":**  
 (start simulation as explained above)   
-Start MoveIt and RViz:
+Start MoveIt and RViz:  
+Without r2e cell:
 ```
 ros2 launch kuka_common_moveit kuka_moveit.launch.py kuka_type:=kuka_kr3r540
 ```
-Start controller and hardware interface with **"simulation"**:
+With r2e cell:
+```
+ros2 launch kuka_common_moveit kuka_moveit.launch.py kuka_type:=ready2_educate
+```
+Start controller and hardware interface with **"simulation"**:  
+Withot r2e cell:
 ```
 ros2 launch kuka_ros2_control_support motion_primitives_from_traj_bringup.launch.py description_package:=kuka_kr3_support description_macro_file:=kr3r540_macro.xacro start_rviz:=false robot_name:=kuka_kr3r540
+```
+With r2e cell:
+```
+ros2 launch kuka_ros2_control_support motion_primitives_from_traj_bringup.launch.py description_package:=kuka_ready2_educate_support description_macro_file:=ready2_educate_macro.xacro start_rviz:=false robot_name:=ready2_educate
 ```
 Start controller and hardware interface with **ready2educate H-KA cell 2**:
 ```

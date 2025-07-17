@@ -88,7 +88,8 @@ def declare_arguments():
                     "kuka_kr150r3100_2",
                     "kuka_kr210l150",
                     "kuka_kr210r3100",
-                    "kuka_lbr_iiwa_14_r820"
+                    "kuka_lbr_iiwa_14_r820",
+                    "ready2_educate"
                 ],
             ),
             DeclareLaunchArgument(

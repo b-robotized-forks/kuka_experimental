@@ -115,4 +115,9 @@
   <xacro:if value="${description_package == 'kuka_lbr_iiwa_support'}">
     <xacro:kuka_lbr_iiwa_14_r820 prefix="$(arg prefix)"/>
   </xacro:if>
+
+  <xacro:if value="${description_package == 'kuka_ready2_educate_support'}">
+    <xacro:ready2_educate prefix="$(arg prefix)" connected_to="world" xyz="0 0 0" rpy="0 0 0"/>
+  </xacro:if>
+
 </robot>
