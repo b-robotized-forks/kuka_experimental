@@ -33,70 +33,70 @@ PTP_1.type = MotionPrimitive.LINEAR_JOINT
 PTP_1.joint_positions = [0.0, -1.57, 1.57, 0.0, 1.57, 0.0]
 PTP_1.blend_radius = 0.1
 PTP_1.additional_arguments = [
-    MotionArgument(argument_name="velocity", argument_value=0.5),
-    MotionArgument(argument_name="acceleration", argument_value=0.5)]
+    MotionArgument(name="velocity", value=0.5),
+    MotionArgument(name="acceleration", value=0.5)]
 
 PTP_1_slow = MotionPrimitive()
 PTP_1_slow.type = MotionPrimitive.LINEAR_JOINT
 PTP_1_slow.joint_positions = [0.0, -1.57, 1.57, 0.0, 1.57, 0.0]
 PTP_1_slow.additional_arguments = [
-    MotionArgument(argument_name="velocity", argument_value=0.1),
-    MotionArgument(argument_name="acceleration", argument_value=0.1)]
+    MotionArgument(name="velocity", value=0.1),
+    MotionArgument(name="acceleration", value=0.1)]
 
 PTP_11 = MotionPrimitive()
 PTP_11.type = MotionPrimitive.LINEAR_JOINT
 PTP_11.joint_positions = [0.15, -1.57, 1.57, 0.0, 1.57, 0.0]
 PTP_11.blend_radius = 0.1
 PTP_11.additional_arguments = [
-    MotionArgument(argument_name="velocity", argument_value=0.5),
-    MotionArgument(argument_name="acceleration", argument_value=0.5)]
+    MotionArgument(name="velocity", value=0.5),
+    MotionArgument(name="acceleration", value=0.5)]
 
 PTP_12 = MotionPrimitive()
 PTP_12.type = MotionPrimitive.LINEAR_JOINT
 PTP_12.joint_positions = [0.3, -1.57, 1.57, 0.0, 1.57, 0.0]
 PTP_12.blend_radius = 0.1
 PTP_12.additional_arguments = [
-    MotionArgument(argument_name="velocity", argument_value=0.5),
-    MotionArgument(argument_name="acceleration", argument_value=0.5)]
+    MotionArgument(name="velocity", value=0.5),
+    MotionArgument(name="acceleration", value=0.5)]
 
 PTP_2 = MotionPrimitive()
 PTP_2.type = MotionPrimitive.LINEAR_JOINT
 PTP_2.joint_positions = [0.5, -1.57, 1.57, 0.0, 1.57, 0.0]
 PTP_2.blend_radius = 0.1
 PTP_2.additional_arguments = [
-    MotionArgument(argument_name="velocity", argument_value=0.5),
-    MotionArgument(argument_name="acceleration", argument_value=0.5)]
+    MotionArgument(name="velocity", value=0.5),
+    MotionArgument(name="acceleration", value=0.5)]
 
 PTP_2_slow = MotionPrimitive()
 PTP_2_slow.type = MotionPrimitive.LINEAR_JOINT
 PTP_2_slow.joint_positions = [0.5, -1.57, 1.57, 0.0, 1.57, 0.0]
 PTP_2_slow.additional_arguments = [
-    MotionArgument(argument_name="velocity", argument_value=0.1),
-    MotionArgument(argument_name="acceleration", argument_value=0.1)]
+    MotionArgument(name="velocity", value=0.1),
+    MotionArgument(name="acceleration", value=0.1)]
 
 PTP_21 = MotionPrimitive()
 PTP_21.type = MotionPrimitive.LINEAR_JOINT
 PTP_21.joint_positions = [0.65, -1.57, 1.57, 0.0, 1.57, 0.0]
 PTP_21.blend_radius = 0.1
 PTP_21.additional_arguments = [
-    MotionArgument(argument_name="velocity", argument_value=0.5),
-    MotionArgument(argument_name="acceleration", argument_value=0.5)]
+    MotionArgument(name="velocity", value=0.5),
+    MotionArgument(name="acceleration", value=0.5)]
 
 PTP_22 = MotionPrimitive()
 PTP_22.type = MotionPrimitive.LINEAR_JOINT
 PTP_22.joint_positions = [0.8, -1.57, 1.57, 0.0, 1.57, 0.0]
 PTP_22.blend_radius = 0.1
 PTP_22.additional_arguments = [
-    MotionArgument(argument_name="velocity", argument_value=0.5),
-    MotionArgument(argument_name="acceleration", argument_value=0.5)]
+    MotionArgument(name="velocity", value=0.5),
+    MotionArgument(name="acceleration", value=0.5)]
 
 PTP_3 = MotionPrimitive()
 PTP_3.type = MotionPrimitive.LINEAR_JOINT
 PTP_3.joint_positions = [1.0, -1.57, 1.57, 0.0, 1.57, 0.0]
 PTP_3.blend_radius = 0.1
 PTP_3.additional_arguments = [
-    MotionArgument(argument_name="velocity", argument_value=0.5),
-    MotionArgument(argument_name="acceleration", argument_value=0.5)]
+    MotionArgument(name="velocity", value=0.5),
+    MotionArgument(name="acceleration", value=0.5)]
 
 LIN_1 = MotionPrimitive()
 LIN_1.type = MotionPrimitive.LINEAR_CARTESIAN
@@ -111,15 +111,15 @@ pose_L1.pose.orientation.w = 0.0
 LIN_1.poses = [pose_L1]
 LIN_1.blend_radius = 0.1
 LIN_1.additional_arguments = [
-    MotionArgument(argument_name="velocity", argument_value=2.0),
-    MotionArgument(argument_name="acceleration", argument_value=2.0)]
+    MotionArgument(name="velocity", value=2.0),
+    MotionArgument(name="acceleration", value=2.0)]
 
 LIN_1_slow = MotionPrimitive()
 LIN_1_slow.type = MotionPrimitive.LINEAR_CARTESIAN
 LIN_1_slow.poses = [pose_L1]
 LIN_1_slow.additional_arguments = [
-    MotionArgument(argument_name="velocity", argument_value=0.1),
-    MotionArgument(argument_name="acceleration", argument_value=0.1)]
+    MotionArgument(name="velocity", value=0.1),
+    MotionArgument(name="acceleration", value=0.1)]
 
 LIN_2 = MotionPrimitive()
 LIN_2.type = MotionPrimitive.LINEAR_CARTESIAN
@@ -134,15 +134,15 @@ pose_L2.pose.orientation.w = 0.0
 LIN_2.poses = [pose_L2]
 LIN_2.blend_radius = 0.1
 LIN_2.additional_arguments = [
-    MotionArgument(argument_name="velocity", argument_value=2.0),
-    MotionArgument(argument_name="acceleration", argument_value=2.0)]
+    MotionArgument(name="velocity", value=2.0),
+    MotionArgument(name="acceleration", value=2.0)]
 
 LIN_2_slow = MotionPrimitive()
 LIN_2_slow.type = MotionPrimitive.LINEAR_CARTESIAN
 LIN_2_slow.poses = [pose_L2]
 LIN_2_slow.additional_arguments = [
-    MotionArgument(argument_name="velocity", argument_value=0.1),
-    MotionArgument(argument_name="acceleration", argument_value=0.1)]
+    MotionArgument(name="velocity", value=0.1),
+    MotionArgument(name="acceleration", value=0.1)]
 
 LIN_3 = MotionPrimitive()
 LIN_3.type = MotionPrimitive.LINEAR_CARTESIAN
@@ -157,8 +157,8 @@ pose_L3.pose.orientation.w = 0.0
 LIN_3.poses = [pose_L3]
 LIN_3.blend_radius = 0.1
 LIN_3.additional_arguments = [
-    MotionArgument(argument_name="velocity", argument_value=2.0),
-    MotionArgument(argument_name="acceleration", argument_value=2.0)]
+    MotionArgument(name="velocity", value=2.0),
+    MotionArgument(name="acceleration", value=2.0)]
 
 LIN_4 = MotionPrimitive()
 LIN_4.type = MotionPrimitive.LINEAR_CARTESIAN
@@ -173,8 +173,8 @@ pose_L4.pose.orientation.w = 0.0
 LIN_4.poses = [pose_L4]
 LIN_4.blend_radius = 0.1
 LIN_4.additional_arguments = [
-    MotionArgument(argument_name="velocity", argument_value=2.0),
-    MotionArgument(argument_name="acceleration", argument_value=2.0)]
+    MotionArgument(name="velocity", value=2.0),
+    MotionArgument(name="acceleration", value=2.0)]
 
 LIN_5 = MotionPrimitive()
 LIN_5.type = MotionPrimitive.LINEAR_CARTESIAN
@@ -189,8 +189,8 @@ pose_L5.pose.orientation.w = 0.0
 LIN_5.poses = [pose_L5]
 LIN_5.blend_radius = 0.1
 LIN_5.additional_arguments = [
-    MotionArgument(argument_name="velocity", argument_value=2.0),
-    MotionArgument(argument_name="acceleration", argument_value=2.0)]
+    MotionArgument(name="velocity", value=2.0),
+    MotionArgument(name="acceleration", value=2.0)]
 
 moveC_1 = MotionPrimitive()
 moveC_1.type = MotionPrimitive.CIRCULAR_CARTESIAN
@@ -212,15 +212,15 @@ pose_C1_goal.pose.orientation.z = 0.0
 pose_C1_goal.pose.orientation.w = 0.05
 moveC_1.poses = [pose_C1_goal, pose_C1_via] 
 moveC_1.additional_arguments = [
-    MotionArgument(argument_name="velocity", argument_value=2.0),
-    MotionArgument(argument_name="acceleration", argument_value=2.0)]
+    MotionArgument(name="velocity", value=2.0),
+    MotionArgument(name="acceleration", value=2.0)]
 
 moveC_1_slow = MotionPrimitive()
 moveC_1_slow.type = MotionPrimitive.CIRCULAR_CARTESIAN
 moveC_1_slow.poses = [pose_C1_goal, pose_C1_via] 
 moveC_1_slow.additional_arguments = [
-    MotionArgument(argument_name="velocity", argument_value=0.1),
-    MotionArgument(argument_name="acceleration", argument_value=0.1)]
+    MotionArgument(name="velocity", value=0.1),
+    MotionArgument(name="acceleration", value=0.1)]
 
 # Motions to compare moprim driver and rsi driver
 eval_vel = 0.1
@@ -232,72 +232,72 @@ PTP_eval_0.type = MotionPrimitive.LINEAR_JOINT
 PTP_eval_0.joint_positions = [0, -1.57, 1.57, 0.0, 1.57, 0.0]
 PTP_eval_0.blend_radius = eval_blend_radius
 PTP_eval_0.additional_arguments = [
-    MotionArgument(argument_name="velocity", argument_value=eval_vel),
-    MotionArgument(argument_name="acceleration", argument_value=eval_acc)]
+    MotionArgument(name="velocity", value=eval_vel),
+    MotionArgument(name="acceleration", value=eval_acc)]
 
 PTP_eval_1 = MotionPrimitive()
 PTP_eval_1.type = MotionPrimitive.LINEAR_JOINT
 PTP_eval_1.joint_positions = [0, -1.1, 1.0, 0.0, 1.57, 0.0]
 PTP_eval_1.blend_radius = eval_blend_radius
 PTP_eval_1.additional_arguments = [
-    MotionArgument(argument_name="velocity", argument_value=eval_vel),
-    MotionArgument(argument_name="acceleration", argument_value=eval_acc)]
+    MotionArgument(name="velocity", value=eval_vel),
+    MotionArgument(name="acceleration", value=eval_acc)]
 
 PTP_eval_2 = MotionPrimitive()
 PTP_eval_2.type = MotionPrimitive.LINEAR_JOINT
 PTP_eval_2.joint_positions = [0.7, -0.9, 0.7, 0.0, 1.57, 0.0]
 PTP_eval_2.blend_radius = eval_blend_radius
 PTP_eval_2.additional_arguments = [
-    MotionArgument(argument_name="velocity", argument_value=eval_vel),
-    MotionArgument(argument_name="acceleration", argument_value=eval_acc)]
+    MotionArgument(name="velocity", value=eval_vel),
+    MotionArgument(name="acceleration", value=eval_acc)]
 
 PTP_eval_3 = MotionPrimitive()
 PTP_eval_3.type = MotionPrimitive.LINEAR_JOINT
 PTP_eval_3.joint_positions = [1.57, -1.57, 1.57, 0.0, 1.57, 0.0]
 PTP_eval_3.blend_radius = eval_blend_radius
 PTP_eval_3.additional_arguments = [
-    MotionArgument(argument_name="velocity", argument_value=eval_vel),
-    MotionArgument(argument_name="acceleration", argument_value=eval_acc)]
+    MotionArgument(name="velocity", value=eval_vel),
+    MotionArgument(name="acceleration", value=eval_acc)]
 
 PTP_eval_4 = MotionPrimitive()
 PTP_eval_4.type = MotionPrimitive.LINEAR_JOINT
 PTP_eval_4.joint_positions = [0, -1.57, 1.57, 0.0, 1.57, 0.0]
 PTP_eval_4.blend_radius = eval_blend_radius
 PTP_eval_4.additional_arguments = [
-    MotionArgument(argument_name="velocity", argument_value=eval_vel),
-    MotionArgument(argument_name="acceleration", argument_value=eval_acc)]
+    MotionArgument(name="velocity", value=eval_vel),
+    MotionArgument(name="acceleration", value=eval_acc)]
 
 PTP_eval_5 = MotionPrimitive()
 PTP_eval_5.type = MotionPrimitive.LINEAR_JOINT
 PTP_eval_5.joint_positions = [0, -1.1, 1.0, 0.0, 1.57, 0.0]
 PTP_eval_5.blend_radius = eval_blend_radius
 PTP_eval_5.additional_arguments = [
-    MotionArgument(argument_name="velocity", argument_value=eval_vel),
-    MotionArgument(argument_name="acceleration", argument_value=eval_acc)]
+    MotionArgument(name="velocity", value=eval_vel),
+    MotionArgument(name="acceleration", value=eval_acc)]
 
 PTP_eval_6 = MotionPrimitive()
 PTP_eval_6.type = MotionPrimitive.LINEAR_JOINT
 PTP_eval_6.joint_positions = [-0.7, -0.9, 0.7, 0.0, 1.57, 0.0]
 PTP_eval_6.blend_radius = eval_blend_radius
 PTP_eval_6.additional_arguments = [
-    MotionArgument(argument_name="velocity", argument_value=eval_vel),
-    MotionArgument(argument_name="acceleration", argument_value=eval_acc)]
+    MotionArgument(name="velocity", value=eval_vel),
+    MotionArgument(name="acceleration", value=eval_acc)]
 
 PTP_eval_7 = MotionPrimitive()
 PTP_eval_7.type = MotionPrimitive.LINEAR_JOINT
 PTP_eval_7.joint_positions = [-1.57, -1.57, 1.57, 0.0, 1.57, 0.0]
 PTP_eval_7.blend_radius = eval_blend_radius
 PTP_eval_7.additional_arguments = [
-    MotionArgument(argument_name="velocity", argument_value=eval_vel),
-    MotionArgument(argument_name="acceleration", argument_value=eval_acc)]
+    MotionArgument(name="velocity", value=eval_vel),
+    MotionArgument(name="acceleration", value=eval_acc)]
 
 PTP_eval_8 = MotionPrimitive()
 PTP_eval_8.type = MotionPrimitive.LINEAR_JOINT
 PTP_eval_8.joint_positions = [0, -1.57, 1.57, 0.0, 1.57, 0.0]
 PTP_eval_8.blend_radius = eval_blend_radius
 PTP_eval_8.additional_arguments = [
-    MotionArgument(argument_name="velocity", argument_value=eval_vel),
-    MotionArgument(argument_name="acceleration", argument_value=eval_acc)]
+    MotionArgument(name="velocity", value=eval_vel),
+    MotionArgument(name="acceleration", value=eval_acc)]
 
 class ExecuteMotionClient(Node):
     def __init__(self):
