@@ -128,7 +128,7 @@ motion_primitive_from_trajectory_controller:
     use_time_not_vel_and_acc: false
     epsilon_joint_angle: 0.01
     epsilon_cart_position: 0.01
-    epsilon_cart_angle: 0.01
+    epsilon_cart_angle: 0.05
     # blend_radius_overwrite: 0.01
     # joint_vel_overwrite: 0.5
     # joint_acc_overwrite: 0.5
