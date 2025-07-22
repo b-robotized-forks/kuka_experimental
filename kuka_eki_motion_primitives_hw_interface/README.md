@@ -175,6 +175,9 @@ Start controller and hardware interface with **ready2educate H-KA cell 2**:
 ```
 ros2 launch kuka_ros2_control_support motion_primitives_from_traj_bringup.launch.py description_package:=kuka_kr3_support description_macro_file:=kr3r540_macro.xacro start_rviz:=false use_mock_hardware:=false eki_robot_ip:=10.181.116.51 robot_name:=kuka_kr3r540
 ```
+```
+ros2 launch kuka_ros2_control_support motion_primitives_from_traj_bringup.launch.py description_package:=kuka_ready2_educate_support description_macro_file:=ready2_educate_macro.xacro start_rviz:=false use_mock_hardware:=false eki_robot_ip:=10.181.116.51 robot_name:=ready2_educate
+```
 
 # TODOs/ Improvements
 - KRL: Occasionally, the error "Kontrollstruktur nächster Satz" occurs when stopping/ canceling movement. This error must be acknowledged on the touch panel before the program can continue. Why does this error occur?
