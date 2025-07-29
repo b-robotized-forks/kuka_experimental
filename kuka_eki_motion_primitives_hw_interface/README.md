@@ -5,18 +5,18 @@ Hardware interface for executing motion primitives on a KUKA robot using the ROS
 
 [![Licence](https://img.shields.io/badge/License-Apache-2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-# Demo Video
-[![Play Video](doc/kuka_demo_video_preview.png)](https://www.youtube.com/watch?v=LFxwfy6cmH4)
+# Demo Video with motion_primitives_forward_controller
+[![Play Video](doc/moprim_forward_controller_kuka_demo_thumbnail.png)](https://youtu.be/_BWCO36j9bg)
 
-# Related packages/ repos
-- [industrial_robot_motion_interfaces](https://github.com/b-robotized-forks/industrial_robot_motion_interfaces/tree/helper-types)
-- [ros2_controllers with motion_primitives_forward_controller](https://github.com/b-robotized-forks/ros2_controllers/tree/motion_primitive_forward_controller/motion_primitives_forward_controller)
-- [kuka_experimental with motion_primitive_kuka_driver](https://github.com/b-robotized-forks/kuka_experimental/tree/motion_primitive_kuka_driver)
-
+# Demo Video with motion_primitives_from_trajectory_controller
+[![Play Video](doc/moprim_from_traj_controller_kuka_demo_thumbnail.png)](https://youtu.be/zaRkU-whyPM)
 
 # Architecture
-
+**with motion_primitives_forward_controller**
 ![Architecture Overview](doc/ros2_control_motion_primitives_kuka.drawio.png)
+
+**with motion_primitives_from_trajectory_controller**
+![Architecture Overview](doc/ros2_control_motion_primitives_from_traj_kuka.drawio.png)
 
 # Command and State Interfaces
 
@@ -110,8 +110,7 @@ Instructions for the KRL implementation and how to deploy it on the robot contro
 
 
 # Usage notes:
-## With "simulation"
-**1. Start simulation**
+## "Simulation"
 ```
 ros2 run kuka_eki_simulator kuka_eki_simulator_tcp
 ```
@@ -123,25 +122,20 @@ ros2 run kuka_eki_simulator kuka_eki_simulator_tcp
 > - **Multi-Primitive XML:** The simulator cannot correctly process XML messages containing multiple motion primitives. However, the received XML is printed, which is usually sufficient for debugging purposes.
 
 
-**2. Launch KR3 with motion primitive driver**
-Without r2e cell
-```
-ros2 launch kuka_ros2_control_support motion_primitives_forward_bringup.launch.py description_package:=kuka_kr3_support description_macro_file:=kr3r540_macro.xacro
-```
-With r2e cell:
+## With motion_primitives_forward_controller
+**Driver with "simulation"**
+> [!NOTE]   
+> Start simulation as explained above.
 ```
 ros2 launch kuka_ros2_control_support motion_primitives_forward_bringup.launch.py description_package:=kuka_ready2_educate_support description_macro_file:=ready2_educate_macro.xacro
 ```
-## With ready2educate H-KA cell 2 (adjust robot_ip for other cells)
+**Driver with ready2educate H-KA cell 2** (adjust robot_ip for other cells)
 > [!NOTE]   
 > Make sure to follow the instructions in the [README file in the KRL folder](krl/README.md) to setup the robot before launching the hardware interface.
-
-**Launch kr3 with motion primitive driver**
 ```
 ros2 launch kuka_ros2_control_support motion_primitives_forward_bringup.launch.py description_package:=kuka_kr3_support description_macro_file:=kr3r540_macro.xacro eki_robot_ip:=10.181.116.51
 ```
-## Send dummy commands
-**Commands from python script**
+**Send motion primitives from python script**
 > [!WARNING]  
 > Ensure that the robot in your configuration is able to execute these motion primitives without any risk of collision.
 ```
@@ -150,31 +144,18 @@ ros2 run kuka_eki_motion_primitives_hw_interface send_dummy_motion_primitives.py
 During the execution of the motion primitives, the movement can be stopped by pressing the Enter key in the terminal.
 
 
-## MoveIt
-**With "simulation":**  
-(start simulation as explained above)   
-Start MoveIt and RViz:  
-Without r2e cell:
-```
-ros2 launch kuka_common_moveit kuka_moveit.launch.py kuka_type:=kuka_kr3r540
-```
-With r2e cell:
+## With motion_primitives_from_trajectory_controller
+**Start MoveIt and RViz:**
 ```
 ros2 launch kuka_common_moveit kuka_moveit.launch.py kuka_type:=ready2_educate
 ```
-Start controller and hardware interface with **"simulation"**:  
-Withot r2e cell:
-```
-ros2 launch kuka_ros2_control_support motion_primitives_from_traj_bringup.launch.py description_package:=kuka_kr3_support description_macro_file:=kr3r540_macro.xacro start_rviz:=false robot_name:=kuka_kr3r540
-```
-With r2e cell:
+**Start controller and hardware interface with "simulation":**
+> [!NOTE]   
+> Start simulation as explained above.
 ```
 ros2 launch kuka_ros2_control_support motion_primitives_from_traj_bringup.launch.py description_package:=kuka_ready2_educate_support description_macro_file:=ready2_educate_macro.xacro start_rviz:=false robot_name:=ready2_educate
 ```
-Start controller and hardware interface with **ready2educate H-KA cell 2**:
-```
-ros2 launch kuka_ros2_control_support motion_primitives_from_traj_bringup.launch.py description_package:=kuka_kr3_support description_macro_file:=kr3r540_macro.xacro start_rviz:=false use_mock_hardware:=false eki_robot_ip:=10.181.116.51 robot_name:=kuka_kr3r540
-```
+**Start controller and hardware interface with ready2educate H-KA cell 2:**
 ```
 ros2 launch kuka_ros2_control_support motion_primitives_from_traj_bringup.launch.py description_package:=kuka_ready2_educate_support description_macro_file:=ready2_educate_macro.xacro start_rviz:=false use_mock_hardware:=false eki_robot_ip:=10.181.116.51 robot_name:=ready2_educate
 ```
