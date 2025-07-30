@@ -160,6 +160,14 @@ ros2 launch kuka_ros2_control_support motion_primitives_from_traj_bringup.launch
 ros2 launch kuka_ros2_control_support motion_primitives_from_traj_bringup.launch.py description_package:=kuka_ready2_educate_support description_macro_file:=ready2_educate_macro.xacro start_rviz:=false use_mock_hardware:=false eki_robot_ip:=10.181.116.51 robot_name:=ready2_educate
 ```
 
+**(H-KA KR210)**
+```
+ros2 launch kuka_common_moveit kuka_moveit.launch.py kuka_type:=kuka_kr210r3100
+```
+```
+ros2 launch kuka_ros2_control_support motion_primitives_from_traj_bringup.launch.py description_package:=kuka_kr210_support description_macro_file:=kr210r3100_macro.xacro start_rviz:=false use_mock_hardware:=false eki_robot_ip:=172.31.1.178 robot_name:=kuka_kr210r3100
+```
+
 # TODOs/ Improvements
 - KRL: Occasionally, the error "Kontrollstruktur nächster Satz" occurs when stopping/ canceling movement. This error must be acknowledged on the touch panel before the program can continue. Why does this error occur?
 - KRL: Get max_joit_acc and calculate acc_scale=acceleration/max_joit_acc to set $ACC_AXIS[] --> for now, joint acceleration is set to 50%
