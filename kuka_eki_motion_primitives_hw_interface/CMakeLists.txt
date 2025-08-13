@@ -14,7 +14,7 @@ find_package(rclcpp_lifecycle REQUIRED)
 find_package(rclpy REQUIRED)
 find_package(ament_cmake_gmock REQUIRED)
 find_package(ros2_control_test_assets REQUIRED)
-find_package(motion_primitives_forward_controller REQUIRED)
+find_package(motion_primitives_controllers REQUIRED)
 find_package(angles REQUIRED)
 find_package(tinyxml_vendor REQUIRED)
 find_package(TinyXML REQUIRED)
@@ -44,13 +44,11 @@ target_link_libraries(kuka_eki_motion_primitives_hw_interface
     angles::angles
     hardware_interface::hardware_interface
     hardware_interface::mock_components
-    motion_primitives_forward_controller::motion_primitives_forward_controller
-    motion_primitives_forward_controller::motion_primitives_forward_controller_parameters
+    motion_primitives_controllers::motion_primitives_controllers
     rclcpp::rclcpp
     rclcpp_lifecycle::rclcpp_lifecycle
     tf2_geometry_msgs::tf2_geometry_msgs
 )
-
 
 # prevent pluginlib from using boost
 target_compile_definitions(kuka_eki_motion_primitives_hw_interface PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")

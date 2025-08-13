@@ -12,10 +12,10 @@ controller_manager:
       type: joint_trajectory_controller/JointTrajectoryController
     
     motion_primitive_forward_controller:
-      type: motion_primitives_forward_controller/MotionPrimitivesForwardController
+      type: motion_primitives_controllers/MotionPrimitivesForwardController
 
     motion_primitive_from_trajectory_controller:
-      type: motion_primitives_from_trajectory_controller/MotionPrimitivesFromTrajectoryController
+      type: motion_primitives_controllers/MotionPrimitivesFromTrajectoryController
 
 forward_position_controller:
   ros__parameters:

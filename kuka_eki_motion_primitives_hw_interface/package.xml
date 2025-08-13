@@ -18,7 +18,7 @@
   <depend>rclcpp_lifecycle</depend>
   <depend>rclpy</depend>
   <depend>ros2_control_test_assets</depend>
-  <depend>motion_primitives_forward_controller</depend>
+  <depend>motion_primitives_controllers</depend>
   <depend>angles</depend>
   <depend>tf2_geometry_msgs</depend>  
   <depend>control_msgs</depend>

@@ -28,13 +28,13 @@
 #include "rclcpp/macros.hpp"
 #include "rclcpp_lifecycle/state.hpp"
 
-#include "motion_primitives_forward_controller/motion_primitives_forward_controller.hpp"
+#include "motion_primitives_controllers/motion_primitives_forward_controller.hpp"
 #include "eki_communication/Robot.h"
 #include "control_msgs/msg/motion_primitive.hpp"
 
-using MoprimExecutionState = motion_primitives_forward_controller::ExecutionState;
+using MoprimExecutionState = motion_primitives_controllers::ExecutionState;
 using MoprimMotionType = control_msgs::msg::MotionPrimitive;
-using MoprimMotionHelperType = motion_primitives_forward_controller::MotionHelperType;
+using MoprimMotionHelperType = motion_primitives_controllers::MotionHelperType;
 
 namespace kuka_eki_motion_primitives_hw_interface
 {
