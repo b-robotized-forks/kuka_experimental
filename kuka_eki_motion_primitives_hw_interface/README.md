@@ -9,7 +9,7 @@ Hardware interface for executing motion primitives on a KUKA robot using the ROS
 [![Play Video](doc/moprim_forward_controller_kuka_demo_thumbnail.png)](https://youtu.be/_BWCO36j9bg)
 
 # Demo Video with motion_primitives_from_trajectory_controller
-[![Play Video](doc/moprim_from_traj_controller_kuka_demo_thumbnail.png)](https://youtu.be/zaRkU-whyPM)
+[![Play Video](doc/moprim_from_traj_controller_kuka_demo_thumbnail.png)](https://youtu.be/SvUU6PM1qRk)
 
 # Architecture
 **with motion_primitives_forward_controller**
