@@ -17,10 +17,10 @@
             - joint_a4
             - joint_a5
             - joint_a6
-    trajectory_execution:
-      allowed_execution_duration_scaling: 100.0
-      allowed_goal_duration_margin: 0.5
-      allowed_start_tolerance: 0.01
+    # trajectory_execution:
+    #   allowed_execution_duration_scaling: 100.0
+    #   allowed_goal_duration_margin: 0.5
+    #   allowed_start_tolerance: 0.01
 
     ompl:
       manipulator:
