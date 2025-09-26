@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(kuka_eki_io_interface)
+project(iras_kuka_eki_io_interface)
 
 # Default to C99
 if(NOT CMAKE_C_STANDARD)
@@ -17,12 +17,15 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
+find_package(hardware_interface REQUIRED)
 find_package(Boost REQUIRED COMPONENTS system)
+find_package(Boost REQUIRED COMPONENTS thread)
 find_package(tinyxml_vendor REQUIRED)
 find_package(TinyXML REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
 find_package(std_msgs REQUIRED)
+
 
 # uncomment the following section in order to fill in
 # further dependencies manually.
@@ -48,14 +51,32 @@ target_include_directories(
   ${PROJECT_NAME}
   PRIVATE
   include
+  
 )
 ament_target_dependencies(
   ${PROJECT_NAME}
+  hardware_interface
+  pluginlib
   rclcpp
   rclcpp_lifecycle
-  TinyXML
+  Boost
+)
+pluginlib_export_plugin_description_file(hardware_interface ros2_control_kuka_eki_io.xml)
+
+### ros2 control hardware plugin
+install(
+  TARGETS ${PROJECT_NAME}
+  EXPORT export_iras_kuka_eki_io_interface
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
+install(
+  DIRECTORY include/
+  DESTINATION include/
 )
 
+ament_export_targets(export_iras_kuka_eki_io_interface HAS_LIBRARY_TARGET)
 ament_export_include_directories(
   include
 )
@@ -63,35 +84,10 @@ ament_export_libraries(
   ${PROJECT_NAME}
 )
 ament_export_dependencies(
+  hardware_interface
+  pluginlib
   rclcpp
   rclcpp_lifecycle
+  Boost
 )
-
-
-### ros2 control hardware plugin
-install(
-  TARGETS ${PROJECT_NAME}
-  DESTINATION lib
-)
-install(
-  DIRECTORY include/
-  DESTINATION include
-)
-
-add_executable(eki_io_node src/kuka_eki_io_interface_node.cpp src/kuka_eki_io_interface.cpp)
-target_include_directories(
-  eki_io_node
-  PRIVATE
-  include)
-ament_target_dependencies(eki_io_node ${${PROJECT_NAME}_EXPORTED_TARGETS} rclcpp std_msgs rclcpp_lifecycle TinyXML)
-install(TARGETS
-  eki_io_node
-  DESTINATION lib/${PROJECT_NAME})
-
-
-install(
-  DIRECTORY launch
-  DESTINATION share/${PROJECT_NAME}/
-)
-
 ament_package()

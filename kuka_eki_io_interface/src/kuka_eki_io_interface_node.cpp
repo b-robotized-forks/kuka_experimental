@@ -35,7 +35,7 @@ int main(int argc,  char **argv)
     int eki_io_port = node->get_parameter("eki_io_port").as_int();
     std::string eki_io_port_ = std::to_string(eki_io_port);
     int n_io = node->get_parameter("n_io").as_int();
-    kuka_eki_io_interface::KukaEkiIOInterface io_interface(robot_ip.c_str(), eki_io_port_.c_str(), n_io);
+    kuka_eki_io_interface::KukaEkiIoInterface io_interface(robot_ip.c_str(), eki_io_port_.c_str(), n_io);
 //
     const std::vector<int> io_pins_cmd{7, 8};
     const std::vector<int> io_modes_cmd{2, 2};

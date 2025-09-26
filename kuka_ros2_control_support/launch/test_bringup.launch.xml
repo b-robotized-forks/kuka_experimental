@@ -2,111 +2,36 @@
 <launch>
 
   <!-- Declare launch arguments -->
-  <arg name="controllers_file" default="kuka_6dof_controllers.yaml">
-    <doc>YAML file with the controllers configuration. Only LBR IIWA 14 has 7 dofs.</doc>
-    <choice value="kuka_6dof_controllers.yaml"/>
-    <choice value="kuka_7dof_controllers.yaml"/>
-  </arg>
+  <arg name="controllers_file" default="kuka_6dof_controllers.yaml" description="YAML file with the controllers configuration. Valid choices are kuka_6dof_controllers.yaml and kuka_7dof_controllers.yaml."/>
 
-  <arg name="initial_positions_file" default="initial_positions.yaml">
-    <doc>YAML file with the initial positions when using mock hardware from ros2_control. Robots using '_all_zeros' file are: - kr210l150 -</doc>
-    <choice value="initial_positions.yaml"/>
-    <choice value="initial_positions_all_zeros.yaml"/>
-  </arg>
+  <arg name="initial_positions_file" default="initial_positions.yaml" description="YAML file with the initial positions for mock hardware. Valid choices are initial_positions.yaml and initial_positions_all_zeros.yaml."/>
 
-  <arg name="description_package">
-    <doc>Description package with robot URDF/xacro files.</doc>
-    <choice value="kuka_kr3_support"/>
-    <choice value="kuka_kr5_support"/>
-    <choice value="kuka_kr6_support"/>
-    <choice value="kuka_kr10_support"/>
-    <choice value="kuka_kr16_support"/>
-    <choice value="kuka_kr120_support"/>
-    <choice value="kuka_kr150_support"/>
-    <choice value="kuka_kr210_support"/>
-    <choice value="kuka_lbr_iiwa_support"/>
-  </arg>
+  <arg name="description_package" description="Description package with robot URDF/xacro files (e.g., kuka_kr5_support, kuka_lbr_iiwa_support)."/>
 
-  <arg name="description_macro_file">
-    <doc>URDF/XACRO description file with of the robot or application. The expected location of the file is '&lt;description_package&gt;/urdf/'.</doc>
-    <choice value="kr3r540_macro.xacro"/>
-    <choice value="kr5_arc_macro.xacro"/>
-    <choice value="kr6r700sixx_macro.xacro"/>
-    <choice value="kr6r900_2_macro.xacro"/>
-    <choice value="kr6r900sixx_macro.xacro"/>
-    <choice value="kr10r900_2_macro.xacro"/>
-    <choice value="kr10r1100sixx_macro.xacro"/>
-    <choice value="kr10r1420_macro.xacro"/>
-    <choice value="kr16_2_macro.xacro"/>
-    <choice value="kr120r2500pro_macro.xacro"/>
-    <choice value="kr150_2_macro.xacro"/>
-    <choice value="kr150r3100_2_macro.xacro"/>
-    <choice value="kr210l150_macro.xacro"/>
-    <choice value="lbr_iiwa_14_r820_macro.xacro"/>
-  </arg>
+  <arg name="description_macro_file" description="URDF/XACRO description file of the robot (e.g., kr5_arc_macro.xacro, lbr_iiwa_14_r820_macro.xacro)."/>
 
-  <arg name="use_eki_communication" default="false">
-    <doc>Use EKI communication to the KUKA Robot Controller (KR-C). If the flag is set to true 'eki_robot_ip' and 'eki_robot_port' arguments define the endpoint of robot controller to connect.</doc>
-  </arg>
+  <arg name="use_eki_communication" default="false" description="Use EKI communication to the KUKA Robot Controller (KR-C)."/>
 
-  <arg name="eki_robot_ip" default="127.0.0.1">
-    <doc>IP address for the robot controller for communication using EKI protocol.</doc>
-  </arg>
+  <arg name="eki_robot_ip" default="127.0.0.1" description="IP address for the robot controller for EKI communication."/>
 
-  <arg name="eki_robot_port" default="54600">
-    <doc>Port by which the robot can be reached for communication using EKI protocol.</doc>
-  </arg>
+  <arg name="eki_robot_port" default="54600" description="Port for the robot controller for EKI communication."/>
 
-  <arg name="use_rsi_communication" default="false">
-    <doc>Use RSI communication to the KUKA Robot Controller (KR-C). If the flag is set to true 'rsi_listen_ip' and 'rsi_robot_port' arguments define the endpoint where robot controller should connect to. (Keep in mind that you have to define this endpoint also in the RSI configuration of the program.)</doc>
-  </arg>
+  <arg name="use_rsi_communication" default="false" description="Use RSI communication to the KUKA Robot Controller (KR-C)."/>
 
-  <arg name="rsi_listen_ip" default="127.0.0.1">
-    <doc>IP address of a computer where robot controller should connect for communication using RSI protocol.</doc>
-  </arg>
+  <arg name="rsi_listen_ip" default="127.0.0.1" description="IP address where the robot controller should connect for RSI communication."/>
 
-  <arg name="rsi_listen_port" default="49152">
-    <doc>Port on a computer where robot controller should connect for communication using RSI protocol.</doc>
-  </arg>
+  <arg name="rsi_listen_port" default="49152" description="Port where the robot controller should connect for RSI communication."/>
 
-  <arg name="use_mock_hardware" default="true">
-    <doc>Start robot with fake hardware mirroring command to its states.</doc>
-  </arg>
+  <arg name="use_mock_hardware" default="true" description="Start robot with fake hardware mirroring command to its states."/>
 
-  <arg name="start_rviz" default="true">
-    <doc>Start vizualization in Rviz2.</doc>
-  </arg>
+  <arg name="start_rviz" default="true" description="Start visualization in Rviz2."/>
 
-  <arg name="log_level_driver" default="info">
-    <doc>Set the logging level of the loggers of all started nodes.</doc>
-    <choice value="debug"/>
-    <choice value="DEBUG"/>
-    <choice value="info"/>
-    <choice value="INFO"/>
-    <choice value="warn"/>
-    <choice value="WARN"/>
-    <choice value="error"/>
-    <choice value="ERROR"/>
-    <choice value="fatal"/>
-    <choice value="FATAL"/>
-  </arg>
+  <arg name="log_level_driver" default="info" description="Set the logging level for the driver nodes (e.g., debug, info, warn, error)."/>
 
-  <arg name="log_level_all" default="info">
-    <doc>Set the logging level of the loggers of all started nodes.</doc>
-    <choice value="debug"/>
-    <choice value="DEBUG"/>
-    <choice value="info"/>
-    <choice value="INFO"/>
-    <choice value="warn"/>
-    <choice value="WARN"/>
-    <choice value="error"/>
-    <choice value="ERROR"/>
-    <choice value="fatal"/>
-    <choice value="FATAL"/>
-  </arg>
+  <arg name="log_level_all" default="info" description="Set the logging level for all started nodes (e.g., debug, info, warn, error)."/>
 
   <!-- Include the bringup launch file from kuka_ros2_control_support -->
-  <include file="$(find kuka_ros2_control_support)/launch/bringup.launch.py">
+  <include file="$(find-pkg-share kuka_ros2_control_support)/launch/bringup.launch.py">
     <arg name="robot_name" value="kuka_test_setup"/>
     <arg name="controllers_file" value="$(arg controllers_file)"/>
     <arg name="initial_positions_file" value="$(arg initial_positions_file)"/>
@@ -125,3 +50,4 @@
   </include>
 
 </launch>
+
