@@ -51,7 +51,7 @@ namespace kuka_eki_io_interface
     {
       std::string name;
       std::string key;
-    }
+    };
 
     class KukaEkiIoInterface : public hardware_interface::SystemInterface
     {
@@ -98,7 +98,7 @@ namespace kuka_eki_io_interface
             void eki_check_read_state_deadline();
             static void eki_handle_receive(const boost::system::error_code& systemErrorCode, size_t length, boost::system::error_code* out_ec, size_t* out_length);
             bool isValidIPv4(const std::string& ipString);
-            hardware_interface::return_type assignOrderedInterfaceNames();
+            hardware_interface::return_type configureInterfaces();
             hardware_interface::return_type assignEkiConfiguration();
             std::string removeInterfacePrefix(const std::string& interfaceName, const std::string& prefixName);
 
