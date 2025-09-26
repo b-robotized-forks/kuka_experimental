@@ -41,7 +41,7 @@ namespace kuka_eki_io_interface
         auto logger = rclcpp::get_logger(LOGGER_NAME);
         RCLCPP_INFO(logger, "on_configure() called. Previous state was [ %i, %s ]", previous_state.id(), previous_state.label().c_str());
 
-        if (assignOrderedInterfaceNames()==hardware_interface::return_type::ERROR)
+        if (configureInterfaces()==hardware_interface::return_type::ERROR)
             return hardware_interface::CallbackReturn::ERROR;
 
         if (assignEkiConfiguration()==hardware_interface::return_type::ERROR)
@@ -83,14 +83,9 @@ namespace kuka_eki_io_interface
         eki_server_socket_->close();
 
         // Reset ordered interface names.
-        orderedCommandFullNames_.clear();
-        orderedCommandNames_.clear();
-        orderedCommandStateFullNames_.clear();
-        orderedCommandStateNames_.clear();
-        orderedCommandStateKeys_.clear();
-        orderedNonCommandStateFullNames_.clear();
-        orderedNonCommandStateNames_.clear();
-        orderedNonCommandStateKeys_.clear();
+        command_interfaces_info_.clear();
+        command_state_interfaces_info_.clear();
+        non_command_state_interfaces_info_.clear();
 
         RCLCPP_INFO(logger, "KUKA EKI IO interface deactivated.");
         return hardware_interface::CallbackReturn::SUCCESS;
@@ -126,88 +121,90 @@ namespace kuka_eki_io_interface
         return std::regex_match(ipString, ipv4Regex);
     }
 
-    hardware_interface::return_type KukaEkiIoInterface::assignOrderedInterfaceNames() {
+    hardware_interface::return_type KukaEkiIoInterface::configureInterfaces() {
         auto logger = rclcpp::get_logger(LOGGER_NAME);
 
         // Reset ordered interface names.
-        orderedCommandFullNames_.clear();
-        orderedCommandNames_.clear();
-        orderedCommandStateFullNames_.clear();
-        orderedCommandStateNames_.clear();
-        orderedCommandStateKeys_.clear();
-        orderedNonCommandStateFullNames_.clear();
-        orderedNonCommandStateNames_.clear();
-        orderedNonCommandStateKeys_.clear();
+        command_interfaces_info_.clear();
+        command_state_interfaces_info_.clear();
+        non_command_state_interfaces_info_.clear();
 
         // Reset Id tracking.
         lastRequestId_ = 0;
 
-        // Initialize ordered interface names.
-        for (const auto& [name, command] : gpio_command_interfaces_) {
-            orderedCommandFullNames_.push_back(command.get_name());
-            orderedCommandNames_.push_back(command.get_interface_name());
-        }
+        RCLCPP_INFO(logger, "--- Configuring EKI Interfaces from URDF ---");
 
-        for (const auto& [name, interface] : gpio_state_interfaces_) {
-            if (std::find(orderedCommandFullNames_.begin(), orderedCommandFullNames_.end(), interface.get_name()) != orderedCommandFullNames_.end()) {
-                orderedCommandStateFullNames_.push_back(interface.get_name());
-                orderedCommandStateNames_.push_back(interface.get_interface_name());
-            } else {
-                orderedNonCommandStateFullNames_.push_back(interface.get_name());
-                orderedNonCommandStateNames_.push_back(interface.get_interface_name());
+        for (const auto& gpio : info_.gpios) {
+            RCLCPP_INFO(logger, "Processing GPIO component: %s", gpio.name.c_str());
+
+            for (const auto& command_if : gpio.command_interfaces) {
+                EkiInterfaceInfo info;
+                info.name = command_if.name;
+                if (command_if.parameters.find("EKI_key") == command_if.parameters.end()) {
+                    RCLCPP_FATAL(logger, "Command interface '%s' is missing the 'EKI_key' parameter.", info.name.c_str());
+                    return hardware_interface::return_type::ERROR;
+                }
+                info.key = command_if.parameters.at("EKI_key");
+
+                try {
+                    std::stoi(info.key);
+                } catch (const std::invalid_argument& e) {
+                    RCLCPP_FATAL(
+                        logger, "EKI_key '%s' for command interface '%s' is not a valid integer.",
+                        info.key.c_str(), info.name.c_str());
+                    return hardware_interface::return_type::ERROR;
+                }
+
+                command_interfaces_info_.push_back(info);
+
+                RCLCPP_INFO(logger, "  [Command] '%s' -> Key: %s (Type: %s)", info.name.c_str(), info.key.c_str(), command_if.data_type.c_str());
+            }
+
+            for (const auto& state_if : gpio.state_interfaces) {
+                EkiInterfaceInfo info;
+                info.name = state_if.name;
+
+                if (state_if.parameters.find("EKI_key") == state_if.parameters.end()) {
+                    RCLCPP_FATAL(logger, "State interface '%s' is missing the 'EKI_key' parameter.", info.name.c_str());
+                    return hardware_interface::return_type::ERROR;
+                }
+                info.key = state_if.parameters.at("EKI_key");
+
+                try {
+                    std::stoi(info.key);
+                } catch (const std::invalid_argument& e) {
+                    RCLCPP_FATAL(
+                        logger, "EKI_key '%s' for command interface '%s' is not a valid integer.",
+                        info.key.c_str(), info.name.c_str());
+                    return hardware_interface::return_type::ERROR;
+                }
+
+                // Check if this state interface has a corresponding command interface
+                auto it = std::find_if(command_interfaces_info_.begin(), command_interfaces_info_.end(),
+                                       [&info](const EkiInterfaceInfo& cmd_info) {
+                                           return cmd_info.name == info.name;
+                                       });
+
+                if (it != command_interfaces_info_.end()) {
+                    command_state_interfaces_info_.push_back(info);
+                    RCLCPP_INFO(logger, "  [Cmd State] '%s' -> Key: %s (Type: %s)", info.name.c_str(), info.key.c_str(), state_if.data_type.c_str());
+                } else {
+                    non_command_state_interfaces_info_.push_back(info);
+                    RCLCPP_INFO(logger, "  [State] '%s' -> Key: %s (Type: %s)", info.name.c_str(), info.key.c_str(), state_if.data_type.c_str());
+                }
             }
         }
 
-        std::sort(orderedCommandFullNames_.begin(), orderedCommandFullNames_.end());
-        std::sort(orderedCommandNames_.begin(), orderedCommandNames_.end());
+        // Sort by the 'key' member of the struct to ensure the XML is generated in a consistent order.
+        auto sort_by_key = [](const EkiInterfaceInfo& a, const EkiInterfaceInfo& b) {
+            return std::stoi(a.key) < std::stoi(b.key);
+        };
+        std::sort(command_interfaces_info_.begin(), command_interfaces_info_.end(), sort_by_key);
+        std::sort(command_state_interfaces_info_.begin(), command_state_interfaces_info_.end(), sort_by_key);
+        std::sort(non_command_state_interfaces_info_.begin(), non_command_state_interfaces_info_.end(), sort_by_key);
 
-        std::sort(orderedCommandStateFullNames_.begin(), orderedCommandStateFullNames_.end());
-        std::sort(orderedCommandStateNames_.begin(), orderedCommandStateNames_.end());
+        RCLCPP_INFO(logger, "--- Interface configuration finished ---");
 
-        std::sort(orderedNonCommandStateFullNames_.begin(), orderedNonCommandStateFullNames_.end());
-        std::sort(orderedNonCommandStateNames_.begin(), orderedNonCommandStateNames_.end());
-
-        for (const std::string& orderedCommandStateFullName : orderedCommandStateFullNames_) {
-            const auto& interface = gpio_state_interfaces_.at(orderedCommandStateFullName);
-            orderedCommandStateKeys_.push_back(removeInterfacePrefix(interface.get_interface_name(), interface.get_prefix_name()));
-        }
-
-        for (const std::string& orderedNonCommandStateFullName : orderedNonCommandStateFullNames_) {
-            const auto& interface = gpio_state_interfaces_.at(orderedNonCommandStateFullName);
-            orderedNonCommandStateKeys_.push_back(removeInterfacePrefix(interface.get_interface_name(), interface.get_prefix_name()));
-        }
-
-        for (const std::string& orderedCommandFullName : orderedCommandFullNames_) {
-            const auto& command = gpio_command_interfaces_.at(orderedCommandFullName);
-            RCLCPP_INFO(logger, "-------[ Detected gpio_command_interface ]-------");
-            RCLCPP_INFO(logger, "Full       Name: %s", command.get_name().c_str());
-            RCLCPP_INFO(logger, "Prefix     Name: %s", command.get_prefix_name().c_str());
-            RCLCPP_INFO(logger, "Interface  Name: %s", command.get_interface_name().c_str());
-            RCLCPP_INFO(logger, "Out         Key: %s", removeInterfacePrefix(command.get_interface_name(), command.get_prefix_name()).c_str());
-            RCLCPP_INFO(logger, "Data       Type: %s", command.get_data_type().to_string().c_str());
-            RCLCPP_INFO(logger, "Data      Value: %f", get_command(orderedCommandFullName));
-        }
-
-        for (const std::string& orderedCommandStateFullName : orderedCommandStateFullNames_) {
-            const auto& interface = gpio_state_interfaces_.at(orderedCommandStateFullName);
-            RCLCPP_INFO(logger, "-------[ Detected gpio_state_interface   ]-------");
-            RCLCPP_INFO(logger, "Full      Name: %s", interface.get_name().c_str());
-            RCLCPP_INFO(logger, "Prefix    Name: %s", interface.get_prefix_name().c_str());
-            RCLCPP_INFO(logger, "Interface Name: %s", interface.get_interface_name().c_str());
-            RCLCPP_INFO(logger, "In         Key: %s", removeInterfacePrefix(interface.get_interface_name(), interface.get_prefix_name()).c_str());
-            RCLCPP_INFO(logger, "Data      Type: %s", interface.get_data_type().to_string().c_str());
-            RCLCPP_INFO(logger, "Data     Value: %f", get_state(orderedCommandStateFullName));
-        }
-
-        for (const std::string& orderedNonCommandStateFullName : orderedNonCommandStateFullNames_) {
-            const auto& interface = gpio_state_interfaces_.at(orderedNonCommandStateFullName);
-            RCLCPP_INFO(logger, "-------[ Detected gpio_state_interface   ]-------");
-            RCLCPP_INFO(logger, "Full      Name: %s", interface.get_name().c_str());
-            RCLCPP_INFO(logger, "Prefix    Name: %s", interface.get_prefix_name().c_str());
-            RCLCPP_INFO(logger, "Interface Name: %s", interface.get_interface_name().c_str());
-            RCLCPP_INFO(logger, "In         Key: %s", removeInterfacePrefix(interface.get_interface_name(), interface.get_prefix_name()).c_str());
-            RCLCPP_INFO(logger, "Data      Type: %s", interface.get_data_type().to_string().c_str());
-        }
         return hardware_interface::return_type::OK;
     }
 
@@ -228,19 +225,6 @@ namespace kuka_eki_io_interface
             return hardware_interface::return_type::ERROR;
         }
         return hardware_interface::return_type::OK;
-    }
-
-    std::string KukaEkiIoInterface::removeInterfacePrefix(const std::string& interfaceName, const std::string& prefixName) {
-        std::string result = interfaceName;
-
-        size_t prefixPosition = interfaceName.find(prefixName);
-        if (prefixPosition != std::string::npos)
-            result = result.substr(prefixPosition + prefixName.length());
-
-        if (!result.empty() && result.front() == '/')
-            result = result.substr(1);
-
-        return result;
     }
 
     hardware_interface::return_type KukaEkiIoInterface::read(const rclcpp::Time& time, const rclcpp::Duration& period) {
@@ -328,36 +312,33 @@ namespace kuka_eki_io_interface
         for (tinyxml2::XMLElement* xmlIo = xmlIoState->FirstChildElement(); xmlIo != nullptr; xmlIo = xmlIo->NextSiblingElement()) {
             std::string name = xmlIo->Name();
 
+            if (readIoValuesFromXmlIo(xmlIo, key, value) != hardware_interface::return_type::OK) {
+                RCLCPP_ERROR(logger, "Failed to read values from %s.", name.c_str());
+                continue; // Try next element
+            }
+
+            std::string key_str = std::to_string(key);
+            
             if (name.find(EKI_XML_ELEMENT_PREFIX_IN.c_str()) != std::string::npos) {
-                if (readIoValuesFromXmlIo(xmlIo, key, value) == hardware_interface::return_type::OK) {
-                    RCLCPP_DEBUG(logger, "Read values from %s. %s=%i %s=%d", name.c_str(), EKI_XML_ATTRIBUTE_KEY.c_str(), key, EKI_XML_ATTRIBUTE_VALUE.c_str(), value);
-                    
-                    std::string nonCommandStateInterfaceName;
-                    if (getNonCommandStateFullNameByKey(std::to_string(key), nonCommandStateInterfaceName) == hardware_interface::return_type::OK) {
-                        set_state(nonCommandStateInterfaceName, value ? 1.0 : 0.0);
-                        RCLCPP_DEBUG(logger, "Setting state %s to %f.", nonCommandStateInterfaceName.c_str(), value ? 1.0 : 0.0);
-                    } else {
-                        RCLCPP_ERROR(logger, "Failed to find interface for %i. set_state is not executed.", key);
-                        return hardware_interface::return_type::ERROR;
-                    }
+                auto it = std::find_if(non_command_state_interfaces_info_.begin(), non_command_state_interfaces_info_.end(),
+                                       [&key_str](const EkiInterfaceInfo& info) { return info.key == key_str; });
+
+                if (it != non_command_state_interfaces_info_.end()) {
+                    set_state(it->name, value ? 1.0 : 0.0);
+                    RCLCPP_DEBUG(logger, "Setting state '%s' (Key: %s) to %f.", it->name.c_str(), it->key.c_str(), value ? 1.0 : 0.0);
                 } else {
-                    RCLCPP_ERROR(logger, "Failed to read values from %s.", name.c_str());
+                    RCLCPP_ERROR(logger, "Received state for unconfigured INPUT Key: %s", key_str.c_str());
                     return hardware_interface::return_type::ERROR;
                 }
+
             } else if (name.find(EKI_XML_ELEMENT_PREFIX_OUT.c_str()) != std::string::npos) {
-                if (readIoValuesFromXmlIo(xmlIo, key, value) == hardware_interface::return_type::OK) {
-                    RCLCPP_DEBUG(logger, "Read values from %s. %s=%i %s=%d", name.c_str(), EKI_XML_ATTRIBUTE_KEY.c_str(), key, EKI_XML_ATTRIBUTE_VALUE.c_str(), value);
-                    
-                    std::string commandStateInterfaceName;
-                    if (getCommandStateFullNameByKey(std::to_string(key), commandStateInterfaceName) == hardware_interface::return_type::OK) {
-                        set_state(commandStateInterfaceName, value ? 1.0 : 0.0);
-                        RCLCPP_DEBUG(logger, "Setting command state %s to %f.", commandStateInterfaceName.c_str(), value ? 1.0 : 0.0);
-                    } else {
-                        RCLCPP_ERROR(logger, "Failed to find interface for %i. set_state is not executed.", key);
-                        return hardware_interface::return_type::ERROR;
-                    }
+                 auto it = std::find_if(command_state_interfaces_info_.begin(), command_state_interfaces_info_.end(),
+                                       [&key_str](const EkiInterfaceInfo& info) { return info.key == key_str; });
+                if (it != command_state_interfaces_info_.end()) {
+                    set_state(it->name, value ? 1.0 : 0.0);
+                     RCLCPP_DEBUG(logger, "Setting state '%s' (Key: %s) to %f.", it->name.c_str(), it->key.c_str(), value ? 1.0 : 0.0);
                 } else {
-                    RCLCPP_ERROR(logger, "Failed to read values from %s.", name.c_str());
+                    RCLCPP_ERROR(logger, "Received state for unconfigured OUTPUT Key: %s", key_str.c_str());
                     return hardware_interface::return_type::ERROR;
                 }
             }
@@ -377,32 +358,6 @@ namespace kuka_eki_io_interface
         }
 
         return hardware_interface::return_type::OK;
-    }
-
-    hardware_interface::return_type KukaEkiIoInterface::getNonCommandStateFullNameByKey(const std::string& key, std::string& fullname) {
-        auto iterator = std::find_if(orderedNonCommandStateFullNames_.begin(), orderedNonCommandStateFullNames_.end(), [&key](const std::string orderedNonCommandStateFullName) {
-            return orderedNonCommandStateFullName.size() >= key.size() && orderedNonCommandStateFullName.compare(orderedNonCommandStateFullName.size() - key.size(), key.size(), key) == 0; 
-        });
-
-        if (iterator != orderedNonCommandStateFullNames_.end()) {
-            fullname = *iterator;
-            return hardware_interface::return_type::OK;
-        }
-
-        return hardware_interface::return_type::ERROR;
-    }
-
-    hardware_interface::return_type KukaEkiIoInterface::getCommandStateFullNameByKey(const std::string& key, std::string& fullname) {
-        auto iterator = std::find_if(orderedCommandStateFullNames_.begin(), orderedCommandStateFullNames_.end(), [&key](const std::string orderedCommandStateFullName) {
-            return orderedCommandStateFullName.size() >= key.size() && orderedCommandStateFullName.compare(orderedCommandStateFullName.size() - key.size(), key.size(), key) == 0; 
-        });
-
-        if (iterator != orderedCommandStateFullNames_.end()) {
-            fullname = *iterator;
-            return hardware_interface::return_type::OK;
-        }
-
-        return hardware_interface::return_type::ERROR;
     }
 
     hardware_interface::return_type KukaEkiIoInterface::write(const rclcpp::Time& time, const rclcpp::Duration& period) {
@@ -437,19 +392,19 @@ namespace kuka_eki_io_interface
     }
 
     bool KukaEkiIoInterface::isCommandUpdateRequired() {
-        for (const auto& name : orderedCommandStateFullNames_) {
+        for (const auto& info : command_state_interfaces_info_) {
             try {
-                if (std::isnan(get_command(name))) {
-                    RCLCPP_DEBUG(rclcpp::get_logger(LOGGER_NAME), "in isCommandUpdateRequired(): %s was NaN.", name.c_str());
+                if (std::isnan(get_command(info.name))) {
+                    RCLCPP_DEBUG(rclcpp::get_logger(LOGGER_NAME), "Command update not required. Command '%s' was NaN.", info.name.c_str());
                     return false;
                 }
-
-                if (get_command(name) != get_state(name)) {
-                    RCLCPP_DEBUG(rclcpp::get_logger(LOGGER_NAME), "in isCommandUpdateRequired(): %s was TRUE because of %f==%f", name.c_str(), get_command(name), get_state(name));
+                if (get_command(info.name) != get_state(info.name)) {
+                    RCLCPP_DEBUG(rclcpp::get_logger(LOGGER_NAME), "Command update required for '%s': command=%.1f, state=%.1f",
+                                 info.name.c_str(), get_command(info.name), get_state(info.name));
                     return true;
                 }
             } catch (const std::runtime_error& e) {
-                RCLCPP_ERROR(rclcpp::get_logger(LOGGER_NAME), "in isCommandUpdateRequired(): Failed to update state_interface with name=\"%s\"", name.c_str());
+                RCLCPP_ERROR(rclcpp::get_logger(LOGGER_NAME), "Error accessing interface '%s' in isCommandUpdateRequired(): %s", info.name.c_str(), e.what());
             }
         }
         return false;
@@ -464,18 +419,22 @@ namespace kuka_eki_io_interface
         // Building XML DOM.
         tinyxml2::XMLDocument xmlCommand;
         auto ioRequest = xmlCommand.NewElement(EKI_XML_ELEMENT_REQUEST.c_str());
-        ioRequest->SetAttribute(EKI_XML_ELEMENT_REQUEST_ID.c_str(), lastRequestId_);   
-        for (std::size_t index = 0; index < orderedCommandFullNames_.size(); index++) {
+        ioRequest->SetAttribute(EKI_XML_ELEMENT_REQUEST_ID.c_str(), lastRequestId_);
+        
+        for (std::size_t index = 0; index < command_interfaces_info_.size(); ++index) {
+            const auto& info = command_interfaces_info_[index];
             tinyxml2::XMLElement* outElement = xmlCommand.NewElement(getOutElementNameByIndex(index).c_str());
-            outElement->SetAttribute(EKI_XML_ATTRIBUTE_KEY.c_str(), orderedCommandStateKeys_[index].c_str());
-            outElement->SetAttribute(EKI_XML_ATTRIBUTE_VALUE.c_str(), getCommandAsValidDigit(orderedCommandFullNames_[index]));
+            outElement->SetAttribute(EKI_XML_ATTRIBUTE_KEY.c_str(), info.key.c_str());
+            outElement->SetAttribute(EKI_XML_ATTRIBUTE_VALUE.c_str(), getCommandAsValidDigit(info.name));
             ioRequest->InsertEndChild(outElement);
         }
-        for (std::size_t index = 0; index < orderedNonCommandStateKeys_.size(); index++) {
+        for (std::size_t index = 0; index < non_command_state_interfaces_info_.size(); ++index) {
+            const auto& info = non_command_state_interfaces_info_[index];
             tinyxml2::XMLElement* inElement = xmlCommand.NewElement(getInElementNameByIndex(index).c_str());
-            inElement->SetAttribute(EKI_XML_ATTRIBUTE_KEY.c_str(), orderedNonCommandStateKeys_[index].c_str());
+            inElement->SetAttribute(EKI_XML_ATTRIBUTE_KEY.c_str(), info.key.c_str());
             ioRequest->InsertEndChild(inElement);
         }
+
         xmlCommand.InsertEndChild(ioRequest);
 
         // Building XML String.
