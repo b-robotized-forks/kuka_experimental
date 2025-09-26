@@ -47,6 +47,12 @@ namespace kuka_eki_io_interface
     const std::string LOGGER_NAME = "KukaEkiIoInterface";
     const int __maxIoNumber = 8;
 
+    struct EkiInterfaceInfo
+    {
+      std::string name;
+      std::string key;
+    }
+
     class KukaEkiIoInterface : public hardware_interface::SystemInterface
     {
         public:
@@ -67,14 +73,11 @@ namespace kuka_eki_io_interface
             std::string eki_server_address_;
             std::string eki_server_port_;
             std::string eki_io_port_;
-            std::vector<std::string> orderedCommandFullNames_;
-            std::vector<std::string> orderedCommandNames_;
-            std::vector<std::string> orderedCommandStateFullNames_;
-            std::vector<std::string> orderedCommandStateNames_;
-            std::vector<std::string> orderedCommandStateKeys_;
-            std::vector<std::string> orderedNonCommandStateFullNames_;
-            std::vector<std::string> orderedNonCommandStateNames_;
-            std::vector<std::string> orderedNonCommandStateKeys_;
+
+            std::vector<EkiInterfaceInfo> command_interfaces_info_;
+            std::vector<EkiInterfaceInfo> command_state_interfaces_info_;
+            std::vector<EkiInterfaceInfo> non_command_state_interfaces_info_;
+
             int lastRequestId_;
 
             // EKI socket read/write
@@ -102,8 +105,6 @@ namespace kuka_eki_io_interface
             // Read states
             hardware_interface::return_type eki_read_state();
             hardware_interface::return_type readIoValuesFromXmlIo(tinyxml2::XMLElement* xmlIo, int& key, bool& value);
-            hardware_interface::return_type getNonCommandStateFullNameByKey(const std::string& key, std::string& fullname);
-            hardware_interface::return_type getCommandStateFullNameByKey(const std::string& key, std::string& fullname);
 
             // Write commands
             bool isCommandUpdateRequired();
