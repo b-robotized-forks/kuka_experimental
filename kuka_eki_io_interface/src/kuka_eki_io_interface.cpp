@@ -139,7 +139,7 @@ namespace kuka_eki_io_interface
 
             for (const auto& command_if : gpio.command_interfaces) {
                 EkiInterfaceInfo info;
-                info.name = command_if.name;
+                info.name = gpio.name + "/" + command_if.name;
                 if (command_if.parameters.find("EKI_key") == command_if.parameters.end()) {
                     RCLCPP_FATAL(logger, "Command interface '%s' is missing the 'EKI_key' parameter.", info.name.c_str());
                     return hardware_interface::return_type::ERROR;
@@ -162,7 +162,7 @@ namespace kuka_eki_io_interface
 
             for (const auto& state_if : gpio.state_interfaces) {
                 EkiInterfaceInfo info;
-                info.name = state_if.name;
+                info.name = gpio.name + "/" + state_if.name;
 
                 if (state_if.parameters.find("EKI_key") == state_if.parameters.end()) {
                     RCLCPP_FATAL(logger, "State interface '%s' is missing the 'EKI_key' parameter.", info.name.c_str());
