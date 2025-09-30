@@ -1,13 +1,15 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro">
 
-  <xacro:macro name="kuka_rsi_driver_control_joint" params="name initial_position">
+  <xacro:macro name="kuka_rsi_driver_control_joint" params="name initial_position use_eki_communication:=^|false">
     <joint name="${name}">
       <command_interface name="position" />
       <state_interface name="position">
         <param name="initial_value">${initial_position}</param>
       </state_interface>
-      <state_interface name="effort" />
+      <xacro:unless value="${use_eki_communication}">
+        <state_interface name="effort" />
+      </xacro:unless>
     </joint>
   </xacro:macro>
 
@@ -69,41 +71,43 @@
         <xacro:kuka_rsi_driver_control_joint name="${prefix}joint_a7" initial_position="${initial_positions['joint_a7']}" />
       </xacro:if>
 
-      <sensor name="${prefix}tcp">
-        <state_interface name="position.x">
-          <param name="initial_value">0</param>
-        </state_interface>
-        <state_interface name="position.y">
-          <param name="initial_value">0</param>
-        </state_interface>
-        <state_interface name="position.z">
-          <param name="initial_value">0</param>
-        </state_interface>
-        <state_interface name="orientation.x">
-          <param name="initial_value">0</param>
-        </state_interface>
-        <state_interface name="orientation.y">
-          <param name="initial_value">0</param>
-        </state_interface>
-        <state_interface name="orientation.z">
-          <param name="initial_value">0</param>
-        </state_interface>
-        <state_interface name="orientation.w">
-          <param name="initial_value">1</param>
-        </state_interface>
-      </sensor>
+      <xacro:unless value="${use_eki_communication}">
+        <sensor name="${prefix}tcp">
+          <state_interface name="position.x">
+            <param name="initial_value">0</param>
+          </state_interface>
+          <state_interface name="position.y">
+            <param name="initial_value">0</param>
+          </state_interface>
+          <state_interface name="position.z">
+            <param name="initial_value">0</param>
+          </state_interface>
+          <state_interface name="orientation.x">
+            <param name="initial_value">0</param>
+          </state_interface>
+          <state_interface name="orientation.y">
+            <param name="initial_value">0</param>
+          </state_interface>
+          <state_interface name="orientation.z">
+            <param name="initial_value">0</param>
+          </state_interface>
+          <state_interface name="orientation.w">
+            <param name="initial_value">1</param>
+          </state_interface>
+        </sensor>
 
-      <gpio name="${prefix}robot_state">
-        <state_interface name="program_state">
-          <param name="initial_value">3</param>
-        </state_interface>
-      </gpio>
+        <gpio name="${prefix}robot_state">
+          <state_interface name="program_state">
+            <param name="initial_value">3</param>
+          </state_interface>
+        </gpio>
 
-      <gpio name="${prefix}speed_scaling">
-        <state_interface name="speed_scaling_factor">
-          <param name="initial_value">1</param>
-        </state_interface>
-      </gpio>
+        <gpio name="${prefix}speed_scaling">
+          <state_interface name="speed_scaling_factor">
+            <param name="initial_value">1</param>
+          </state_interface>
+        </gpio>
+      </xacro:unless>
     </ros2_control>
 
     <xacro:if value="${sim_gazebo}">
