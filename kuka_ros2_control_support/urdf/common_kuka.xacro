@@ -15,8 +15,8 @@
 
   <!-- ros2_control mock and simulation plugins -->
   <xacro:arg name="use_mock_hardware" default="false" />
-  <xacro:arg name="sim_gazebo_classic" default="false" />
-  <xacro:arg name="sim_gazebo" default="false" />
+  <!-- <xacro:arg name="sim_gazebo_classic" default="false" />
+  <xacro:arg name="sim_gazebo" default="false" /> -->
   <xacro:arg name="simulation_controllers" default="" />
 
   <xacro:arg name="initial_positions_file" default="$(find kuka_resources)/config/initial_positions.yaml"/>
@@ -43,8 +43,6 @@
     rsi_listen_ip="$(arg rsi_listen_ip)"
     rsi_listen_port="$(arg rsi_listen_port)"
     use_mock_hardware="$(arg use_mock_hardware)"
-    sim_gazebo_classic="$(arg sim_gazebo_classic)"
-    sim_gazebo="$(arg sim_gazebo)"
     simulation_controllers="$(arg simulation_controllers)"
     description_package="$(arg description_package)"
     initial_positions="${xacro.load_yaml(initial_positions_file)}"
