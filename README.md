@@ -1,3 +1,14 @@
+> [!WARNING]
+> ## ⚠️ Important Notice (ROS 2 KUKA Control)
+> This repository is **not recommended** for controlling **KUKA robots using ROS 2**.
+>
+> Please use the actively maintained and feature-complete repository instead:
+>
+> 👉 **https://github.com/kroshu/kuka_drivers**
+>
+> It is **up-to-date**, **better supported**, and provides **significantly more functionality**.
+
+
 
 # Kuka experimental
 
