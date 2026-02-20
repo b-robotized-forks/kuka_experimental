@@ -1,0 +1,208 @@
+&ACCESS RVP
+&REL 48
+def meta_eki()
+   ; Software License Agreement (BSD License)
+   ;
+   ; Copyright (c) 2018, 3M
+   ; Modifications copyright (c) 2021 Gergely Sóti
+   ; All rights reserved.
+   ;
+   ; Redistribution and use in source and binary forms, with or without
+   ; modification, are permitted provided that the following conditions are met:
+   ;
+   ;      * Redistributions of source code must retain the above copyright
+   ;        notice, this list of conditions and the following disclQaimer.
+   ;      * Redistributions in binary form must reproduce the above copyright
+   ;        notice, this list of conditions and the following disclaimer in the
+   ;        documentation and/or other materials provided with the distribution.
+   ;      * Neither the name of the copyright holder, nor the names of its
+   ;        contributors may be used to endorse or promote products derived
+   ;        from this software without specific prior written permission.
+   ;
+   ; THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+   ; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+   ; IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+   ; ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+   ; LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+   ; CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+   ; SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+   ; INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+   ; CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+   ; ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+   ; POSSIBILITY OF SUCH DAMAGE.
+
+   ; This software is derived work of Brett Hemes (3M) <brhemes@mmm.com>
+   ; Adaptation by Gergely Sóti, H-KA iRAS Prof. Hein, 2021; gergely.soti@h-ka.de
+   ;
+   ; Modifications: Moritz Weisenboehler (H-KA) <moritz.weisenboehler@h-ka.de>
+   ; Modifications: Mathias Fuhrer <mathias.fuhrer@b-robotized.de>
+   
+   ; Declarations
+   decl int index
+   
+   ; Initialization
+   init_meta_interface()
+   current_meta = null_meta()
+
+   index = 0
+   $FLAG[3] = FALSE  ; reset abort_commands flag
+   
+   ; Communication process
+   loop
+      if get_meta(current_meta) then
+         update_meta(current_meta)
+      endif
+   endloop
+end
+
+deffct meta_type null_meta()
+   decl meta_type meta
+   
+   meta = { velocity_override 1, abort_commands 0}
+   
+   return meta
+endfct
+
+def init_meta_interface()
+   decl eki_status status
+   msgnotify("Init meta interface", "Meta EKI")
+   
+   ; NOTE: for testing/ implementiong krl files its more convenient to use close_meta_interface() instead of reset_meta_interface()
+   global interrupt decl 17 when $flag[2] == false do close_meta_interface()   
+   interrupt on 17
+   
+   global interrupt decl 18 when $timer_flag[2] == true do send_meta_status()
+   interrupt on 18
+   
+   wait sec 0.012          ; Wait for next interpolation cycle
+   $timer[2] = -200        ; Time in [ms] before first interrupt call
+   $timer_stop[2] = false  ; Start timer 2
+   
+   status = eki_init("META_EKI")
+   status = eki_open("META_EKI")
+end
+
+
+def reset_meta_interface()
+   decl eki_status status
+   msgnotify("Reset meta interface", "Meta EKI")
+
+   status = eki_clear("META_EKI")
+   status = eki_init("META_EKI")
+   status = eki_open("META_EKI")
+end
+
+def close_meta_interface()
+   decl eki_status status
+   msgnotify("Close meta interface", "Meta EKI")
+   status = eki_close("META_EKI")
+end
+
+
+deffct bool has_meta_connection()
+   return $flag[2]
+endfct
+
+
+def send_meta_status()
+   decl eki_status status
+   
+   if has_meta_connection() then
+      ;("Send meta status", "Meta EKI")
+      ; Command id
+      status = eki_setreal("META_EKI", "MetaState/@VelocityOverride", current_meta.velocity_override)
+      status = eki_setint("META_EKI", "MetaState/@CommandEmpty", 0)
+      
+      if has_meta_connection() then
+         status = eki_send("META_EKI", "MetaState")
+      endif
+   endif
+   
+   ; Set timer for next interrupt [ms]
+   $timer[2] = -10  ; ~10 ms for above send + 10 ms interrupt timer -> ~50 Hz state transmission
+end
+
+
+def check_error(error_code :in)
+   decl int error_code
+   
+   decl char error_message[64]
+   decl int index
+   
+   index = 0
+   
+   for index = 1 to 64
+      error_message[index] = " "
+   endfor
+   
+   if error_code > 0 then
+      switch error_code
+         case 1
+            error_message[] = "Fehler 1"
+         default
+            error_message[] = "Unbekannter Fehler"
+      endswitch
+      
+      send_error(error_code, error_message[])
+     endif
+end
+
+def send_error(error_code :in, error_message[] :in)
+   decl int error_code
+   decl char error_message[]
+   
+   decl eki_status status
+   
+   if has_meta_connection() then
+      status = eki_setint("META_EKI", "MetaState/Error/@Code", error_code)
+      status = eki_setstring("META_EKI", "MetaState/Error/@Message", error_message[])
+   endif
+end
+
+
+deffct bool has_meta()
+   decl eki_status status
+   
+   if not has_meta_connection() then
+      return false
+   endif
+
+   status = eki_checkbuffer("META_EKI", "MetaCommand/@VelocityOverride")
+   
+   return status.buff > 0
+endfct
+
+
+deffct bool get_meta(meta :out)
+   decl meta_type meta
+   
+   decl eki_status status
+   
+   if not has_meta() then
+     return false
+   endif
+   
+   status = eki_getreal("META_EKI", "MetaCommand/@VelocityOverride", meta.velocity_override)
+   status = eki_getint("META_EKI", "MetaCommand/@AbortCommands", meta.abort_commands)
+   
+   return true
+endfct
+
+
+def update_meta(meta :in)
+   decl meta_type meta
+   decl int i
+   
+   ; Update velocity_override
+   ; Velocity is handled in motion_eki.src
+   
+   ; Update abort_commands_flag
+   if meta.abort_commands == 1 then
+      $FLAG[3] = TRUE
+      msgnotify("Set abort_commands flag to TRUE", "Meta EKI")
+   else
+      $FLAG[3] = FALSE
+      ROBOT_STOPPED = FALSE
+      msgnotify("Set abort_commands flag to FALSE", "Meta EKI")
+   endif   
+end

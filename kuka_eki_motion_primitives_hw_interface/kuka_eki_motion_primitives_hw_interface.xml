@@ -1,0 +1,9 @@
+<library path="kuka_eki_motion_primitives_hw_interface">
+  <class name="kuka_eki_motion_primitives_hw_interface/MotionPrimitivesKukaDriver"
+         type="kuka_eki_motion_primitives_hw_interface::MotionPrimitivesKukaDriver"
+         base_class_type="hardware_interface::SystemInterface">
+    <description>
+      ros2_control hardware interface.
+    </description>
+  </class>
+</library>

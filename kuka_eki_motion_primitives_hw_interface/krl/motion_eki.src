@@ -1,0 +1,586 @@
+&ACCESS RVP
+&REL 48
+def motion_eki()
+   ; Software License Agreement (BSD License)
+   ;
+   ; Copyright (c) 2018, 3M
+   ; Modifications copyright (c) 2021 Gergely Sóti
+   ; All rights reserved.
+   ;
+   ; Redistribution and use in source and binary forms, with or without
+   ; modification, are permitted provided that the following conditions are met:
+   ;
+   ;      * Redistributions of source code must retain the above copyright
+   ;        notice, this list of conditions and the following disclQaimer.
+   ;      * Redistributions in binary form must reproduce the above copyright
+   ;        notice, this list of conditions and the following disclaimer in the
+   ;        documentation and/or other materials provided with the distribution.
+   ;      * Neither the name of the copyright holder, nor the names of its
+   ;        contributors may be used to endorse or promote products derived
+   ;        from this software without specific prior written permission.
+   ;
+   ; THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+   ; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+   ; IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+   ; ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+   ; LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+   ; CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+   ; SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+   ; INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+   ; CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+   ; ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+   ; POSSIBILITY OF SUCH DAMAGE.
+
+   ; This software is derived work of Brett Hemes (3M) <brhemes@mmm.com>
+   ; Adaptation by Gergely Sóti, H-KA iRAS Prof. Hein, 2021; gergely.soti@h-ka.de
+   ;
+   ; Modifications: Moritz Weisenboehler (H-KA) <moritz.weisenboehler@h-ka.de>
+   ; Modifications: Mathias Fuhrer <mathias.fuhrer@b-robotized.de>
+   
+   ; Declarations
+   decl int index
+   decl real tmp_vel
+   
+   ; Initialization
+   bas(#initmov, 0)
+   
+   init_interface()
+   current_command = null_command()
+   CURRENT_COMMAND_ID = 0
+   LAST_FINISHED_MOVE_ID = 0
+   ROBOT_STOPPED = false   ; global variable
+   
+   act_joint_vel = 1.0   ; 100%
+   act_joint_acc = 1.0   ; 100%
+   act_cart_vel = 0 ; modify default value if needed
+   act_cart_acc = 0 ; modify default value if needed
+
+   index = 0
+   
+   for index = 1 to 10
+      teached_points[index] = { a1 0, a2 0, a3 0, a4 0, a5 0, a6 0 }
+   endfor
+   
+   max_joint_vel = 0.0
+   for index = 1 to 6
+      ; msgnotify("$VEL_AXIS_MA[index] = %1","Motion EKI",$VEL_AXIS_MA[index])
+      ; U/min ? rad/s: (U/min * 2p) / 60
+      tmp_vel = ( $VEL_AXIS_MA[index] * $RAT_MOT_AX[index].D / $RAT_MOT_AX[index].N ) * 6.283185307 / 60.0
+      if tmp_vel > max_joint_vel then
+         max_joint_vel = tmp_vel
+      endif
+   endfor
+   msgnotify("max_joint_vel = %1 rad/s", "Motion EKI", max_joint_vel)
+   
+   max_joint_acc = 0.0
+   ; TODO: calculate max_joint_acc?
+   
+   ; Move to current position
+   ptp $axis_act_meas
+   
+   ; Reference gripper
+   ControlWord = 0
+   DeviceMode = 10 
+
+   interrupt decl 19 when $flag[3] == true do stop_movement()  ;local interrupt to use RESUME
+ 
+   ; Communication process
+   loop
+      if get_command(current_command) then   
+         CURRENT_COMMAND_ID = current_command.id
+         switch current_command.type
+            case 1
+               check_error(do_grip(current_command.grip_data))
+               check_error(do_move(current_command.step, current_command.move_data, current_command.id))
+            case 2
+               check_error(do_move(current_command.step, current_command.move_data, current_command.id))
+            case 3
+               check_error(do_grip(current_command.grip_data))
+         endswitch
+      else
+         CURRENT_COMMAND_ID = 0
+      endif
+   endloop 
+   close_interface()
+end
+
+deffct command_type null_command()
+   decl axis joint
+   decl frame cartesian
+   decl frame cartesian_aux
+   decl move_type move_data
+   decl vacuum_type vacuum
+   decl jaw_type jaw
+   decl grip_type grip_data
+   decl command_type command
+   
+   move_data = { mode 0, base_index 0, tool_index 0, wait_for_gripper 0, teached 0, velocity 0, acceleration 0, blending 0}
+   joint = { a1 0, a2 0, a3 0, a4 0, a5 0, a6 0}
+   move_data.joint = joint
+   cartesian = { x 0, y 0, z 0, a 0, b 0, c 0 }
+   move_data.cartesian = cartesian
+   cartesian_aux = { x 0, y 0, z 0, a 0, b 0, c 0 }
+   move_data.cartesian_aux = cartesian_aux
+   
+   grip_data.mode = 0
+   jaw = { tolerance 0, velocity 0, force 0, base_pos 0, work_pos 0, teach_pos 0, shift_pos 0, direction_mode 0 }
+   grip_data.jaw = jaw
+   vacuum = { suction 0, cylinder 0 }
+   grip_data.vacuum = vacuum
+   
+   command = { id 0, step 0, type 0}
+   command.move_data = move_data
+   command.grip_data = grip_data
+   
+   return command
+endfct
+
+def init_interface()
+   decl eki_status status
+   
+   msgnotify("Init motion interface", "Motion EKI")
+   
+   ; NOTE: for testing/ implementiong krl files its more convenient to use close_interface() instead of reset_interface()
+   global interrupt decl 15 when $flag[1] == false do close_interface()
+   interrupt on 15
+   
+   global interrupt decl 16 when $timer_flag[1] == true do send_status()
+   interrupt on 16
+   
+   wait sec 0.012          ; Wait for next interpolation cycle
+   $timer[1] = -200        ; Time in [ms] before first interrupt call
+   $timer_stop[1] = false  ; Start timer 1
+   
+   status = eki_init("MOTION_EKI")
+   status = eki_open("MOTION_EKI")
+end
+
+
+def reset_interface()
+   decl eki_status status
+   msgnotify("Reset motion interface", "Motion EKI")
+
+   status = eki_clear("MOTION_EKI")
+   status = eki_init("MOTION_EKI")
+   status = eki_open("MOTION_EKI")
+end
+
+def close_interface()
+   decl eki_status status
+   msgnotify("Close motion interface", "Motion EKI")
+   status = eki_close("MOTION_EKI")
+end
+
+
+deffct bool has_connection()
+   return $flag[1]
+endfct
+
+
+def send_status()
+   decl eki_status status
+   
+   if has_connection() then
+      ;msgnotify("Send status", "Motion EKI")
+      ; Command id
+      status = eki_setint("MOTION_EKI", "RobotState/Command/@Id", CURRENT_COMMAND_ID)
+      status = eki_setint("MOTION_EKI", "RobotState/Command/@Finished_Id", LAST_FINISHED_MOVE_ID)
+      status = eki_setbool("MOTION_EKI", "RobotState/Command/@Stopped", ROBOT_STOPPED)
+      ; Joint position
+      status = eki_setreal("MOTION_EKI", "RobotState/Position/Joint/@A1", $axis_act_meas.a1)
+      status = eki_setreal("MOTION_EKI", "RobotState/Position/Joint/@A2", $axis_act_meas.a2)
+      status = eki_setreal("MOTION_EKI", "RobotState/Position/Joint/@A3", $axis_act_meas.a3)
+      status = eki_setreal("MOTION_EKI", "RobotState/Position/Joint/@A4", $axis_act_meas.a4)
+      status = eki_setreal("MOTION_EKI", "RobotState/Position/Joint/@A5", $axis_act_meas.a5)
+      status = eki_setreal("MOTION_EKI", "RobotState/Position/Joint/@A6", $axis_act_meas.a6)
+      ; Cartesian position
+      status = eki_setreal("MOTION_EKI", "RobotState/Position/Cartesian/@X", $pos_act.x)
+      status = eki_setreal("MOTION_EKI", "RobotState/Position/Cartesian/@Y", $pos_act.y)
+      status = eki_setreal("MOTION_EKI", "RobotState/Position/Cartesian/@Z", $pos_act.z)
+      status = eki_setreal("MOTION_EKI", "RobotState/Position/Cartesian/@A", $pos_act.a)
+      status = eki_setreal("MOTION_EKI", "RobotState/Position/Cartesian/@B", $pos_act.b)
+      status = eki_setreal("MOTION_EKI", "RobotState/Position/Cartesian/@C", $pos_act.c)
+      ; Velocity
+      status = eki_setreal("MOTION_EKI", "RobotState/Velocity/@A1", $vel_axis_act[1] * $vel_axis_ma[1] / 100.0)
+      status = eki_setreal("MOTION_EKI", "RobotState/Velocity/@A2", $vel_axis_act[2] * $vel_axis_ma[2] / 100.0)
+      status = eki_setreal("MOTION_EKI", "RobotState/Velocity/@A3", $vel_axis_act[3] * $vel_axis_ma[3] / 100.0)
+      status = eki_setreal("MOTION_EKI", "RobotState/Velocity/@A4", $vel_axis_act[4] * $vel_axis_ma[4] / 100.0)
+      status = eki_setreal("MOTION_EKI", "RobotState/Velocity/@A5", $vel_axis_act[5] * $vel_axis_ma[5] / 100.0)
+      status = eki_setreal("MOTION_EKI", "RobotState/Velocity/@A6", $vel_axis_act[6] * $vel_axis_ma[6] / 100.0)
+      ; Torque
+      status = eki_setreal("MOTION_EKI", "RobotState/Torque/@A1", $torque_axis_act[1])
+      status = eki_setreal("MOTION_EKI", "RobotState/Torque/@A2", $torque_axis_act[2])
+      status = eki_setreal("MOTION_EKI", "RobotState/Torque/@A3", $torque_axis_act[3])
+      status = eki_setreal("MOTION_EKI", "RobotState/Torque/@A4", $torque_axis_act[4])
+      status = eki_setreal("MOTION_EKI", "RobotState/Torque/@A5", $torque_axis_act[5])
+      status = eki_setreal("MOTION_EKI", "RobotState/Torque/@A6", $torque_axis_act[6])
+      ; Gripper
+      ;status = eki_setint("MOTION_EKI", "RobotState/Gripper/Jaw/@Position", ActualPosition)
+      ;status = eki_setint("MOTION_EKI", "RobotState/Gripper/Jaw/@Status", StatusWord)
+      ;status = eki_setbool("MOTION_EKI", "RobotState/Gripper/Vacuum/@Suction", $out[1230])
+      ;status = eki_setbool("MOTION_EKI", "RobotState/Gripper/Vacuum/@Force1", $in[1230])  ;VakuumSensor1
+      ;status = eki_setbool("MOTION_EKI", "RobotState/Gripper/Vacuum/@Force2", $in[1231])  ;VakuumSensor2
+      ;status = eki_setbool("MOTION_EKI", "RobotState/Gripper/Vacuum/@Cylinder", $in[1228])
+      
+      if has_connection() then
+         status = eki_send("MOTION_EKI", "RobotState")
+      endif
+   endif
+   
+   ; Set timer for next interrupt [ms]
+   $timer[1] = -10  ; ~10 ms for above send + 10 ms interrupt timer -> ~50 Hz state transmission
+end
+
+
+def check_error(error_code :in)
+   decl int error_code
+   
+   decl char error_message[64]
+   decl int index
+   
+   index = 0
+   
+   for index = 1 to 64
+      error_message[index] = " "
+   endfor
+   
+   if error_code > 0 then
+      switch error_code
+         case 1
+            error_message[] = "Fehler 1"
+         default
+            error_message[] = "Unbekannter Fehler"
+      endswitch
+      
+      send_error(error_code, error_message[])
+     endif
+end
+
+def send_info(info_code :in, info_message[] :in)
+   decl int info_code
+   decl char info_message[]
+   
+   decl eki_status status
+   
+   if has_connection() then
+      status = eki_setint("MOTION_EKI", "RobotState/Info/@Code", info_code)
+      status = eki_setstring("MOTION_EKI", "RobotState/Info/@Message", info_message[])
+   endif
+end
+
+def send_error(error_code :in, error_message[] :in)
+   decl int error_code
+   decl char error_message[]
+   
+   decl eki_status status
+   
+   if has_connection() then
+      status = eki_setint("MOTION_EKI", "RobotState/Error/@Code", error_code)
+      status = eki_setstring("MOTION_EKI", "RobotState/Error/@Message", error_message[])
+   endif
+end
+
+
+deffct bool has_command()
+   decl eki_status status
+   
+   if not $flag[1] then
+      return false
+   endif
+
+   status = eki_checkbuffer("MOTION_EKI", "RobotCommand/@Id")
+   
+   return status.buff > 0
+endfct
+
+
+deffct bool get_command(command :out)
+   decl command_type command
+   
+   decl eki_status status
+   
+   if not has_command() then
+     return false
+   endif
+   
+   status = eki_getint("MOTION_EKI", "RobotCommand/@Id", command.id)
+   status = eki_getint("MOTION_EKI", "RobotCommand/@Type", command.type)
+   
+   status = eki_getint("MOTION_EKI", "RobotCommand/Move/@Mode", command.move_data.mode)
+   status = eki_getint("MOTION_EKI", "RobotCommand/Move/@BaseIndex", command.move_data.base_index)
+   status = eki_getint("MOTION_EKI", "RobotCommand/Move/@ToolIndex", command.move_data.tool_index)
+   status = eki_getreal("MOTION_EKI", "RobotCommand/Move/@Velocity", command.move_data.velocity)
+   status = eki_getreal("MOTION_EKI", "RobotCommand/Move/@Acceleration", command.move_data.acceleration)
+   status = eki_getreal("MOTION_EKI", "RobotCommand/Move/@Blending", command.move_data.blending)
+   status = eki_getint("MOTION_EKI", "RobotCommand/Move/@WaitForGripper", command.move_data.wait_for_gripper)
+   
+   status = eki_getreal("MOTION_EKI", "RobotCommand/Move/Joint/@A1", command.move_data.joint.a1)
+   status = eki_getreal("MOTION_EKI", "RobotCommand/Move/Joint/@A2", command.move_data.joint.a2)
+   status = eki_getreal("MOTION_EKI", "RobotCommand/Move/Joint/@A3", command.move_data.joint.a3)
+   status = eki_getreal("MOTION_EKI", "RobotCommand/Move/Joint/@A4", command.move_data.joint.a4)
+   status = eki_getreal("MOTION_EKI", "RobotCommand/Move/Joint/@A5", command.move_data.joint.a5)
+   status = eki_getreal("MOTION_EKI", "RobotCommand/Move/Joint/@A6", command.move_data.joint.a6)
+   
+   status = eki_getreal("MOTION_EKI", "RobotCommand/Move/Cartesian/@X", command.move_data.cartesian.x)
+   status = eki_getreal("MOTION_EKI", "RobotCommand/Move/Cartesian/@Y", command.move_data.cartesian.y)
+   status = eki_getreal("MOTION_EKI", "RobotCommand/Move/Cartesian/@Z", command.move_data.cartesian.z)
+   status = eki_getreal("MOTION_EKI", "RobotCommand/Move/Cartesian/@A", command.move_data.cartesian.a)
+   status = eki_getreal("MOTION_EKI", "RobotCommand/Move/Cartesian/@B", command.move_data.cartesian.b)
+   status = eki_getreal("MOTION_EKI", "RobotCommand/Move/Cartesian/@C", command.move_data.cartesian.c)
+   
+   status = eki_getreal("MOTION_EKI", "RobotCommand/Move/Cartesian_Aux/@X", command.move_data.cartesian_aux.x)
+   status = eki_getreal("MOTION_EKI", "RobotCommand/Move/Cartesian_Aux/@Y", command.move_data.cartesian_aux.y)
+   status = eki_getreal("MOTION_EKI", "RobotCommand/Move/Cartesian_Aux/@Z", command.move_data.cartesian_aux.z)
+   status = eki_getreal("MOTION_EKI", "RobotCommand/Move/Cartesian_Aux/@A", command.move_data.cartesian_aux.a)
+   status = eki_getreal("MOTION_EKI", "RobotCommand/Move/Cartesian_Aux/@B", command.move_data.cartesian_aux.b)
+   status = eki_getreal("MOTION_EKI", "RobotCommand/Move/Cartesian_Aux/@C", command.move_data.cartesian_aux.c)
+   
+   status = eki_getint("MOTION_EKI", "RobotCommand/Move/Teached/@PositionIndex", command.move_data.teached)
+   
+   status = eki_getint("MOTION_EKI", "RobotCommand/Grip/@Mode", command.grip_data.mode)
+   
+   status = eki_getint("MOTION_EKI", "RobotCommand/Grip/Jaw/@Tolerance", command.grip_data.jaw.tolerance)
+   status = eki_getint("MOTION_EKI", "RobotCommand/Grip/Jaw/@Velocity", command.grip_data.jaw.velocity)
+   status = eki_getint("MOTION_EKI", "RobotCommand/Grip/Jaw/@Force", command.grip_data.jaw.force)
+   status = eki_getint("MOTION_EKI", "RobotCommand/Grip/Jaw/@BasePosition", command.grip_data.jaw.base_pos)
+   status = eki_getint("MOTION_EKI", "RobotCommand/Grip/Jaw/@WorkPosition", command.grip_data.jaw.work_pos)
+   status = eki_getint("MOTION_EKI", "RobotCommand/Grip/Jaw/@TeachPosition", command.grip_data.jaw.teach_pos)
+   status = eki_getint("MOTION_EKI", "RobotCommand/Grip/Jaw/@ShiftPosition", command.grip_data.jaw.shift_pos)
+   status = eki_getint("MOTION_EKI", "RobotCommand/Grip/Jaw/@DirectionMode", command.grip_data.jaw.direction_mode)
+   
+   status = eki_getint("MOTION_EKI", "RobotCommand/Grip/Vacuum/@Suction", command.grip_data.vacuum.suction)
+   status = eki_getreal("MOTION_EKI", "RobotCommand/Grip/Vacuum/@Cylinder", command.grip_data.vacuum.cylinder)
+   
+   return true
+endfct
+
+
+deffct int do_move(step :in, move_data :in, cmd_id :in)
+   decl int step
+   decl move_type move_data
+   decl int cmd_id
+   decl int error_code
+   error_code = 0
+   
+   temp_cmd_id = cmd_id
+   
+   if move_data.base_index > 0 then
+      $base = base_data[move_data.base_index]
+   else 
+      $base = $nullframe
+   endif
+
+   if move_data.tool_index > 0 then
+      $tool = tool_data[move_data.tool_index]
+   else 
+      $tool = $nullframe
+   endif
+   
+   switch (move_data.mode)
+      case 1
+         set_joint_vel(move_data.velocity)
+         set_joint_acc(move_data.acceleration)
+         set_blending(move_data.blending)
+         TRIGGER WHEN DISTANCE=1 DELAY=0 DO set_cmd_id_done(temp_cmd_id) PRIO=-1 ; save id of last finished motion primitive
+         INTERRUPT ON 19   ; enable interrupt to stop movement
+         ptp move_data.joint c_ptp C_DIS
+         INTERRUPT OFF 19
+      case 2
+         set_joint_vel(move_data.velocity)
+         set_joint_acc(move_data.acceleration)
+         set_blending(move_data.blending)
+         TRIGGER WHEN DISTANCE=1 DELAY=0 DO set_cmd_id_done(temp_cmd_id) PRIO=-1
+         INTERRUPT ON 19
+         ptp move_data.cartesian c_ptp C_DIS
+         INTERRUPT OFF 19
+      case 3
+         set_cart_vel(move_data.velocity)
+         set_cart_acc(move_data.acceleration)
+         set_blending(move_data.blending)
+         TRIGGER WHEN DISTANCE=1 DELAY=0 DO set_cmd_id_done(temp_cmd_id) PRIO=-1
+         INTERRUPT ON 19
+         lin move_data.cartesian C_DIS
+         INTERRUPT OFF 19
+      ;case 4
+      ;   INTERRUPT ON 19
+      ;   ptp teached_points[move_data.teached] c_ptp C_DIS
+      ;   INTERRUPT OFF 19
+      ;case 5
+      ;   lin teached_points[move_data.teached]
+      case 6
+         set_cart_vel(move_data.velocity)
+         set_cart_acc(move_data.acceleration)
+         set_blending(move_data.blending)
+         TRIGGER WHEN DISTANCE=1 DELAY=0 DO set_cmd_id_done(temp_cmd_id) PRIO=-1
+         INTERRUPT ON 19
+         circ move_data.cartesian_aux, move_data.cartesian C_DIS
+         INTERRUPT OFF 19
+   endswitch
+   
+   return error_code
+endfct
+
+deffct int do_grip(grip_data :in)
+   decl grip_type grip_data
+   
+   decl int error_code
+   
+   error_code = 0
+   
+   if (grip_data.mode == 1) or (grip_data.mode == 3) then
+      $out[1230] = (grip_data.vacuum.suction == 1)
+      $out[1231] = (grip_data.vacuum.suction == 1)
+      
+      $out[1228] = (grip_data.vacuum.cylinder > 0)
+      $out[1229] = (grip_data.vacuum.cylinder == 0)
+      
+      if $out[1230] then
+         wait for ($in[1230] or $in[1231])
+      endif
+      
+      if $out[1228] then
+         ;wait sec 1
+         wait for $in[1227]
+      else
+         wait for $in[1229]
+      endif
+   endif
+   
+   if (grip_data.mode == 1) or (grip_data.mode == 2) then
+      ControlWord = 0
+   
+      if $in[1112] == false then
+         DeviceMode = 80
+         WorkpieceNo = 0
+         
+         ;Positionen in mm = Wert[mm] * 100
+         PositionTolerance = grip_data.jaw.tolerance  ;50 = 0,5mm
+         GripForce = grip_data.jaw.force              ;1
+         DriveVelocity = grip_data.jaw.velocity       ;100
+         BasePosition = grip_data.jaw.base_pos        ;75
+         ShiftPosition = grip_data.jaw.shift_pos      ;500
+         WorkPosition = grip_data.jaw.work_pos        ;4875
+         TeachPosition = grip_data.jaw.teach_pos      ;3000
+         
+         ControlWord = 1
+      endif
+   
+      wait for $in[1112] == true
+      ControlWord = 0
+      wait for $in[1112] == false
+      
+      $out[1108] = grip_data.jaw.direction_mode == 0
+      $out[1109] = grip_data.jaw.direction_mode == 1
+      
+      
+      if $out[1109] == true then 
+         ;wait sec 1
+      endif
+      
+   endif
+   
+   ;loop
+   ;   int jaw_pos = ....
+   ;   if jaw_pos - target_pos < 5 then
+   ;      break
+   ;   endif
+   ;endloop
+   
+   return error_code
+endfct
+
+
+def set_cmd_id_done(cmd_id :in)
+   decl int cmd_id
+   msgnotify("Command with ID %1 done","Motion EKI",cmd_id)
+   LAST_FINISHED_MOVE_ID = cmd_id
+end
+
+def stop_movement()
+   decl eki_status status
+   msgnotify("Stopping Robot immediately with BREAK", "Motion EKI")
+   
+   ; Immediately stop the robot
+   BRAKE
+   
+   ; Clear the command buffer to prevent further motion
+   status = eki_clearbuffer("MOTION_EKI", "RobotCommand")
+   if status.buff > 0 then
+      msgnotify("Failed to clear command buffer", "Motion EKI")
+   else
+      msgnotify("Successfully cleared command buffer", "Motion EKI")
+   endif
+   
+   ; Reset current command to ensure a clean restart
+    current_command = null_command()
+    
+   ROBOT_STOPPED = true
+    
+   ; wait one cycle
+   WAIT sec 0.012
+   
+   RESUME   ; dont go back to where the interrupt occured ($ADVANCE must be 0)
+end
+
+def set_joint_vel(velocity :in)
+   decl real velocity   ; in rad/s
+   decl real vel_scale ; 0...1
+   decl int i
+
+   if (velocity > 0.0) AND (velocity <> act_joint_vel) then
+      vel_scale = velocity/max_joint_vel
+      act_joint_vel = velocity
+      if vel_scale < 0.1 then
+         vel_scale = 0.1
+         act_joint_vel = 0.1 * max_joint_vel
+      endif
+      if vel_scale > 1.0 then
+         vel_scale = 1.0
+         act_joint_vel = max_joint_vel
+      endif
+      for i = 1 to 6
+        $VEL_AXIS[i] = vel_scale * 100
+      endfor
+      ;msgnotify("Set joint velocity to: %1 %","Motion EKI",vel_scale * 100)
+   endif   
+end
+
+def set_joint_acc(acceleration :in)
+   decl real acceleration ; in rad/s^2
+   decl real acc_scale ; 0...1
+   decl int i
+
+   if (acceleration > 0.0) AND (acceleration <> act_joint_acc) then
+      ; TODO: $ACC_AXIS needs percentage 0...100 --> calculate acc_scale=acceleration/max_joint_acc (clamp between 0.1 -1)
+      acc_scale = 0.5
+      for i = 1 to 6
+        $ACC_AXIS[i] = acc_scale * 100
+      endfor
+      act_joint_acc = acceleration
+      ;msgnotify("Set joint acceleration to: %1 %","Motion EKI",acc_scale * 100)
+   endif
+end
+
+def set_cart_vel(velocity :in)
+   decl real velocity   ; in m/s
+   if (velocity > 0.0) AND (velocity <= $VEL_MA.CP) AND (velocity <> act_cart_vel) then
+      $VEL.CP = velocity
+      act_cart_vel = velocity
+      ;msgnotify("Set cartesian velocity to: %1 mm/s","Motion EKI",velocity * 1000)
+   endif
+end
+
+def set_cart_acc(acceleration :in)
+   decl real acceleration ; in m/s^2
+   if (acceleration > 0.0) AND (acceleration <= $ACC_MA.CP) AND (acceleration <> act_cart_acc) then
+      $ACC.CP = acceleration  
+      act_cart_acc = acceleration
+      ;msgnotify("Set cartesian acceleration to: %1 mm/s^2","Motion EKI",acceleration * 1000)
+   endif
+end
+
+def set_blending(blending :in)
+   decl real blending ; in m
+   $APO.CDIS = blending * 1000
+   ;msgnotify("Set blending to %1 mm","Motion EKI",blending * 1000)
+end

@@ -43,6 +43,8 @@ from launch.substitutions import (
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 
+from launch.substitutions import TextSubstitution
+
 
 def generate_launch_description():
     declared_arguments = []
@@ -110,6 +112,15 @@ def generate_launch_description():
     )
     declared_arguments.append(
         DeclareLaunchArgument(
+            "use_motion_primitives_driver",
+            default_value="false",
+            description="Use EKI communication with motion primitives driver. \
+            If the flag is set to true 'eki_robot_ip' and 'eki_robot_port' arguments define the \
+            endpoint of robot controller to connect.",
+        )
+    )
+    declared_arguments.append(
+        DeclareLaunchArgument(
             "eki_robot_ip",
             default_value="127.0.0.1",
             description="IP address for the robot controller for communication using EKI protocol.",
@@ -161,7 +172,7 @@ def generate_launch_description():
             "rviz_file",
             default_value="view_robot.rviz",
             description="Rviz2 configuration file of the visualization. \
-            The expected location of the file is '<configuration_package>/config/'.",
+            The expected location of the file is '<configuration_package>/rviz/'.",
         )
     )
     declared_arguments.append(
@@ -237,6 +248,7 @@ def generate_launch_description():
     initial_positions_file = LaunchConfiguration("initial_positions_file")
 
     use_eki_communication = LaunchConfiguration("use_eki_communication")
+    use_motion_primitives_driver = LaunchConfiguration("use_motion_primitives_driver")
     eki_robot_ip = LaunchConfiguration("eki_robot_ip")
     eki_robot_port = LaunchConfiguration("eki_robot_port")
     use_rsi_communication = LaunchConfiguration("use_rsi_communication")
@@ -280,6 +292,9 @@ def generate_launch_description():
             " ",
             "use_eki_communication:=",
             use_eki_communication,
+            " ",
+            "use_motion_primitives_driver:=",
+            use_motion_primitives_driver,
             " ",
             "eki_robot_ip:=",
             eki_robot_ip,
@@ -340,15 +355,17 @@ def generate_launch_description():
     for controller in ["position_trajectory_controller", "joint_state_broadcaster"]:
         load_and_activate_controllers += [
             ExecuteProcess(
-                cmd=[f"ros2 run controller_manager spawner {controller} -c {controller_manager_name}"],
-                shell=True,
+                cmd=[
+                    "ros2", "run", "controller_manager", "spawner", controller,
+                    "--controller-manager", controller_manager_name,
+                ],
                 output="screen",
                 condition=IfCondition(activate_ros2_control),
             )
         ]
 
     rviz_config_file = PathJoinSubstitution(
-        [FindPackageShare(configuration_package), "config", rviz_file]
+        [FindPackageShare(configuration_package), "rviz", rviz_file]
     )
     rviz_node = Node(
         package="rviz2",

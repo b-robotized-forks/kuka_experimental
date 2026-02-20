@@ -26,6 +26,11 @@ foreach(Dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
   find_package(${Dependency} REQUIRED)
 endforeach()
 
+find_package(ament_cmake_python REQUIRED)
+find_package(rclpy REQUIRED)
+find_package(trajectory_msgs REQUIRED)
+
+
 add_library(kuka_rsi_hw_interface SHARED
   src/robot_control_interface.cpp
 )
@@ -69,6 +74,13 @@ install(
   DESTINATION share/kuka_rsi_hw_interface
 )
 
+# Python nodes
+install(PROGRAMS
+  kuka_rsi_hw_interface/send_joint_positions.py
+  DESTINATION lib/${PROJECT_NAME}
+)
+
 ament_export_targets(export_kuka_rsi_hw_interface HAS_LIBRARY_TARGET)
 ament_export_dependencies(${THIS_PACKAGE_INCLUDE_DEPENDS})
+ament_export_dependencies(rclpy trajectory_msgs)
 ament_package()

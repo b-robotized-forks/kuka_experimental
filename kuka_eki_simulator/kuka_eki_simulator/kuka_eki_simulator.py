@@ -54,7 +54,7 @@ def parse_eki_xml_sen(data):
 
 def main(args=None):
     rclpy.init(args=args)
-    parser = argparse.ArgumentParser(description='KUKA RSI Simulation')
+    parser = argparse.ArgumentParser(description='KUKA EKI Simulation')
     parser.add_argument('--eki_hw_iface_ip', default="127.0.0.1", help='The ip address of the EKI control interface (default=127.0.0.1)')
     parser.add_argument('--eki_hw_iface_port', default=54600, help='The port of the EKI control interface (default=54600)')
     parser.add_argument('--sen', default='ImFree', help='Type attribute in EKI XML doc. E.g. <Sen Type:"ImFree">')
@@ -77,8 +77,8 @@ def main(args=None):
 
     node.get_logger().info(f"Started '{node_name}' node.")
 
-    rsi_act_pub = node.create_publisher(String, '~/eki/state', 1)
-    rsi_cmd_pub = node.create_publisher(String, '~/eki/command', 1)
+    eki_act_pub = node.create_publisher(String, '~/eki/state', 1)
+    eki_cmd_pub = node.create_publisher(String, '~/eki/command', 1)
 
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -102,19 +102,20 @@ def main(args=None):
         while rclpy.ok() and timeout_count < max_timeout:
             time.sleep(0.001)  # FIXME: make this a ros2 node
             try:
-                str_data = create_eki_xml_rob(act_joint_pos)
+                str_data = create_eki_xml_rob(act_joint_pos)    # create the XML with the current joint position
                 msg = String()
                 msg.data = str(str_data)
-                rsi_act_pub.publish(msg)
+                eki_act_pub.publish(msg)
                 s.sendto(str_data, addr)
 
-                recv_msg, addr = s.recvfrom(1024)
+                recv_msg, addr = s.recvfrom(1024)   # receive the command
+                # node.get_logger().info(f"Recived XML:\n{recv_msg.decode('utf-8')}") # print the received XML
                 msg = String()
                 msg.data = str(recv_msg)
-                rsi_cmd_pub.publish(msg)
+                eki_cmd_pub.publish(msg)
                 des_joint_absolute = parse_eki_xml_sen(recv_msg)
                 if des_joint_absolute is not None:
-                    act_joint_pos = des_joint_absolute
+                    act_joint_pos = des_joint_absolute  # update the joint position
                 else:
                     continue
                 time.sleep(cycle_time / 2)

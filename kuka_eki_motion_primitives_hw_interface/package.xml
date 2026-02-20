@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>kuka_eki_motion_primitives_hw_interface</name>
+  <version>0.0.1</version>
+  <description>Driver package to control kuka robot using motion primitives like PTP, LIN and CIRC</description>
+  <author email="mathias.fuhrer@b-robotized.com">Mathias Fuhrer</author>
+  <maintainer email="mathias.fuhrer@b-robotized.com">Mathias Fuhrer</maintainer>
+  <license>Apache 2.0</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <buildtool_depend>ament_cmake_gmock</buildtool_depend> 
+  <buildtool_depend>ament_cmake_python</buildtool_depend>
+
+  <depend>hardware_interface</depend>
+  <depend>pluginlib</depend>
+  <depend>rclcpp</depend>
+  <depend>rclcpp_lifecycle</depend>
+  <depend>rclpy</depend>
+  <depend>ros2_control_test_assets</depend>
+  <depend>motion_primitives_controllers</depend>
+  <depend>angles</depend>
+  <depend>tf2_geometry_msgs</depend>  
+  <depend>control_msgs</depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>
